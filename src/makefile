@@ -56,17 +56,22 @@ all: OpenParEM3D process3D
 
 install:
 	rm -f ../bin/OpenParEM3D
-	rm -f ../bin/process3D
+	cp OpenParEM3D ../bin/OpenParEM3D
 	rm -f $(HOME)/bin/OpenParEM3D
+	mv OpenParEM3D $(HOME)/bin/OpenParEM3D
+
+	rm -f ../bin/process3D
+	cp process3D ../bin/process3D
 	rm -f $(HOME)/bin/process3D
+	mv process3D $(HOME)/bin/process3D
+
 	rm -f $(HOME)/bin/process3D.sh
-	rm -f $(HOME)/bin/regression3D.sh
-	cp OpenParEM3D $(HOME)/bin
-	cp process3D $(HOME)/bin
-	mv OpenParEM3D ../bin
-	mv process3D ../bin
 	cp ../scripts/process3D.sh $(HOME)/bin/process3D.sh
+
+	rm -f $(HOME)/bin/regression3D.sh
 	cp ../scripts/regression3D.sh $(HOME)/bin/regression3D.sh
+
+	rm -f $(HOME)/.FreeCAD/Macro/OpenParEM3D_save.py
 	cp ../scripts/OpenParEM3D_save.py $(HOME)/.FreeCAD/Macro/OpenParEM3D_save.py
 
 clean:
