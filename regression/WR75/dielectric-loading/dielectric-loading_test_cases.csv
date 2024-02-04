@@ -1,0 +1,27 @@
+# ResultDatabase::save_as_test
+dielectric-loading_1_0_result,8500000000,magS(dB),1,1,equal,-3.46363002829104,1e-10
+dielectric-loading_1_1_result,8500000000,argS(deg),1,1,equal,44.1279565288982,1e-10
+dielectric-loading_1_2_result,8500000000,magS(dB),2,1,equal,-2.59987806997688,5e-08
+dielectric-loading_1_3_result,8500000000,argS(deg),2,1,equal,134.132959972577,1e-10
+dielectric-loading_2_4_result,11600000000,magS(dB),1,1,equal,-32.8949827133683,1e-10
+dielectric-loading_2_5_result,11600000000,argS(deg),1,1,equal,95.1928787734493,1e-10
+dielectric-loading_2_6_result,11600000000,magS(dB),2,1,lessthan,0
+dielectric-loading_2_6a_result,11600000000,magS(dB),2,1,greaterthan,-0.003
+dielectric-loading_2_7_result,11600000000,argS(deg),2,1,equal,-174.439719424399,1e-12
+dielectric-loading_3_8_result,12500000000,magS(dB),1,1,equal,-4.16405918490397,3e-12
+dielectric-loading_3_9_result,12500000000,argS(deg),1,1,equal,168.314896762665,1e-12
+dielectric-loading_3_10_result,12500000000,magS(dB),2,1,equal,-2.10003801163556,5e-08
+dielectric-loading_3_11_result,12500000000,argS(deg),2,1,equal,78.3024627636725,1e-12
+dielectric-loading_1_12_result,8500000000,magS(dB),1,2,equal,-2.59993350874142,5e-08
+dielectric-loading_1_13_result,8500000000,argS(deg),1,2,equal,134.133349547409,1e-10
+dielectric-loading_1_14_result,8500000000,magS(dB),2,2,equal,-3.46367473969555,1e-10
+dielectric-loading_1_15_result,8500000000,argS(deg),2,2,equal,44.1378271500196,1e-10
+dielectric-loading_2_16_result,11600000000,magS(dB),1,2,lessthan,0
+dielectric-loading_2_16a_result,11600000000,magS(dB),1,2,greaterthan,-0.003
+dielectric-loading_2_17_result,11600000000,argS(deg),1,2,equal,-174.439137157983,1e-12
+dielectric-loading_2_18_result,11600000000,magS(dB),2,2,equal,-32.8920531650769,1e-10
+dielectric-loading_2_19_result,11600000000,argS(deg),2,2,equal,95.7324708248942,3e-11
+dielectric-loading_3_20_result,12500000000,magS(dB),1,2,equal,-2.10008572404445,5e-08
+dielectric-loading_3_21_result,12500000000,argS(deg),1,2,equal,78.3031306854653,1e-10
+dielectric-loading_3_22_result,12500000000,magS(dB),2,2,equal,-4.16404351811886,1e-10
+dielectric-loading_3_23_result,12500000000,argS(deg),2,2,equal,168.296111922444,1e-12
