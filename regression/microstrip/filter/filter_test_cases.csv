@@ -1,0 +1,17 @@
+# ResultDatabase::save_as_test
+filter_1_0_result,1000000000,magS(dB),1,1,equal,-0.0059149626554254,5e-09
+filter_1_1_result,1000000000,argS(deg),1,1,equal,-68.6327823079907,1e-10
+filter_1_2_result,1000000000,magS(dB),2,1,equal,-46.6822369318485,1e-10
+filter_1_3_result,1000000000,argS(deg),2,1,equal,18.9042460838338,1e-09
+filter_2_4_result,4000000000,magS(dB),1,1,equal,-0.0442927247058814,1e-10
+filter_2_5_result,4000000000,argS(deg),1,1,equal,-58.0938216475856,1e-10
+filter_2_6_result,4000000000,magS(dB),2,1,equal,-38.5220164345368,1e-11
+filter_2_7_result,4000000000,argS(deg),2,1,equal,-143.54802844473,1e-11
+filter_1_8_result,1000000000,magS(dB),1,2,equal,-46.6659480695345,1e-09
+filter_1_9_result,1000000000,argS(deg),1,2,equal,19.000424532161,1e-09
+filter_1_10_result,1000000000,magS(dB),2,2,equal,-0.00587467305921844,1e-08
+filter_1_11_result,1000000000,argS(deg),2,2,equal,-68.4984673625486,1e-10
+filter_2_12_result,4000000000,magS(dB),1,2,equal,-38.5057821371342,1e-11
+filter_2_13_result,4000000000,argS(deg),1,2,equal,-143.31631187205,1e-10
+filter_2_14_result,4000000000,magS(dB),2,2,equal,-0.044164740939766,1e-10
+filter_2_15_result,4000000000,argS(deg),2,2,equal,-58.0982181104209,5e-11
