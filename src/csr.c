@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2022 Brian Young                                          //
+//    Copyright (C) 2024 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -31,16 +31,16 @@ PetscErrorCode printMatInfo (const char *mat_name, Mat *mat)
    ierr=MatGetSize(*mat,&m,&n); CHKERRQ(ierr);
    ierr=MatGetType(*mat,&type); CHKERRQ(ierr);
 
-   PetscPrintf(PETSC_COMM_WORLD,"%s:\n",mat_name);
-   PetscPrintf(PETSC_COMM_WORLD,"   rows=%ld, columns=%ld\n",m,n);
-   PetscPrintf(PETSC_COMM_WORLD,"   type=%s\n",type);
-   PetscPrintf(PETSC_COMM_WORLD,"   block_size=%g\n",info.block_size);
-   PetscPrintf(PETSC_COMM_WORLD,"   nz_allocated=%g\n",info.nz_allocated);
-   PetscPrintf(PETSC_COMM_WORLD,"   nz_used=%g\n",info.nz_used);
-   PetscPrintf(PETSC_COMM_WORLD,"   nz_unneeded=%g\n",info.nz_unneeded);
-   PetscPrintf(PETSC_COMM_WORLD,"   memory_allocated=%g\n",info.memory);
-   PetscPrintf(PETSC_COMM_WORLD,"   number_of_assemblies=%g\n",info.assemblies);
-   PetscPrintf(PETSC_COMM_WORLD,"   mallocs=%g\n",info.mallocs);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s:\n",mat_name);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   rows=%ld, columns=%ld\n",m,n);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   type=%s\n",type);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   block_size=%g\n",info.block_size);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   nz_allocated=%g\n",info.nz_allocated);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   nz_used=%g\n",info.nz_used);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   nz_unneeded=%g\n",info.nz_unneeded);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   memory_allocated=%g\n",info.memory);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   number_of_assemblies=%g\n",info.assemblies);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   mallocs=%g\n",info.mallocs);
 
    return ierr;
 }
@@ -51,7 +51,7 @@ void show_memory (int show, const char *description)
 
    if (show) {
       getrusage(RUSAGE_SELF,&usage);
-      PetscPrintf(PETSC_COMM_WORLD,"%s memory (MB): %g\n",description,(double)usage.ru_maxrss/1024.);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s memory (MB): %g\n",description,(double)usage.ru_maxrss/1024.);
    }
 }
 
@@ -184,7 +184,7 @@ PetscErrorCode hypre_ParCSRMatrixToMat(hypre_ParCSRMatrix *a, Mat *A, PetscInt s
 
    // create the matrix
    if (create_A) {
-      ierr=MatDestroy(A); if (ierr) return ierr;
+      //ierr=MatDestroy(A); if (ierr) return ierr;
       ierr=MatCreate(PETSC_COMM_WORLD,A); if (ierr) return ierr;
 
       if (size == 1) {

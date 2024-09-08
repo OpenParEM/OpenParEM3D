@@ -18,34 +18,15 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LINEARSYSTEM_H
-#define LINEARSYSTEM_H
+#ifndef OPEML2ZZ_H
+#define OPEML2ZZ_H
 
-#include <petsc.h>
-#include <complex.h>
-#include "project.h"
-#include <_hypre_parcsr_mv.h>
-#include "triplet.h"
-#include <lapacke.h>
-#include <time.h>
+#include "mfem.hpp"
 
-//double* allocReaddof (char *, char *, size_t *);
-//void printdof (double *, size_t);
-FILE* openDataFile (const char *, const char *, char *, int);
-int loadDataLine (FILE *, struct dataTriplet *, int);
-int loadDataFileStats (const char *, const char *, char *, PetscInt *, PetscInt *, PetscInt *);
-int loadDataFile (const char *, const char *, char *, Mat *, PetscInt, PetscInt, int, int, double, PetscMPIInt);
+using namespace std;
+using namespace mfem;
 
-void matrixPrint(lapack_complex_double *, lapack_int);
-void matrixDiagonalPrint(lapack_complex_double *, lapack_int);
-void linearPrint(lapack_complex_double *, lapack_int);
-lapack_complex_double* matrixClone (lapack_complex_double *, lapack_int);
-void matrixTranspose(lapack_complex_double *, lapack_int);
-void matrixConjugate (lapack_complex_double *, lapack_int);
-void matrixScale (lapack_complex_double *, lapack_complex_double *, lapack_int);
-void matrixCopy (lapack_complex_double *, lapack_complex_double *, lapack_int);
-int matrixInverse(lapack_complex_double *, lapack_int);
-void matrixMultiply(lapack_complex_double *, lapack_complex_double *, lapack_int);
+bool OPEM_L2ZZErrorEstimator (BilinearFormIntegrator &, const ParGridFunction &, ParFiniteElementSpace &, ParFiniteElementSpace &, Vector &, int, double, int, double &);
 
 #endif
 

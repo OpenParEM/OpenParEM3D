@@ -1,7 +1,7 @@
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2022 Brian Young                                          //
+//    Copyright (C) 2024 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -98,20 +98,23 @@ void fem3D::build_PEC_dofs ()
 // A is a complex matrix that is matrixSize x sparseWidth.
 // Building A costs 50% more memory ReA or ReB must be allocated at the same time as A.
 bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *materialDatabase, double temperature,
-                     PWConstCoefficient *neg_ko2_Re_er, PWConstCoefficient *neg_ko2_Im_er,PWConstCoefficient *Inv_mur)
+                     PWConstCoefficient *Inv_mur, PWConstCoefficient *neg_ko2_Re_er, PWConstCoefficient *neg_ko2_Im_er,
+                     bool solution_check_homogeneous, string indent)
 {
    vector<Array<int> *> borderAttributeList;
-   vector<ConstantCoefficient *> alphaConstList,betaConstList,ZconstList;
+   vector<ConstantCoefficient *> ReInvGammaConstList,ImInvGammaConstList,RekConstList,ImkConstList,ZconstList;
 
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    // real
 
-   ParMixedBilinearForm *pmblfReA=new ParMixedBilinearForm(fespace_ND,fespace_ND);
+   ParBilinearForm *pmblfReA=new ParBilinearForm(fespace_ND);
    pmblfReA->AddDomainIntegrator(new CurlCurlIntegrator (*Inv_mur));
    pmblfReA->AddDomainIntegrator(new VectorFEMassIntegrator (*neg_ko2_Re_er));
-   boundaryDatabase->addMassPortIntegrators(*pmesh,pmblfReA,Inv_mur,borderAttributeList,alphaConstList,betaConstList,true);
+   if (boundaryDatabase->addPortIntegrators(*pmesh,pmblfReA,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,borderAttributeList,
+                                            ReInvGammaConstList,ImInvGammaConstList,RekConstList,ImkConstList,
+                                            true,drivingSet,solution_check_homogeneous,indent)) return true;
    pmblfReA->Assemble();
    pmblfReA->Finalize();
    HypreParMatrix *ReA=pmblfReA->ParallelAssemble();
@@ -119,13 +122,23 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
    long unsigned int i=0;
    while (i < borderAttributeList.size()) {
       if (borderAttributeList[i]) delete borderAttributeList[i];
-      if (alphaConstList[i]) delete alphaConstList[i];
-      if (betaConstList[i]) delete betaConstList[i];
       i++;
    }
    borderAttributeList.clear();
-   alphaConstList.clear();
-   betaConstList.clear();
+
+   i=0;
+   while (i < ReInvGammaConstList.size()) {
+      if (ReInvGammaConstList[i]) delete ReInvGammaConstList[i];
+      if (ImInvGammaConstList[i]) delete ImInvGammaConstList[i];
+      if (RekConstList[i]) delete RekConstList[i];
+      if (ImkConstList[i]) delete ImkConstList[i];
+      i++;
+   }
+   ReInvGammaConstList.clear();
+   ImInvGammaConstList.clear();
+   RekConstList.clear();
+   ImkConstList.clear();
+
 
    delete pmblfReA;
    hypre_getSparseWidth((hypre_ParCSRMatrix *) *ReA,&sparseWidth);
@@ -134,11 +147,13 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
 
    // imag
 
-   ParMixedBilinearForm *pmblfImA=new ParMixedBilinearForm(fespace_ND,fespace_ND);
+   ParBilinearForm *pmblfImA=new ParBilinearForm(fespace_ND);
    pmblfImA->AddDomainIntegrator(new VectorFEMassIntegrator (*neg_ko2_Im_er));
-   boundaryDatabase->addMassPortIntegrators(*pmesh,pmblfImA,Inv_mur,borderAttributeList,alphaConstList,betaConstList,false);
-   boundaryDatabase->addMassImpedanceIntegrators(frequency,temperature,*pmesh,pmblfImA,materialDatabase,
-                                                 borderAttributeList,ZconstList,false);
+   if (boundaryDatabase->addPortIntegrators(*pmesh,pmblfImA,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,borderAttributeList,
+                                            ReInvGammaConstList,ImInvGammaConstList,RekConstList,ImkConstList,
+                                            false,drivingSet,solution_check_homogeneous,indent)) return true;
+   boundaryDatabase->addImpedanceIntegrators(frequency,temperature,*pmesh,pmblfImA,materialDatabase,
+                                             borderAttributeList,ZconstList,false);
    pmblfImA->Assemble(); 
    pmblfImA->Finalize();
    HypreParMatrix *ImA=pmblfImA->ParallelAssemble();
@@ -150,9 +165,11 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
    }
 
    i=0;
-   while (i < alphaConstList.size()) {
-      if (alphaConstList[i]) delete alphaConstList[i];
-      if (betaConstList[i]) delete betaConstList[i];
+   while (i < ReInvGammaConstList.size()) {
+      if (ReInvGammaConstList[i]) delete ReInvGammaConstList[i];
+      if (ImInvGammaConstList[i]) delete ImInvGammaConstList[i];
+      if (RekConstList[i]) delete RekConstList[i];
+      if (ImkConstList[i]) delete ImkConstList[i];
       i++;
    }
 
@@ -188,7 +205,7 @@ void fem3D::build_P ()
 
 void fem3D::build_Q (PWConstCoefficient *Inv_w_mu)
 {
-   ParMixedBilinearForm *pmblfReQ=new ParMixedBilinearForm(fespace_ND,fespace_ND);
+   ParBilinearForm *pmblfReQ=new ParBilinearForm(fespace_ND);
    pmblfReQ->AddDomainIntegrator(new MixedVectorCurlIntegrator (*Inv_w_mu));
    pmblfReQ->Assemble();
    pmblfReQ->Finalize();
@@ -204,17 +221,55 @@ void fem3D::build_Q (PWConstCoefficient *Inv_w_mu)
    delete ReQ;
 }
 
+void fem3D::build_R (PWConstCoefficient *ReInv_w_er, PWConstCoefficient *ImInv_w_er)
+{
+   // real
+
+   ParBilinearForm *pmblfReR=new ParBilinearForm(fespace_ND);
+   pmblfReR->AddDomainIntegrator(new MixedVectorCurlIntegrator (*ReInv_w_er));
+   pmblfReR->Assemble();
+   pmblfReR->Finalize();
+   HypreParMatrix *ReR=pmblfReR->ParallelAssemble();
+   delete pmblfReR;
+
+   // anticipate solving PE=-jRH and put ReR in the imaginary position as a negative
+   (*ReR)*=-1.0;
+   if (hypre_ParCSRMatrixToMat((hypre_ParCSRMatrix *) *ReR, &R, sparseWidth, 1, 1, 0)) {
+      cout << "ASSERT: fem3D::build_R failed to build Mat ReR." << endl;
+   }
+
+   delete ReR;
+
+   // imag
+
+   ParBilinearForm *pmblfImR=new ParBilinearForm(fespace_ND);
+   pmblfImR->AddDomainIntegrator(new MixedVectorCurlIntegrator (*ImInv_w_er));
+   pmblfImR->Assemble();
+   pmblfImR->Finalize();
+   HypreParMatrix *ImR=pmblfImR->ParallelAssemble();
+   delete pmblfImR;
+
+   // anticipate solving PE=-jRH and put ImR in the real position
+   if (hypre_ParCSRMatrixToMat((hypre_ParCSRMatrix *) *ImR, &R, sparseWidth, 0, 0, 1)) {
+      cout << "ASSERT: fem3D::build_R failed to build Mat ImR." << endl;
+   }
+
+   delete ImR;
+}
+
 PetscErrorCode fem3D::build_X()
 {
    PetscErrorCode ierr=0;
-   ierr=MatCreateVecs(A,&X,NULL);
+   ierr=MatCreateVecs(A,&X,NULL); if (ierr) return ierr;
+   ierr=VecZeroEntries(X);
    return ierr;
 }
 
 PetscErrorCode fem3D::build_x()
 {
    PetscErrorCode ierr=0;
-   ierr=MatCreateVecs(A,&x,NULL);
+   ierr=MatCreateVecs(A,&x,NULL); if (ierr) return ierr;
+   ierr=VecZeroEntries(x);
    return ierr;
 }
 
@@ -256,7 +311,8 @@ void fem3D::build_portEssTdofLists(BoundaryDatabase *boundaryDatabase)
 PetscErrorCode fem3D::build_Xdofs()
 {
    PetscErrorCode ierr=0;
-   ierr=MatCreateVecs(A,&Xdofs,NULL);
+   ierr=MatCreateVecs(A,&Xdofs,NULL);  if (ierr) return ierr;
+   ierr=VecZeroEntries(Xdofs);
    return ierr;
 }
 
@@ -577,7 +633,7 @@ void fem3D::buildHgrids(BoundaryDatabase *boundaryDatabase, PWConstCoefficient *
    MatDestroy(&P);
 
    // Vec hdofs to HypreParVector h_re,h_im
-   build_h_re_h_im (&hdofs);
+   build_h_re_h_im(&hdofs);
 
    // fill grids
    gridReH->Distribute(*h_re);
@@ -652,23 +708,25 @@ void fem3D::build_ImExHgrid()
 
 bool fem3D::solve(BoundaryDatabase *boundaryDatabase, MaterialDatabase *materialDatabase, double temperature,
                   PWConstCoefficient *neg_ko2_Re_er, PWConstCoefficient *neg_ko2_Im_er,
-                  PWConstCoefficient *Inv_mur, PWConstCoefficient *Inv_w_mu, int drivingSport_)
+                  PWConstCoefficient *Inv_mur, PWConstCoefficient *Inv_w_mu, int drivingSet_, bool calculateH,
+                  bool solution_check_homogeneous, string indent)
 {
    PetscInt i,low,high;
    PetscScalar value;
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
-   drivingSport=drivingSport_;
+   drivingSet=drivingSet_;
 
-   if (build_A(boundaryDatabase,materialDatabase,temperature,neg_ko2_Re_er,neg_ko2_Im_er,Inv_mur)) return true;;
+   if (build_A(boundaryDatabase,materialDatabase,temperature,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,solution_check_homogeneous,indent)) return true;
+
    build_PEC_dofs();
    eliminatePEC(&A,nPEC,PEC);
    build_X();
    build_x();
    build_grids();
    build_Xdofs();
-   boundaryDatabase->fillX(&X,&Xdofs,drivingSport);
+   boundaryDatabase->fillX(&X,&Xdofs,drivingSet);
    VecCopy(X,x);
 
    // port dofs
@@ -700,7 +758,6 @@ bool fem3D::solve(BoundaryDatabase *boundaryDatabase, MaterialDatabase *material
       }
       i++;
    }
-
    solveComplexLinearSystem (boundaryDatabase->get_tempDirectory().c_str(),projData,rank,
                                   nPortDof,PortDof,&A,&x,&matrixSize,&EfieldError,&EfieldConverged);
 
@@ -712,24 +769,59 @@ bool fem3D::solve(BoundaryDatabase *boundaryDatabase, MaterialDatabase *material
    build_e_re_e_im();
    buildEgrids(boundaryDatabase);
 
-   PetscPrintf(PETSC_COMM_WORLD,"|         solving H field in 3D volume ...\n");
-   buildHgrids (boundaryDatabase,Inv_w_mu);
-
-   VecDestroy(&x);
-//   buildZgrids(boundaryDatabase);
-
-   if (projData->project_calculate_poynting) {
-      PetscPrintf(PETSC_COMM_WORLD,"|         calculating Poynting vector field in 3D volume ...\n");
-      build_ReExHgrid();
-      build_ImExHgrid();
+   if (calculateH) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"         solving H field in 3D volume ...\n");
+      buildHgrids (boundaryDatabase,Inv_w_mu);
    }
 
-   saveParaView();
+   VecDestroy(&x);
+
+   //buildZgrids(boundaryDatabase);
+
+   if (projData->project_calculate_poynting) {
+      if (calculateH) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"         calculating Poynting vector field in 3D volume ...\n");
+         build_ReExHgrid();
+         build_ImExHgrid();
+      } else {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"         skipping Poynting vector field in 3D volume due to omitted H-field calculation ...\n");
+      }
+   }
+
+   saveParaView(calculateH,projData->project_calculate_poynting,boundaryDatabase->get_drivingSetName());
 
    return false;
 }
 
-void fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase *boundaryDatabase, PWConstCoefficient *Inv_mur)
+void fem3D::printElementVertices ()
+{
+   PetscMPIInt rank,size;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+
+   Array<int> vertices;
+   real_t *coord;
+   int i=0;
+   while (i < (*pmesh)->GetNE()) {
+      (*pmesh)->GetElementVertices(i,vertices);
+
+      cout << rank << ": element " << i << ":" << endl;
+      int j=0;
+      while (j < vertices.Size()) {
+         coord=(*pmesh)->GetVertex(j);
+         cout << rank << ":   vertex j x=" << coord[0] << " y=" << coord[1] << " z=" << coord[2] << endl;
+         j++;
+      }
+      i++;
+   }
+}
+
+// calculate the mesh errors using a Zienkiewicz-Zhu estimator
+//
+// Calculates the mesh errors on the H fields.  Since these are calculated from E, any error in E is magnified, and adaptive refinement
+// does a better job of refining the mesh than if the errors are calculated on E.  To switch to calculating the error on E, change
+// gridReH and gridImH to gridReE and gridImE in the two calls to OPEM_L2ZZErrorEstimator.
+bool fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase *boundaryDatabase, PWConstCoefficient *Inv_mur, double *maxMeshError_)
 {
    PetscMPIInt rank,size;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -743,16 +835,66 @@ void fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
    ND_FECollection smooth_flux_fec(projData->mesh_order,(*pmesh)->Dimension());
    ParFiniteElementSpace smooth_flux_fes(*pmesh, &smooth_flux_fec);
 
+   double solution_tolerance=1e-12;
+   double solution_tolerance_message_limit=1e-3;
+   int iteration_limit=2000;
+   double ReFinalResidualNorm=0;
+   double ImFinalResidualNorm=0;
+   bool printError=false;
    Vector ReLocalErrors,ImLocalErrors;
-   L2ZZErrorEstimator(flux_integrator,*gridReE,smooth_flux_fes,flux_fes,ReLocalErrors,1);
-   L2ZZErrorEstimator(flux_integrator,*gridImE,smooth_flux_fes,flux_fes,ImLocalErrors,1);
+   if (OPEM_L2ZZErrorEstimator(flux_integrator,*gridReH,smooth_flux_fes,flux_fes,ReLocalErrors,1,solution_tolerance,iteration_limit,ReFinalResidualNorm)) printError=true;
+   if (OPEM_L2ZZErrorEstimator(flux_integrator,*gridImH,smooth_flux_fes,flux_fes,ImLocalErrors,1,solution_tolerance,iteration_limit,ImFinalResidualNorm)) printError=true;
+   if (printError) {
+      if (ImFinalResidualNorm > ReFinalResidualNorm) ReFinalResidualNorm=ImFinalResidualNorm;
+      if (ReFinalResidualNorm > solution_tolerance_message_limit) {
+         prefix(); PetscPrintf (PETSC_COMM_WORLD,"            INFO: Calculated mesh errors are approximate with the final error of %g > the target of %g.\n",ReFinalResidualNorm,solution_tolerance_message_limit);
+      }
+   }
 
-   // combine the real and imaginary errors into the real Vector
    int i=0; 
    while (i < ReLocalErrors.Size()) {
       ReLocalErrors[i]=sqrt(ReLocalErrors[i]*ReLocalErrors[i]+ImLocalErrors[i]*ImLocalErrors[i]);
       i++;
    }
+
+   /* Does not work as well as with no scaling
+   // scale the local errors by the longest element edge
+   Array<int> vertices;
+   real_t *coord1,*coord2;
+   i=0;
+   while (i < (*pmesh)->GetNE()) {
+      (*pmesh)->GetElementVertices(i,vertices);
+      real_t maxLength=0;
+      int j=0;
+      while (j < vertices.Size()) {
+         coord1=(*pmesh)->GetVertex(j);
+         int k=0;
+         while (k < vertices.Size()) {
+            if (k != j) {
+               coord2=(*pmesh)->GetVertex(k);
+               real_t length=sqrt(pow(coord1[0]-coord2[0],2)+pow(coord1[1]-coord2[1],2)+pow(coord1[2]-coord2[2],2));
+               if (length > maxLength) maxLength=length;
+            }
+            k++;
+         }
+         j++;
+      }
+      //ReLocalErrors[i]*=pow(maxLength,3);
+      ReLocalErrors[i]*=maxLength;
+      i++;
+   }
+   */
+
+   /* Does not work as well as with no scaling
+   // scale the local errors by the element volume
+   i=0;
+   while (i < (*pmesh)->GetNE()) {
+      real_t volume=(*pmesh)->GetElementVolume(i);
+      ReLocalErrors[i]*=volume;
+      //ReLocalErrors[i]*=pow(volume,0.3333);
+      i++;
+   }
+   */
 
    // merge in the errors from the prior pass (i.e. different driven port) - keep the larger error
    i=0;
@@ -818,6 +960,7 @@ void fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
    refinementCount=getGlobalNE(*pmesh)*projData->mesh_3D_refinement_fraction;
    if (refinementCount == 0) refinementCount=1;
 
+   double maxMeshError=-1;
    if (rank == 0) {
       int i=0;
       while (i < refinementCount) {
@@ -840,7 +983,11 @@ void fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
          }
          i++;
       }
+      maxMeshError=errors[0];
    }
+
+   MPI_Bcast(&maxMeshError,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
+   *maxMeshError_=maxMeshError;
 
    // send back to the ranks
 
@@ -911,6 +1058,8 @@ void fem3D::calculateMeshErrors (struct projectData *projData, BoundaryDatabase 
          i++;
       }
    }
+
+   return false;
 }
 
 void fem3D::refineMesh ()
@@ -931,17 +1080,17 @@ void fem3D::refineMesh ()
    (*pmesh)->GeneralRefinement(localRefineList);
    int newMeshSize=getGlobalNE(*pmesh);
 
-   if (projData->output_show_refining_mesh) PetscPrintf(PETSC_COMM_WORLD,"|             new mesh size: %d\n",newMeshSize);
-   if (newMeshSize > 3*previousMeshSize) PetscPrintf(PETSC_COMM_WORLD,
-      "|             Warning: The mesh size jumped from %d to %d.\n",previousMeshSize,newMeshSize);
+   if (projData->output_show_refining_mesh) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"             new mesh size: %d\n",newMeshSize);}
+   if (newMeshSize > 3*previousMeshSize) {prefix(); PetscPrintf(PETSC_COMM_WORLD,
+      "             Warning: The mesh size jumped from %d to %d.\n",previousMeshSize,newMeshSize);}
 }
 
-void fem3D::saveParaView()
+void fem3D::saveParaView (bool plot_H, bool plot_poynting, string set_name)
 {
    if (!projData->project_save_fields) return;
 
    stringstream ss;
-   ss << projData->project_name << "_frequency_" << frequency << "_Sport_" << drivingSport;
+   ss << projData->project_name << "_frequency_" << frequency << "_" << set_name << "_" << drivingSet;
 
    stringstream ssParaView;
    ssParaView << "ParaView_" << projData->project_name;
@@ -952,12 +1101,10 @@ void fem3D::saveParaView()
    pd->SetPrefixPath(ssParaView.str());
    pd->RegisterField("gridReE",gridReE);
    pd->RegisterField("gridImE",gridImE);
-   pd->RegisterField("gridReH",gridReH);
-   pd->RegisterField("gridImH",gridImH);
-   if (projData->project_calculate_poynting) {
-      pd->RegisterField("gridReExH",gridReExH);
-      pd->RegisterField("gridImExH",gridImExH);
-   }
+   if (plot_H) pd->RegisterField("gridReH",gridReH);
+   if (plot_H) pd->RegisterField("gridImH",gridImH);
+   if (plot_poynting) pd->RegisterField("gridReExH",gridReExH);
+   if (plot_poynting) pd->RegisterField("gridImExH",gridImExH);
    pd->SetLevelsOfDetail(3);
    pd->SetDataFormat(VTKFormat::ASCII);
    pd->SetHighOrderOutput(true);
@@ -990,7 +1137,7 @@ void fem3D::saveFieldValuesHeader (struct projectData *projData)
 
          out.close();
       } else {
-         PetscPrintf(PETSC_COMM_WORLD,"ERROR3009: Failed to open file \"%s\" for writing.\n",ss.str().c_str());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3009: Failed to open file \"%s\" for writing.\n",ss.str().c_str());
       }
    }
 }
@@ -1068,67 +1215,329 @@ void fem3D::saveFieldValues (struct projectData *projData, ParMesh *pmesh, int i
 
          out.close();
       } else {
-         PetscPrintf(PETSC_COMM_WORLD,"ERROR3004: Failed to open file \"%s\" for writing.\n",ss.str().c_str());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3004: Failed to open file \"%s\" for writing.\n",ss.str().c_str());
       }
    }
 }
 
-/*
-// alternative serial calculation for debugging
-void fem3D::saveFieldValues2 (struct projectData *projData, ParMesh *pmesh, int iteration, int drivingSport)
+// conversion = 0 => conversion from modal to single-ended
+// conversion = 1 => conversion from single-ended to mixed-mode
+PetscErrorCode fem3D::build_Mc_Ms (double referenceZ, BoundaryDatabase *boundaryDatabase, vector<DifferentialPair *> *differentialPairList, int conversion)
 {
-   int i=0;
-   while (i < projData->field_points_count) {
+   PetscErrorCode ierr=0;
+   bool SINGLEENDED=false,MIXEDMODE=false;
 
-      Vector point;
-      point.SetSize(3);
-      point(0)=projData->field_points_x[i];
-      point(1)=projData->field_points_y[i];
-      point(2)=projData->field_points_z[i];
+   if (conversion == 0) SINGLEENDED=true;
+   if (conversion == 1) MIXEDMODE=true;
 
-      IntegrationPoint integrationPoint;
+   // for MIXEDMODE
+   double Zoe=referenceZ/2;
+   double Zoo=referenceZ*2;
 
-      int j=0;
-      while (j < pmesh->GetNE()) {
+   int SportCount=boundaryDatabase->get_SportCount();
 
-         ElementTransformation *eltransf=pmesh->GetElementTransformation(j);
+   // make a list of the modes across all ports - ordered in terms of increasing Sport to align with the S-parameters
+   vector<Mode *> modeList;
+   if (boundaryDatabase->buildAggregateModeList(&modeList)) return true;
+   if (SportCount != (int)modeList.size()) {
+      PetscPrintf(PETSC_COMM_WORLD,"ASSERT: fem3D::build_Mc_Ms found inconsistent number of Sports.\n");
+      return true;
+   }
 
-         InverseElementTransformation *inv_tr=new InverseElementTransformation;
-         inv_tr->SetPrintLevel(-1);         // -1 - never print
-         inv_tr->SetInitialGuessType(InverseElementTransformation::Center);
-         inv_tr->SetSolverType(InverseElementTransformation::Newton);
-         inv_tr->SetTransformation(*eltransf);
-         int res=inv_tr->Transform(point,integrationPoint);
-         delete inv_tr;
-
-         if (res == InverseElementTransformation::Inside) break;
-
-         j++;
+   // for convenience, make lists of the ports for each mode
+   vector<Port *> portList;
+   long unsigned int i=0;
+   while (i < modeList.size()) {
+      Port *port;
+      long unsigned int index;
+      if (boundaryDatabase->get_port_from_mode(modeList[i],&port,&index)) {
+         PetscPrintf(PETSC_COMM_WORLD,"ASSERT: fem3D::build_Mc_Ms failed to find a port.\n");
+         return true;
       }
-
-      if (j < pmesh->GetNE()) {
-         Vector vectorReE,vectorImE,vectorReH,vectorImH;
-         gridReE->GetVectorValue(j,integrationPoint,vectorReE);
-         gridImE->GetVectorValue(j,integrationPoint,vectorImE);
-         gridReH->GetVectorValue(j,integrationPoint,vectorReH);
-         gridImH->GetVectorValue(j,integrationPoint,vectorImH);
-         cout << frequency << ","
-              << iteration << ","
-              << drivingSport << ","
-              << projData->field_points_x[i] << "," << projData->field_points_y[i] << "," << projData->field_points_z[i] << ","
-              << vectorReE[0] << "," << vectorReE[1] << "," << vectorReE[2] << ","
-              << vectorImE[0] << "," << vectorImE[1] << "," << vectorImE[2] << ","
-              << vectorReH[0] << "," << vectorReH[1] << "," << vectorReH[2] << ","
-              << vectorImH[0] << "," << vectorImH[1] << "," << vectorImH[2] << ","
-              << endl;
-      } else {
-         PetscPrintf (PETSC_COMM_WORLD,"ERROR3006: Failed to locate a test point within an element.\n");
-      }
-
+      portList.push_back(port);
       i++;
    }
+
+   // allocate space
+   Mat Kv;
+   ierr=MatCreate(PETSC_COMM_WORLD,&Kv); if (ierr) return ierr;
+   ierr=MatSetType(Kv,MATDENSE); if (ierr) return ierr;
+   ierr=MatSetSizes(Kv,PETSC_DECIDE,PETSC_DECIDE,SportCount,SportCount); if (ierr) return ierr;
+   ierr=MatZeroEntries(Kv); if (ierr) return ierr;
+   PetscInt Kvlow,Kvhigh;
+   ierr=MatGetOwnershipRange(Kv,&Kvlow,&Kvhigh); if (ierr) return ierr;
+
+   Mat Ki;
+   ierr=MatCreate(PETSC_COMM_WORLD,&Ki); if (ierr) return ierr;
+   ierr=MatSetType(Ki,MATDENSE); if (ierr) return ierr;
+   ierr=MatSetSizes(Ki,PETSC_DECIDE,PETSC_DECIDE,SportCount,SportCount); if (ierr) return ierr;
+   ierr=MatZeroEntries(Ki); if (ierr) return ierr;
+   PetscInt Kilow,Kihigh;
+   ierr=MatGetOwnershipRange(Ki,&Kilow,&Kihigh); if (ierr) return ierr;
+
+   Mat rootZa;
+   ierr=MatCreate(PETSC_COMM_WORLD,&rootZa); if (ierr) return ierr;
+   ierr=MatSetType(rootZa,MATDENSE); if (ierr) return ierr;
+   ierr=MatSetSizes(rootZa,PETSC_DECIDE,PETSC_DECIDE,SportCount,SportCount); if (ierr) return ierr;
+   ierr=MatZeroEntries(rootZa); if (ierr) return ierr;
+   PetscInt rootZalow,rootZahigh;
+   ierr=MatGetOwnershipRange(rootZa,&rootZalow,&rootZahigh); if (ierr) return ierr;
+
+   Mat rootZb;
+   ierr=MatCreate(PETSC_COMM_WORLD,&rootZb); if (ierr) return ierr;
+   ierr=MatSetType(rootZb,MATDENSE); if (ierr) return ierr;
+   ierr=MatSetSizes(rootZb,PETSC_DECIDE,PETSC_DECIDE,SportCount,SportCount); if (ierr) return ierr;
+   ierr=MatZeroEntries(rootZb); if (ierr) return ierr;
+   PetscInt rootZblow,rootZbhigh;
+   ierr=MatGetOwnershipRange(rootZb,&rootZblow,&rootZbhigh); if (ierr) return ierr;
+
+   Mat invRootZa;
+   ierr=MatCreate(PETSC_COMM_WORLD,&invRootZa); if (ierr) return ierr;
+   ierr=MatSetType(invRootZa,MATDENSE); if (ierr) return ierr;
+   ierr=MatSetSizes(invRootZa,PETSC_DECIDE,PETSC_DECIDE,SportCount,SportCount); if (ierr) return ierr;
+   ierr=MatZeroEntries(invRootZa); if (ierr) return ierr;
+   PetscInt invRootZalow,invRootZahigh;
+   ierr=MatGetOwnershipRange(invRootZa,&invRootZalow,&invRootZahigh); if (ierr) return ierr;
+
+   Mat invRootZb;
+   ierr=MatCreate(PETSC_COMM_WORLD,&invRootZb); if (ierr) return ierr;
+   ierr=MatSetType(invRootZb,MATDENSE); if (ierr) return ierr;
+   ierr=MatSetSizes(invRootZb,PETSC_DECIDE,PETSC_DECIDE,SportCount,SportCount); if (ierr) return ierr;
+   ierr=MatZeroEntries(invRootZb); if (ierr) return ierr;
+   PetscInt invRootZblow,invRootZbhigh;
+   ierr=MatGetOwnershipRange(invRootZb,&invRootZblow,&invRootZbhigh); if (ierr) return ierr;
+
+
+   // fill rootZa and rootZb
+
+   PetscScalar value;
+
+   if (SINGLEENDED) {
+      PetscInt i=0;
+      while (i < (PetscInt)modeList.size()) {
+         value=real(sqrt(modeList[i]->get_impedance()))+PETSC_i*imag(sqrt(modeList[i]->get_impedance()));
+         if (i >= rootZalow && i < rootZahigh) {ierr=MatSetValue(rootZa,i,i,value,INSERT_VALUES); if (ierr) return ierr;}
+         SportZoList.push_back(referenceZ);
+         value=sqrt(referenceZ);
+         if (i >= rootZblow && i < rootZbhigh) {ierr=MatSetValue(rootZb,i,i,value,INSERT_VALUES); if (ierr) return ierr;}
+         i++;
+      }
+   }
+
+   if (MIXEDMODE) {
+      PetscInt i=0;
+      while (i < (PetscInt)modeList.size()) {
+         value=sqrt(referenceZ);
+         if (i >= rootZalow && i < rootZahigh) {ierr=MatSetValue(rootZa,i,i,value,INSERT_VALUES); if (ierr) return ierr;}
+         SportZoList.push_back(referenceZ);
+         value=sqrt(referenceZ);
+         if (i >= rootZblow && i < rootZbhigh) {ierr=MatSetValue(rootZb,i,i,value,INSERT_VALUES); if (ierr) return ierr;} // default to single-ended
+         i++;
+      }
+
+      i=0;
+      while (i < (PetscInt)differentialPairList->size()) {
+         PetscInt p=(*differentialPairList)[i]->get_Sport_P()-1;
+         PetscInt n=(*differentialPairList)[i]->get_Sport_N()-1;
+
+         // set to mixed mode
+         SportZoList[p]=Zoe;
+         value=sqrt(Zoe);
+         if (p >= rootZblow && p < rootZbhigh) {ierr=MatSetValue(rootZb,p,p,value,INSERT_VALUES); if (ierr) return ierr;}
+         SportZoList[n]=Zoo;
+         value=sqrt(Zoo);
+         if (n >= rootZblow && n < rootZbhigh) {ierr=MatSetValue(rootZb,n,n,value,INSERT_VALUES); if (ierr) return ierr;}
+         i++;
+      }
+   }
+
+   ierr=MatAssemblyBegin(rootZa,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+   ierr=MatAssemblyEnd(rootZa,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+
+   ierr=MatAssemblyBegin(rootZb,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+   ierr=MatAssemblyEnd(rootZb,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+
+   // fill invRootZa and invRootZb
+
+   if (SINGLEENDED) {
+      PetscInt i=0;
+      while (i < (PetscInt)modeList.size()) {
+         value=real(1/sqrt(modeList[i]->get_impedance()))+PETSC_i*imag(1/sqrt(modeList[i]->get_impedance()));
+         if (i >= invRootZalow && i < invRootZahigh) {ierr=MatSetValue(invRootZa,i,i,value,INSERT_VALUES); if (ierr) return ierr;}
+         value=1/sqrt(referenceZ);
+         if (i >= invRootZblow && i < invRootZbhigh) {ierr=MatSetValue(invRootZb,i,i,value,INSERT_VALUES); if (ierr) return ierr;}
+         i++;
+      }
+   }
+
+   if (MIXEDMODE) {
+      PetscInt i=0;
+      while (i < (PetscInt)modeList.size()) {
+         value=1/sqrt(referenceZ);
+         if (i >= invRootZalow && i < invRootZahigh) {ierr=MatSetValue(invRootZa,i,i,value,INSERT_VALUES); if (ierr) return ierr;}
+         value=1/sqrt(referenceZ);
+         if (i >= invRootZblow && i < invRootZbhigh) {ierr=MatSetValue(invRootZb,i,i,value,INSERT_VALUES); if (ierr) return ierr;} // default to single-ended
+         i++;
+      }
+
+      i=0;
+      while (i < (PetscInt)differentialPairList->size()) {
+         PetscInt p=(*differentialPairList)[i]->get_Sport_P()-1;
+         PetscInt n=(*differentialPairList)[i]->get_Sport_N()-1;
+
+         // set to mixed mode
+         value=1/sqrt(Zoe);
+         if (p >= invRootZblow && p < invRootZbhigh) {ierr=MatSetValue(invRootZb,p,p,value,INSERT_VALUES); if (ierr) return ierr;} // common mode
+         value=1/sqrt(Zoo);
+         if (n >= invRootZblow && n < invRootZbhigh) {ierr=MatSetValue(invRootZb,n,n,value,INSERT_VALUES); if (ierr) return ierr;} // differential mode
+         i++;
+      }
+   }
+
+   ierr=MatAssemblyBegin(invRootZa,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+   ierr=MatAssemblyEnd(invRootZa,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+
+   ierr=MatAssemblyBegin(invRootZb,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+   ierr=MatAssemblyEnd(invRootZb,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+
+   // Kv and Ki
+
+   // Note: From OpenParEM2D for line calculations, Ti/Tv goes from single-ended voltages to modal voltages.
+
+   if (SINGLEENDED) {
+      PetscInt i=0;
+      while (i < (PetscInt)portList.size()) {
+
+         // select the row from Ti/Tv to insert
+         // ports may be in sequential order
+         int row=-1;
+         PetscInt j=0;
+         while (j <= i) {
+            if (portList[j] == portList[i]) row++;
+            j++;
+         }
+
+         // fill Ki/Kv from Ti/Tv
+
+         int TiTvSize=portList[i]->get_TiTvSize();
+         j=0;
+         while (j < (PetscInt) TiTvSize) {
+
+            // get the mode number for this TiTv value
+            int count=-1;
+            PetscInt k=0;
+            while (k < (PetscInt)portList.size()) {
+               if (portList[k] == portList[i]) count++;
+               if (count == (int)j) break;
+               k++;
+            }
+
+            value=portList[i]->get_ReTi(row,j)+PETSC_i*portList[i]->get_ImTi(row,j);
+            if (i >= Kilow && i < Kihigh) {ierr=MatSetValue(Ki,i,k,value,INSERT_VALUES); if (ierr) return ierr;} 
+
+            value=portList[i]->get_ReTv(row,j)+PETSC_i*portList[i]->get_ImTv(row,j);
+            if (i >= Kvlow && i < Kvhigh) {ierr=MatSetValue(Kv,i,k,value,INSERT_VALUES); if (ierr) return ierr;}
+
+            j++;
+         }
+         i++;
+      }
+   }
+
+   if (MIXEDMODE) {
+
+      // default for single ended
+      PetscInt i=0;
+      while (i < (PetscInt)modeList.size()) {
+         value=1;
+         if (i >= Kvlow && i < Kvhigh) {ierr=MatSetValue(Kv,i,i,value,INSERT_VALUES); if (ierr) return ierr;}
+         value=1;
+         if (i >= Kilow && i < Kihigh) {ierr=MatSetValue(Ki,i,i,value,INSERT_VALUES); if (ierr) return ierr;}
+         i++;
+      }
+
+      // mixed mode
+      i=0;
+      while (i < (PetscInt)differentialPairList->size()) {
+         PetscInt p=(*differentialPairList)[i]->get_Sport_P()-1;
+         PetscInt n=(*differentialPairList)[i]->get_Sport_N()-1;
+
+         // common-mode voltage
+         value=0.5;
+         if (p >= Kvlow && p < Kvhigh) {ierr=MatSetValue(Kv,p,p,value,INSERT_VALUES); if (ierr) return ierr;}
+         value=0.5;
+         if (p >= Kvlow && p < Kvhigh) {ierr=MatSetValue(Kv,p,n,value,INSERT_VALUES); if (ierr) return ierr;}
+
+         // differential voltage
+         value=+1;
+         if (n >= Kvlow && n < Kvhigh) {ierr=MatSetValue(Kv,n,p,value,INSERT_VALUES); if (ierr) return ierr;}
+         value=-1;
+         if (n >= Kvlow && n < Kvhigh) {ierr=MatSetValue(Kv,n,n,value,INSERT_VALUES); if (ierr) return ierr;}
+
+         // common-mode current
+         value=1;
+         if (p >= Kilow && p < Kihigh) {ierr=MatSetValue(Ki,p,p,value,INSERT_VALUES); if (ierr) return ierr;}
+         value=1;
+         if (p >= Kilow && p < Kihigh) {ierr=MatSetValue(Ki,p,n,value,INSERT_VALUES); if (ierr) return ierr;}
+
+         // differential current
+         value=+0.5;
+         if (n >= Kilow && n < Kihigh) {ierr=MatSetValue(Ki,n,p,value,INSERT_VALUES); if (ierr) return ierr;}
+         value=-0.5;
+         if (n >= Kilow && n < Kihigh) {ierr=MatSetValue(Ki,n,n,value,INSERT_VALUES); if (ierr) return ierr;}
+
+         i++;
+      }
+   }
+
+   ierr=MatAssemblyBegin(Kv,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+   ierr=MatAssemblyEnd(Kv,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+
+   ierr=MatAssemblyBegin(Ki,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+   ierr=MatAssemblyEnd(Ki,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+
+   // The calculation is going from modal to single-ended, so invert since
+   // Ti/Tv goes from single-ended to modal.
+   if (SINGLEENDED) {
+      ierr=MatInvert(&Kv,0); if (ierr) return ierr;
+      ierr=MatInvert(&Ki,0); if (ierr) return ierr;
+   }
+
+   // intermediate terms
+
+   Mat term1a,term1;
+   ierr=MatMatMult(invRootZb,Kv,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&term1a); if (ierr) return ierr;
+   ierr=MatMatMult(term1a,rootZa,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&term1); if (ierr) return ierr;
+   ierr=MatDestroy(&term1a);  if (ierr) return ierr;
+
+   Mat term2a,term2;
+   ierr=MatMatMult(rootZb,Ki,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&term2a); if (ierr) return ierr;
+   ierr=MatMatMult(term2a,invRootZa,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&term2); if (ierr) return ierr;
+   ierr=MatDestroy(&term2a);  if (ierr) return ierr;
+
+   // Ms
+   ierr=MatConvert(term1,MATSAME,MAT_INITIAL_MATRIX,&Ms); if (ierr) return ierr;
+   ierr=MatAXPY(Ms,1,term2,SAME_NONZERO_PATTERN); if (ierr) return ierr;
+   ierr=MatScale(Ms,0.5); if (ierr) return ierr;
+
+   // Mc
+   ierr=MatConvert(term1,MATSAME,MAT_INITIAL_MATRIX,&Mc); if (ierr) return ierr;
+   ierr=MatAXPY(Mc,-1,term2,SAME_NONZERO_PATTERN); if (ierr) return ierr;
+   ierr=MatScale(Mc,0.5); if (ierr) return ierr;
+
+   // clean up
+   ierr=MatDestroy(&Ki); if (ierr) return ierr;
+   ierr=MatDestroy(&Kv); if (ierr) return ierr;
+   ierr=MatDestroy(&rootZa); if (ierr) return ierr;
+   ierr=MatDestroy(&rootZb); if (ierr) return ierr;
+   ierr=MatDestroy(&invRootZa); if (ierr) return ierr;
+   ierr=MatDestroy(&invRootZb); if (ierr) return ierr;
+   ierr=MatDestroy(&term1); if (ierr) return ierr;
+   ierr=MatDestroy(&term2); if (ierr) return ierr;
+
+   return ierr;
 }
-*/
+
 
 fem3D::~fem3D()
 {
@@ -1158,5 +1567,7 @@ fem3D::~fem3D()
 //   if (gridReHz) {delete gridReHz; gridReHz=nullptr;}
 //   if (gridImHz) {delete gridImHz; gridImHz=nullptr;}
 
+   MatDestroy(&Mc);
+   MatDestroy(&Ms);
 }
 

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2022 Brian Young                                          //
+//    Copyright (C) 2024 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -31,15 +31,6 @@
 #include <string.h>
 #include "inputFrequency.h"
 
-// for the refinement variable
-#define NONE 1
-#define ALPHA 2
-#define BETA 3
-#define ABSGAMMA 4
-#define ABSZO 5
-#define REZO 6
-#define IMZO 7
-
 char* removeNewLineChar (char *);
 char *removeComment (char *);
 int removeQuote (char *);
@@ -57,7 +48,6 @@ struct projectData {
    char *mesh_file;
    int mesh_order;
    int mesh_save_refined;
-   double mesh_refinement_port_limit;
    double mesh_2D_refinement_fraction;
    double mesh_3D_refinement_fraction;
    double mesh_quality_limit;
@@ -72,18 +62,18 @@ struct projectData {
    int materials_check_limits;
 
    char *refinement_frequency;
-   char *refinement_variable;
    int refinement_iteration_min;
    int refinement_iteration_max;
    int refinement_required_passes;
-   double refinement_tolerance;
+   double refinement_relative_tolerance;
+   double refinement_absolute_tolerance;
+   char *refinement_variable;
 
    struct inputFrequencyPlan *inputFrequencyPlans;
    unsigned long int inputFrequencyPlansAllocated;
    unsigned long int inputFrequencyPlansCount;
 
    double reference_impedance;
-   char *touchstone_version;
    char *touchstone_frequency_unit;
    char *touchstone_format;
 
@@ -96,6 +86,7 @@ struct projectData {
    char *solution_impedance_definition;
    char *solution_impedance_calculation;
    int solution_check_closed_loop;
+   int solution_check_homogeneous;
    int solution_accurate_residual;
    int solution_shift_invert;
    int solution_use_initial_guess;
@@ -116,6 +107,8 @@ struct projectData {
    int debug_show_port_definitions;
    int debug_show_impedance_details;
    int debug_save_port_fields;
+   int debug_skip_mixed_conversion;
+   int debug_skip_forced_reciprocity;
    int debug_tempfiles_keep;
 
    int field_points_count;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
-//    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
+//    simplify3D - simplifies project files for OpenParEM3D input decks       //
 //    Copyright (C) 2024 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
@@ -18,34 +18,47 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LINEARSYSTEM_H
-#define LINEARSYSTEM_H
+// simplify project files
+// read in a proj file then output the same file with defaults commented out
 
-#include <petsc.h>
-#include <complex.h>
-#include "project.h"
-#include <_hypre_parcsr_mv.h>
-#include "triplet.h"
-#include <lapacke.h>
-#include <time.h>
+#include "simplify3D.hpp"
 
-//double* allocReaddof (char *, char *, size_t *);
-//void printdof (double *, size_t);
-FILE* openDataFile (const char *, const char *, char *, int);
-int loadDataLine (FILE *, struct dataTriplet *, int);
-int loadDataFileStats (const char *, const char *, char *, PetscInt *, PetscInt *, PetscInt *);
-int loadDataFile (const char *, const char *, char *, Mat *, PetscInt, PetscInt, int, int, double, PetscMPIInt);
+extern "C" void init_project (struct projectData *);
+extern "C" int load_project_file(const char*, projectData*, const char*);
+extern "C" void print_project (struct projectData *, struct projectData *, const char *indent);
+extern "C" void free_project(projectData*);
+extern "C" void prefix ();
+extern "C" char* get_prefix_text ();
+extern "C" void set_prefix_text (char *);
 
-void matrixPrint(lapack_complex_double *, lapack_int);
-void matrixDiagonalPrint(lapack_complex_double *, lapack_int);
-void linearPrint(lapack_complex_double *, lapack_int);
-lapack_complex_double* matrixClone (lapack_complex_double *, lapack_int);
-void matrixTranspose(lapack_complex_double *, lapack_int);
-void matrixConjugate (lapack_complex_double *, lapack_int);
-void matrixScale (lapack_complex_double *, lapack_complex_double *, lapack_int);
-void matrixCopy (lapack_complex_double *, lapack_complex_double *, lapack_int);
-int matrixInverse(lapack_complex_double *, lapack_int);
-void matrixMultiply(lapack_complex_double *, lapack_complex_double *, lapack_int);
+using namespace std;
 
-#endif
+int main (int argc, char *argv[])
+{
+   struct projectData defaultData;
+   struct projectData projData;
+
+   if (argc != 2) {
+      cout << "usage: simplify *.proj" << endl;
+      exit(1);
+   }
+
+   PetscInitializeNoArguments();
+
+   // load the project file
+   const char *projFile;
+   projFile=argv[1];
+
+   init_project (&defaultData);
+   //print_project (&defaultData,nullptr,"");
+
+   init_project (&projData);
+   if (load_project_file (projFile, &projData, "")) {
+      cout << "ERROR2274: Failed to load project file \"" << projFile << "\" for reading." << endl;
+      exit(1);
+   }
+   print_project (&projData,&defaultData,"");
+
+   PetscFinalize();
+}
 
