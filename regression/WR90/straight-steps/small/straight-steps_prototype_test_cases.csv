@@ -1,9 +1,0 @@
-# ResultDatabase::save_as_test
-straight-steps_1_0_result,10000000000,magS(dB),1,1,equal,-18.8653732788974,1e-12
-straight-steps_1_1_result,10000000000,argS(deg),1,1,equal,-145.911990880412,1e-12
-straight-steps_1_2_result,10000000000,magS(dB),2,1,equal,-0.0567651903621436,1e-12
-straight-steps_1_3_result,10000000000,argS(deg),2,1,equal,-55.9251200300672,1e-12
-straight-steps_1_4_result,10000000000,magS(dB),1,2,equal,-0.0567651903621436,1e-12
-straight-steps_1_5_result,10000000000,argS(deg),1,2,equal,-55.9251200300672,1e-12
-straight-steps_1_6_result,10000000000,magS(dB),2,2,equal,-18.8653732771083,1e-12
-straight-steps_1_7_result,10000000000,argS(deg),2,2,equal,-145.938247057419,1e-12

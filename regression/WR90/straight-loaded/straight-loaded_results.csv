@@ -1,9 +1,0 @@
-#Touchstone format,DB
-#frequency unit,GHz
-#number of frequencies,1
-#number of ports,2
-#S-port 1,net1,not renormalized
-#S-port 2,net2,not renormalized
-#prior iterations pre-pended by #
-#Frequency(GHz),dB(S(1;1)),deg(S(1;1)),dB(S(2;1)),deg(S(2;1)),dB(S(1;2)),deg(S(1;2)),dB(S(2;2)),deg(S(2;2))
-8.3,-121.295715222337,40.8161934576383,-1.35963538317458e-08,-50.9111872657301,-1.35963538317458e-08,-50.9111872657301,-121.298531501048,37.3714746293438
