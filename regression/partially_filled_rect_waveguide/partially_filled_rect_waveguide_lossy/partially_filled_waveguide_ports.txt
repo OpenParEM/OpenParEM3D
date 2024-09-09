@@ -1,0 +1,130 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/regression/partially_filled_rect_waveguide/partially_filled_rect_waveguide_lossy_pulledback/partially_filled_waveguide.FCStd
+EndFile
+
+Path
+   name=2
+   point=(0.0,0.0,0.1)
+   point=(0.02,0.0,0.1)
+   point=(0.02,0.009,0.1)
+   point=(0.0,0.009,0.1)
+   closed=true
+EndPath
+
+Path
+   name=v2
+   point=(0.01,0.0,0.1)
+   point=(0.01,0.009,0.1)
+   closed=false
+EndPath
+
+Path
+   name=1
+   point=(0.0,0.0,0.0)
+   point=(0.02,0.0,0.0)
+   point=(0.02,0.009,0.0)
+   point=(0.0,0.009,0.0)
+   closed=true
+EndPath
+
+Path
+   name=v1
+   point=(0.01,0.0,0.0)
+   point=(0.01,0.009,0.0)
+   closed=false
+EndPath
+
+Path
+   name=t
+   point=(0.0,0.0,0.001)
+   point=(0.02,0.0,0.001)
+   point=(0.02,2.176037128265307e-17,0.099)
+   point=(0.0,2.176037128265307e-17,0.099)
+   closed=true
+EndPath
+
+Path
+   name=b
+   point=(0.0,0.009,0.001)
+   point=(0.02,0.009,0.001)
+   point=(0.02,0.009000000000000022,0.099)
+   point=(0.0,0.009000000000000022,0.099)
+   closed=true
+EndPath
+
+Path
+   name=r
+   point=(0.02,0.0,0.001)
+   point=(0.02,0.009000000000000001,0.000999999999999998)
+   point=(0.01999999999999998,0.009000000000000001,0.09900000000000003)
+   point=(0.01999999999999998,0.0,0.09900000000000003)
+   closed=true
+EndPath
+
+Path
+   name=l
+   point=(0.0,0.009,0.001)
+   point=(0.0,-1.734723475976807e-18,0.001000000000000002)
+   point=(2.176037128265307e-17,-1.734723475976807e-18,0.09900000000000003)
+   point=(2.176037128265307e-17,0.009,0.09900000000000003)
+   closed=true
+EndPath
+
+Boundary
+   name=t
+   type=surface_impedance
+   material=copper
+   path=+t
+EndBoundary
+
+Boundary
+   name=b
+   type=surface_impedance
+   material=copper
+   path=+b
+EndBoundary
+
+Boundary
+   name=r
+   type=surface_impedance
+   material=copper
+   path=+r
+EndBoundary
+
+Boundary
+   name=l
+   type=surface_impedance
+   material=copper
+   path=+l
+EndBoundary
+
+Port
+   name=1
+   path=+1
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=1
+      IntegrationPath
+         type=voltage
+         path=+v1
+      EndIntegrationPath
+   EndLine
+EndPort
+
+Port
+   name=2
+   path=+2
+   impedance_definition=PV
+   impedance_calculation=line
+   Line
+      Sport=2
+      IntegrationPath
+         type=voltage
+         path=+v2
+      EndIntegrationPath
+   EndLine
+EndPort
+
