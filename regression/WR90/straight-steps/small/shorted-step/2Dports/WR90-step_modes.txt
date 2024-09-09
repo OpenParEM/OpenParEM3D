@@ -1,0 +1,19 @@
+#OpenParEMmodes 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/regression/WR90/shorted-step/2Dports/WR90step.FCStd
+EndFile
+
+Path
+   name=v1
+   point=(-37.256934886908766,-90.48643086376559)
+   point=(-37.256934886908766,-90.4742708637656)
+   closed=false
+EndPath
+
+Mode
+   mode=1
+   type=voltage
+   path=+v1
+EndMode
+

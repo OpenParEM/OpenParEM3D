@@ -18,7 +18,7 @@ refinement.frequency           none
 refinement.iteration.min       1 
 refinement.iteration.max       20
 refinement.required.passes     1
-refinement.tolerance           1e-3
+refinement.relative.tolerance  1e-3
 
 frequency.plan.linear          10e9,16e9,3e9
 
@@ -48,5 +48,4 @@ debug.show.port.definitions    false
 debug.show.impedance.details   false
 debug.save.port.fields         false
 debug.tempfiles.keep           false
-
 

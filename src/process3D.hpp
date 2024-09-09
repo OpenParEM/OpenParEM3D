@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 //                                                                               //
 //    process3D - processor for automation of regression testing of OpenParEM3D  //
-//    Copyright (C) 2023 Brian Young                                             //
+//    Copyright (C) 2024 Brian Young                                             //
 //                                                                               //
 //    This program is free software: you can redistribute it and/or modify       //
 //    it under the terms of the GNU General Public License as published by       //

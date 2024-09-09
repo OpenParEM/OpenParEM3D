@@ -4,8 +4,9 @@ project.save.fields            false
 
 mesh.file                      bridge.msh
 mesh.quality.limit             1e6
+mesh.refinement.fraction       0.0025
 
-mesh.order                     4
+mesh.order                     5
 
 port.definition.file           bridge_ports.txt
 
@@ -19,7 +20,9 @@ refinement.frequency           none
 refinement.iteration.min       1 
 refinement.iteration.max       30
 refinement.required.passes     1
-refinement.tolerance           1e-3
+refinement.relative.tolerance  0.02
+refinement.absolute.tolerance  1e-7
+refinement.variable            SandH
 
 frequency.plan.point           25e9
 frequency.plan.point           70e9

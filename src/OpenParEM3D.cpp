@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2022 Brian Young                                          //
+//    Copyright (C) 2024 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -49,6 +49,12 @@ extern "C" int load_project_file(const char*, projectData*, const char*);
 extern "C" void print_project (struct projectData *, struct projectData *, const char *);
 extern "C" void free_project(projectData*);
 extern "C" char* get_project_name (const char *filename);
+extern "C" int calculate_S (char *);
+extern "C" int is_converged (struct projectData *, double, double);
+extern "C" void prefix ();
+extern "C" char* get_prefix_text ();
+extern "C" void set_prefix_text (char *);
+
 
 double edgeLength (double *a, double *b)
 {
@@ -100,18 +106,19 @@ void help () {
    PetscPrintf(PETSC_COMM_WORLD,"       -h          : Print this help text\n");
    PetscPrintf(PETSC_COMM_WORLD,"       filename    : Filename of an OpenParEM setup file.\n");
    PetscPrintf(PETSC_COMM_WORLD,"\nOpenParEM3D is a full-wave 3D electromagnetic solver.\n");
+   PetscPrintf(PETSC_COMM_WORLD,"Version 1.0.\n");
 }
 
 bool print_mesh_quality_message (ParMesh *pmesh, struct projectData *projData)
 {
    double h_min,h_max,kappa_min,kappa_max;
    pmesh->GetCharacteristics(h_min, h_max, kappa_min, kappa_max);
-   PetscPrintf(PETSC_COMM_WORLD,"|      mesh worst element aspect ratio: %g",kappa_max);
-   if (kappa_max < 5) PetscPrintf(PETSC_COMM_WORLD," < target: 5\n");
-   else PetscPrintf(PETSC_COMM_WORLD," > target: 5\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"      mesh worst element aspect ratio: %g",kappa_max);
+   if (kappa_max < 5) {PetscPrintf(PETSC_COMM_WORLD," < target: 5\n");}
+   else {PetscPrintf(PETSC_COMM_WORLD," > target: 5\n");}
 
    if (kappa_max > projData->mesh_quality_limit) {
-      PetscPrintf(PETSC_COMM_WORLD,"|         ERROR3005: aspect ratio > limit: %g\n",projData->mesh_quality_limit);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ERROR3005: aspect ratio > limit: %g\n",projData->mesh_quality_limit);
       return true;
    }
 
@@ -126,7 +133,7 @@ void isOpenParEM2Dreachable ()
 
    if (rank == 0) {
       if (system("which OpenParEM2D > /dev/null")) {
-         PetscPrintf(PETSC_COMM_WORLD,"ERROR3008: OpenParEM2D not found.\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3008: OpenParEM2D not found.\n");
          PetscFinalize();
          exit(1);
       }
@@ -136,7 +143,7 @@ void isOpenParEM2Dreachable ()
 
 void load_project_file (const char *projFile, struct projectData *defaultData, struct projectData *projData, char *lockfile, chrono::system_clock::time_point job_start_time)
 {
-   PetscPrintf(PETSC_COMM_WORLD,"   loading project file \"%s\"\n",projFile);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   loading project file \"%s\"\n",projFile);
 
    init_project (defaultData);
    init_project (projData);
@@ -148,18 +155,22 @@ void load_project_file (const char *projFile, struct projectData *defaultData, s
    if (projData->debug_show_project) {print_project (projData,defaultData,"      ");}
 }
 
-void delete_stale_files (const char *baseName)
+void delete_stale_files (const char *baseName, int portCount)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    if (rank == 0) {
+      stringstream ss;
+      ss << ".s" << portCount << "p";
+
       delete_file(baseName,"","_results.csv");
       delete_file(baseName,"","_results.txt");
       delete_file(baseName,"","_iterations.txt");
       delete_file(baseName,"","_protoype_test_cases.csv");
       delete_file(baseName,"","_fields.csv");
       delete_file(baseName,"","_attributes.csv");
+      delete_file(baseName,"",ss.str().c_str());
       delete_file(baseName,"temp_","");
       delete_file(baseName,"ParaView_","");
       delete_file(baseName,"ParaView_2D_port_","");
@@ -170,20 +181,19 @@ void delete_stale_files (const char *baseName)
    MPI_Barrier(PETSC_COMM_WORLD);
 }
 
-bool saveSerialMesh (struct projectData *projData, meshMaterialList *meshMaterials, ParMesh *pmesh)
+bool saveSerialMesh (struct projectData *projData, MeshMaterialList *meshMaterials, ParMesh *pmesh)
 {
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
    stringstream ssMesh;
    ssMesh << "refined_" << projData->mesh_file;
-   ofstream outMesh;
-   outMesh.open(ssMesh.str().c_str(),ofstream::out);
-   if (outMesh.is_open()) {
-      pmesh->PrintAsSerial(outMesh);
-      outMesh.close();
-   } else {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3177: Failed to open file \"%s\" for writing.\n",ssMesh.str().c_str());
-      return true;
+
+   Mesh mesh=pmesh->GetSerialMesh(0);
+   if (rank == 0) {
+      mesh.Save(ssMesh.str());
    }
-   
+
    stringstream ssRegions;
    ssRegions << "materials_for_refined_" << projData->mesh_file;
    bool retval=meshMaterials->saveRegionsFile (ssRegions.str().c_str());
@@ -196,14 +206,16 @@ int main(int argc, char *argv[])
 {
    double eps0=8.8541878176e-12;
    const char *projFile;
+   char *prefix_text;
    struct projectData projData,defaultData;
    BoundaryDatabase boundaryDatabase;
    FrequencyPlan frequencyPlan;
-   meshMaterialList meshMaterials;
+   MeshMaterialList meshMaterials;
    MaterialDatabase materialDatabase;
    vector<ParSubMesh> parSubMeshes;
    ResultDatabase resultDatabase;
    GammaDatabase gammaDatabase;
+   vector<DifferentialPair *> aggregateList;
 
    // Initialize Petsc and MPI
    PetscInitializeNoArguments();
@@ -212,6 +224,10 @@ int main(int argc, char *argv[])
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    MPI_Barrier(PETSC_COMM_WORLD);
+
+   prefix_text=(char *)malloc(256*sizeof(char));
+   snprintf(prefix_text,256,"%s","");
+   set_prefix_text(prefix_text);
 
    // trap PETSc errors to enable graceful exit, primarily for out-of-memory errors
    struct applicationContext appCtx;
@@ -236,11 +252,10 @@ int main(int argc, char *argv[])
    appCtx.job_start_time=job_start_time;
    appCtx.lockfile=lockfile;
 
-   PetscPrintf(PETSC_COMM_WORLD,"Setting up ...\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Setting up ...\n");
 
    // project
    load_project_file(projFile,&defaultData,&projData,lockfile,job_start_time);
-   delete_stale_files(baseName);
    if (projData.output_show_license) {print_license(); exit_job_on_error (job_start_time,lockfile,true);}
    show_memory (projData.debug_show_memory, "   ");
 
@@ -250,26 +265,30 @@ int main(int argc, char *argv[])
                                        projData.materials_check_limits)) exit_job_on_error (job_start_time,lockfile,true);
    if (projData.debug_show_materials) {materialDatabase.print("   ");}
 
-   // boundaries
-   if (boundaryDatabase.load(projData.port_definition_file,projData.solution_check_closed_loop)) exit_job_on_error (job_start_time,lockfile,true);
-   boundaryDatabase.markPortModes();
-   if (boundaryDatabase.checkSportNumbering()) exit_job_on_error (job_start_time,lockfile,true);
-   boundaryDatabase.assignAttributes();
-   if (projData.debug_show_port_definitions) boundaryDatabase.print();
-   if (boundaryDatabase.check_overlaps()) exit_job_on_error (job_start_time,lockfile,true);
-   boundaryDatabase.set2DModeNumbers();
-   boundaryDatabase.fillUnused2DModeNumbers();
-   boundaryDatabase.fillIntegrationPoints();
-
    // mesh
-   PetscPrintf(PETSC_COMM_WORLD,"Loading mesh and assigning materials ...\n");
-   if (!projData.materials_check_limits) PetscPrintf(PETSC_COMM_WORLD,"   Skipping limit checks on material values\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Loading mesh and assigning materials ...\n");
+   if (!projData.materials_check_limits) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Skipping limit checks on material values\n");}
    if (meshMaterials.load(projData.mesh_file,3)) exit_job_on_error (job_start_time,lockfile,true);
    //meshMaterials.print();
    Mesh mesh(projData.mesh_file, 1, 1);
    //   mesh.ScaleElements(0.001);    // hard coded for now to convert from mm to m.  - ToDo - Generalize, but ScaleElements may be broken.
    int dim=mesh.Dimension();
-   if (! (dim == 3)) {PetscPrintf(PETSC_COMM_WORLD,"ERROR3011: Mesh must be 3-dimensional.\n"); exit_job_on_error (job_start_time,lockfile,true);}
+   if (! (dim == 3)) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3011: Mesh must be 3-dimensional.\n"); exit_job_on_error (job_start_time,lockfile,true);}
+   reset_attributes(&mesh,nullptr,&meshMaterials);
+
+   // boundaries
+   if (boundaryDatabase.load(projData.port_definition_file,projData.solution_check_closed_loop)) exit_job_on_error (job_start_time,lockfile,true);
+   if (boundaryDatabase.checkSportNumbering()) exit_job_on_error (job_start_time,lockfile,true);
+   boundaryDatabase.assignAttributes(&mesh);
+   if (boundaryDatabase.snapToMeshBoundary(&mesh)) exit_job_on_error (job_start_time,lockfile,true);
+   if (boundaryDatabase.check_overlaps()) exit_job_on_error (job_start_time,lockfile,true);
+   boundaryDatabase.set2DModeNumbers();
+   boundaryDatabase.aggregateDifferentialPairList(&aggregateList);
+
+   boundaryDatabase.fillIntegrationPoints();
+
+   // clean up from any prior run
+   delete_stale_files(baseName,boundaryDatabase.get_SportCount());
 
    // scale checks for basic error detection
    ParMesh *pmesh=nullptr;
@@ -280,14 +299,14 @@ int main(int argc, char *argv[])
    if (boundaryDatabase.check_scale(&mesh,projData.mesh_order)) exit_job_on_error (job_start_time,lockfile,true);
 
    // boundary and mesh linkage
-   boundaryDatabase.markMeshBoundaries (&mesh);
-   if (boundaryDatabase.setDefaultMeshBoundary(&projData,&mesh,&materialDatabase,&boundaryDatabase)) exit_job_on_error (job_start_time,lockfile,true);
-   mesh.SetAttributes(); // recalculates the support data structures
+   if (boundaryDatabase.createDefaultBoundary(&projData,&mesh,&materialDatabase,&boundaryDatabase)) exit_job_on_error (job_start_time,lockfile,true);
+   if (boundaryDatabase.markMeshBoundaries (&mesh)) exit_job_on_error (job_start_time,lockfile,true);
+   if (projData.debug_show_port_definitions) boundaryDatabase.print();
 
    // mesh and mesh materials consistency check
    if (mesh.attributes.Max() != meshMaterials.size()) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3012: Mesh file \"%s\" does not include the correct number of regions for material definitions.\n",projData.mesh_file);
-      PetscPrintf(PETSC_COMM_WORLD,"       The $PhysicalNames block should have %d entries, but only %d were found\n.",
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3012: Mesh file \"%s\" does not include the correct number of regions for material definitions.\n",projData.mesh_file);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"       The $PhysicalNames block should have %d entries, but only %d were found\n.",
                                            mesh.attributes.Max()+1,meshMaterials.size()+1);
       exit_job_on_error (job_start_time,lockfile,true);
    }
@@ -299,6 +318,8 @@ int main(int argc, char *argv[])
    Vector InvOmegaMu(mesh.attributes.Max());
    Vector mur(mesh.attributes.Max());
    Vector er(mesh.attributes.Max());
+   Vector ReInvOmegaEr(mesh.attributes.Max());
+   Vector ImInvOmegaEr(mesh.attributes.Max());
 
    show_memory (projData.debug_show_memory,"");
 
@@ -313,15 +334,17 @@ int main(int argc, char *argv[])
 
    // loop over frequencies
 
+   FrequencyPlanPoint *frequencyPlanPoint;
    double frequency=-1;
    bool refineMesh=false;
    bool restartMesh=false;
    bool saveFieldsHeader=true;
-   while (frequencyPlan.get_frequency(projData.refinement_frequency,&frequency,&refineMesh,&restartMesh)) {
+   int meshSize=0;
+   while ((frequencyPlanPoint=frequencyPlan.get_frequency(projData.refinement_frequency,&frequency,&refineMesh,&restartMesh,&meshSize))) {
 
-      PetscPrintf(PETSC_COMM_WORLD,"|*******************************************************************************************************************************************************\n");
-      PetscPrintf(PETSC_COMM_WORLD,"| Frequency: %g\n",frequency);
-      PetscPrintf(PETSC_COMM_WORLD,"|*******************************************************************************************************************************************************\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"*******************************************************************************************************************************************************\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD," Frequency: %g\n",frequency);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"*******************************************************************************************************************************************************\n");
 
       double ko=2*M_PI*frequency*sqrt(4.0e-7*M_PI*eps0);
 
@@ -335,12 +358,12 @@ int main(int argc, char *argv[])
       }
 
       if (refineMesh) {
-         if (restartMesh) {PetscPrintf(PETSC_COMM_WORLD,"|   Refining mesh starting with the initial mesh.\n");}
-         else {PetscPrintf(PETSC_COMM_WORLD,"|   Refining mesh starting with the last mesh.\n");}
+         if (restartMesh) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Refining mesh starting with the initial mesh.\n");}
+         else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Refining mesh starting with the last mesh.\n");}
       }
 
       if (! pmesh) {
-         PetscPrintf(PETSC_COMM_WORLD,"ASSERT: pmesh is not defined.\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: pmesh is not defined.\n");
          exit_job_on_error (job_start_time,lockfile,true);
       }
 
@@ -361,6 +384,9 @@ int main(int argc, char *argv[])
 
             er[j]=real(e)/eps0;
 
+            ReInvOmegaEr[j]=real(1/(2*M_PI*frequency*e));
+            ImInvOmegaEr[j]=imag(1/(2*M_PI*frequency*e));
+
             // permeability
             double mu=useMaterial->get_mu(projData.solution_temperature,frequency,materialDatabase.get_tol(),materialDatabase.get_indent());
             if (mu == -DBL_MAX) exit_job_on_error (job_start_time,lockfile,true);
@@ -371,7 +397,7 @@ int main(int argc, char *argv[])
             mur[j]=mu/(4e-7*M_PI);
 
          } else {
-            PetscPrintf(PETSC_COMM_WORLD,"ERROR3013: Material \"%s\" for region %d is not present in the material database.\n",
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3013: Material \"%s\" for region %d is not present in the material database.\n",
                                          meshMaterials.get_name(j).c_str(),j+1);
             exit_job_on_error (job_start_time,lockfile,true);
          }
@@ -383,6 +409,8 @@ int main(int argc, char *argv[])
       PWConstCoefficient neg_ko2_Im_er(Negko2ImRelativePermittivity);
       PWConstCoefficient Inv_mur(InvMur);
       PWConstCoefficient Inv_w_mu(InvOmegaMu);
+      PWConstCoefficient ReInv_w_er(ReInvOmegaEr);
+      PWConstCoefficient ImInv_w_er(ImInvOmegaEr);
 
       // solve 
 
@@ -392,29 +420,30 @@ int main(int argc, char *argv[])
 
          iterate=refineMesh;
  
-         if (iterate) {PetscPrintf(PETSC_COMM_WORLD,"|   Iteration %d ...\n",iteration+1);}
-         else          PetscPrintf(PETSC_COMM_WORLD,"|   Using existing mesh ...\n");
+         if (iterate) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Iteration %d ...\n",iteration+1);}
+         else         {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Using existing mesh ...\n");}
 
          chrono::system_clock::time_point fem_setup_start_time=chrono::system_clock::now();
 
          if (print_mesh_quality_message (pmesh,&projData)) exit_job_on_error (job_start_time,lockfile,true);
-         PetscPrintf(PETSC_COMM_WORLD,"|      mesh size: %d\n",getGlobalNE(pmesh));
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"      mesh size: %d\n",getGlobalNE(pmesh));
 
          double shortestPerWavelength=-1;
          double longestPerWavelength=-1;
          get_edgeLengthsPerWavelength(pmesh,frequency,er,mur,&shortestPerWavelength,&longestPerWavelength);
-         PetscPrintf(PETSC_COMM_WORLD,"|      mesh edge length/wavelength in element: shortest=%g longest=%g\n",shortestPerWavelength,longestPerWavelength);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"      mesh edge length/wavelength in element: shortest=%g longest=%g\n",shortestPerWavelength,longestPerWavelength);
 
          // solve the 2D ports
-         PetscPrintf(PETSC_COMM_WORLD,"|      solving 2D ports ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"      solving 2D ports ...\n");
+
          if (boundaryDatabase.solve2Dports(pmesh,&parSubMeshes,&projData,frequency,&meshMaterials,&gammaDatabase)) {
             exit_job_on_error (job_start_time,lockfile,true);
          }
 
-         // save the propgation constant to use as an initial guess in OpenParEM2D
-         if (boundaryDatabase.getGamma(&gammaDatabase,frequency)) exit_job_on_error (job_start_time,lockfile,true);
+         // save the propagation constant to use as an initial guess in OpenParEM2D
+         boundaryDatabase.populateGamma(frequency,&gammaDatabase);
 
-         PetscPrintf(PETSC_COMM_WORLD,"|      building finite element spaces ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"      building finite element spaces ...\n");
          fem3D *fem=new fem3D();
          fem->set_data(&pmesh,&projData,frequency);
          fem->build_fe_spaces();
@@ -422,38 +451,41 @@ int main(int argc, char *argv[])
          boundaryDatabase.buildGrids(fem);
          boundaryDatabase.save2DModalParaView(&parSubMeshes,&projData,frequency,false);
          boundaryDatabase.save3DParaView(pmesh,&projData,frequency,false);
+         boundaryDatabase.createDrivingSets();
+         boundaryDatabase.calculateLineIntegrals(pmesh,fem);
+         boundaryDatabase.alignDirections(pmesh,fem);
 
          chrono::system_clock::time_point fem_setup_end_time=chrono::system_clock::now();
 
-         // loop through the ports to drive each one in sequence
+         Result *result=new Result();
+         result->set("S",frequency,shortestPerWavelength,longestPerWavelength,iteration,pmesh);
+         resultDatabase.push(result);
 
-         int drivingSport=1;
+         // loop through the driving sets
+
+         int drivingSet=1;
          int SportCount=boundaryDatabase.get_SportCount();
          resultDatabase.set_SportCount(SportCount);
-         while (drivingSport <= SportCount) {
+         while (drivingSet <= SportCount) {
 
             chrono::system_clock::time_point solve_start_time=chrono::system_clock::now();
 
-            PetscPrintf(PETSC_COMM_WORLD,"|      Driving S-port %d ...\n",drivingSport);
+            stringstream setname;
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"      Driving %s %d ...\n",boundaryDatabase.get_drivingSetName().c_str(),drivingSet);
 
-            PetscPrintf(PETSC_COMM_WORLD,"|         solving E field in 3D volume ...\n");
-            if (fem->solve(&boundaryDatabase,&materialDatabase,projData.solution_temperature,&neg_ko2_Re_er,&neg_ko2_Im_er,&Inv_mur,&Inv_w_mu,drivingSport)) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"         solving E field in 3D volume ...\n");
+            if (fem->solve(&boundaryDatabase,&materialDatabase,projData.solution_temperature,
+                &neg_ko2_Re_er,&neg_ko2_Im_er,&Inv_mur,&Inv_w_mu,drivingSet,true,projData.solution_check_homogeneous,"   ")) {
                exit_job_on_error (job_start_time,lockfile,true);
             }
-
-            Result *result=new Result();
-            result->set(drivingSport,frequency,shortestPerWavelength,longestPerWavelength,iteration,projData.reference_impedance,fem,pmesh);
+            result->set_matrixSize(fem->get_matrixSize());
+            result->set_sparseWidth(fem->get_sparseWidth());
 
             boundaryDatabase.transfer_3Dsolution_3Dgrids_to_2Dgrids(fem);
-            boundaryDatabase.save2DSolutionParaView(&parSubMeshes,&projData,frequency,drivingSport,false);
+            boundaryDatabase.save2DSolutionParaView(&parSubMeshes,&projData,frequency,drivingSet,false);
 
-            PetscPrintf(PETSC_COMM_WORLD,"|         calculating S-parameters ...\n");
-
-            Mode *drivingMode=boundaryDatabase.getDrivingMode(drivingSport);
-            boundaryDatabase.set_V3Dsize ();
-            boundaryDatabase.calculateVoltages(pmesh,fem->get_gridReE(),fem->get_gridImE(),drivingMode);
-            boundaryDatabase.calculateWeights(drivingMode);
-            boundaryDatabase.calculateSparameters(result,drivingMode);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"         post-processing ...\n");
+            boundaryDatabase.calculateSplits();
 
             chrono::system_clock::time_point solve_end_time=chrono::system_clock::now();
             result->set_solve_time(elapsed_time(solve_start_time,solve_end_time));
@@ -461,49 +493,78 @@ int main(int argc, char *argv[])
 
             if (iterate) {
                chrono::system_clock::time_point mesh_error_start_time=chrono::system_clock::now();
-               PetscPrintf(PETSC_COMM_WORLD,"|         calculating mesh errors ...\n");
-               fem->calculateMeshErrors(&projData,&boundaryDatabase,&Inv_mur);
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"         calculating mesh errors ...\n");
+               double maxMeshError;
+               if (fem->calculateMeshErrors(&projData,&boundaryDatabase,&Inv_mur,&maxMeshError)) {
+                  exit_job_on_error (job_start_time,lockfile,true);
+               }
+               result->set_maxAbsoluteError(maxMeshError);
                chrono::system_clock::time_point mesh_error_end_time=chrono::system_clock::now();
                result->set_mesh_error_time(elapsed_time(mesh_error_start_time,mesh_error_end_time));
             }
 
-            resultDatabase.push(result);
-
             if (saveFieldsHeader) {fem->saveFieldValuesHeader(&projData); saveFieldsHeader=false;}
-            fem->saveFieldValues(&projData,pmesh,iteration,drivingSport);
+            fem->saveFieldValues(&projData,pmesh,iteration,drivingSet);
 
-            drivingSport++;
+            drivingSet++;
          }
 
-         // reflections as a quality measure
-         drivingSport=1;
-         while (drivingSport <= SportCount) {
-            Result *result=resultDatabase.get_Result(frequency,drivingSport,iteration+1);
-            double maxReflection=boundaryDatabase.get_maxReflection(drivingSport);
-            result->set_maxReflection(maxReflection);
-            drivingSport++;
+         // calculate S-parameters
+         if(boundaryDatabase.calculateS(result)) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"            ERROR3189: failed to calculate S-parameters.\n");
+            exit_job_on_error (job_start_time,lockfile,true);
          }
-         boundaryDatabase.printPortReflections();
+
+         // force the matrix to be reciprocal
+         if (!projData.debug_skip_forced_reciprocity) {
+            if (result->forceReciprocal()) cout << "ASSERT: forced reciprocity failed." << endl;
+         }
+
+         // S-parameter renormalization
+         if (projData.reference_impedance > 0) {
+            PetscPrintf (PETSC_COMM_WORLD,"         renormalizing S-parameters ...\n");
+            if (boundaryDatabase.has_Ti() && boundaryDatabase.has_Tv()) {
+               // If single-ended, then this operation does a renormalization identical to the method in ResultDatabase::renormalize called below.
+               // If modal, then this operation converts modal S-parameters to single-ended S-parameters.
+               fem->build_Mc_Ms(projData.reference_impedance,&boundaryDatabase,&aggregateList,0);
+               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList()))
+                  exit_job_on_error (job_start_time,lockfile,true);
+            } else {
+               // Performs renormalization without doing any recombinations of ports.
+               if (result->renormalize(projData.reference_impedance)) cout << "ASSERT: renomalization failed." << endl;
+            }
+
+            // mixed mode conversion
+            if (aggregateList.size() > 0 && !projData.debug_skip_mixed_conversion) {
+               PetscPrintf (PETSC_COMM_WORLD,"         mixed-mode conversion on S-parameters ...\n");
+               fem->build_Mc_Ms(projData.reference_impedance,&boundaryDatabase,&aggregateList,1);
+               if (result->SparameterConversion(&boundaryDatabase,fem->get_Mc(),fem->get_Ms(),fem->get_SportZoList()))
+                  exit_job_on_error (job_start_time,lockfile,true);
+            }
+         }
 
          if (iterate) {
             chrono::system_clock::time_point refine_start_time=chrono::system_clock::now();
 
             // mark as having iterations
-            resultDatabase.set_hasIterations(true,frequency,iteration+1);
+            result->set_isRefined();
 
             // save the relative error
-            double maxRelativeError=resultDatabase.calculate_maxRelativeError(frequency,iteration+1);
-            resultDatabase.set_maxRelativeError(maxRelativeError,frequency,iteration+1);
+            double maxRelativeError=resultDatabase.calculate_maxRelativeError(&projData,frequency,iteration+1);
+            result->set_maxRelativeError(maxRelativeError);
 
-            // check if converged - preliminary
-            bool isConverged=false;
-            if (!(maxRelativeError < 0)  && maxRelativeError <= projData.refinement_tolerance) {isConverged=true;}
+            // save the absolute error
+            double maxAbsoluteError=resultDatabase.calculate_maxAbsoluteError(&projData,frequency,iteration+1);
+            result->set_maxAbsoluteError(maxAbsoluteError);
+
+            // check if converged - preliminary (can be over-ridden)
+            int isConverged=is_converged(&projData,maxRelativeError,maxAbsoluteError);
 
             // check for minimum iterations
-            if (iteration < projData.refinement_iteration_min-1) {isConverged=false;}
+            if (iteration < projData.refinement_iteration_min-1) {isConverged=0;}
 
             // save the convergence status
-            resultDatabase.set_isConverged(isConverged,frequency,iteration+1);
+            result->set_isConverged(isConverged);
 
             // check for convergence
             if (resultDatabase.isSequentialConverged(&projData,frequency)) iterate=false;
@@ -513,11 +574,11 @@ int main(int argc, char *argv[])
 
             // refine
             if (iterate) {
-               PetscPrintf(PETSC_COMM_WORLD,"|         refining mesh ...\n");
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"         refining mesh ...\n");
                fem->refineMesh();
 
                if (projData.mesh_save_refined) {
-                  PetscPrintf(PETSC_COMM_WORLD,"|         saving refined mesh ...\n");
+                  prefix(); PetscPrintf(PETSC_COMM_WORLD,"         saving refined mesh ...\n");
                   if (saveSerialMesh(&projData,&meshMaterials,pmesh)) exit_job_on_error (job_start_time,lockfile,true);
                }
             }
@@ -526,15 +587,10 @@ int main(int argc, char *argv[])
             resultDatabase.set_refine_time(elapsed_time(refine_start_time,refine_end_time),frequency,iteration+1);
          }
 
-         if (projData.reference_impedance > 0) {
-            if (resultDatabase.renormalize(iteration+1,frequency)) {
-               cout << "ASSERT: renomalization failed." << endl;
-            }
-         }
          resultDatabase.save(&projData);
          resultDatabase.saveFormatted(&projData);
-         resultDatabase.saveCSV (&projData,boundaryDatabase.get_SportCount(),true);
-         resultDatabase.saveTouchstone (&projData,boundaryDatabase.get_SportCount());
+         resultDatabase.saveCSV (&projData,&boundaryDatabase,&aggregateList,true);
+         resultDatabase.saveTouchstone (&projData,&boundaryDatabase,&aggregateList);
 
          delete fem; fem=nullptr;
  
@@ -543,21 +599,26 @@ int main(int argc, char *argv[])
          ++iteration;
       }
 
+      // keep track of mesh sizes to check whether a frequency needs to be recalculated due to refinement at another frequency
+      meshSize=getGlobalNE(pmesh);
+      frequencyPlanPoint->set_meshSize(meshSize);
+
       lastFrequency=frequency;
    }
 
    // save the results as test cases
-   if (projData.test_create_cases && rank == 0) {
+   if (projData.test_create_cases) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"Generating test cases ...\n");
       resultDatabase.save_as_test(&projData);
    }
 
    // print convergence status
-   if (resultDatabase.hasIterations()) {
-      if (resultDatabase.isAllConverged()) PetscPrintf(PETSC_COMM_WORLD,"|Converged\n");
-      else PetscPrintf(PETSC_COMM_WORLD,"|NOT CONVERGED\n");
+   if (resultDatabase.hasRefinement()) {
+      if (resultDatabase.isAllConverged()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"Converged\n");}
+      else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"NOT CONVERGED\n");}
    }
 
-   PetscPrintf(PETSC_COMM_WORLD,"|Job Complete\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Job Complete\n");
 
    if (rank == 0) {
       stringstream ss;
@@ -570,8 +631,9 @@ int main(int argc, char *argv[])
    write_attributes (baseName,pmesh);
    delete pmesh;
 
+   chrono::system_clock::time_point job_end_time=chrono::system_clock::now();
+   resultDatabase.set_solve_time(elapsed_time(job_start_time,job_end_time));
    resultDatabase.save(&projData);
-   resultDatabase.saveCSV (&projData,boundaryDatabase.get_SportCount(),true);
 
    free_project (&projData);
 
@@ -579,9 +641,7 @@ int main(int argc, char *argv[])
 
    remove_lock_file(lockfile);
 
-   chrono::system_clock::time_point job_end_time=chrono::system_clock::now();
-   resultDatabase.set_solve_time(elapsed_time(job_start_time,job_end_time));
-   PetscPrintf(PETSC_COMM_WORLD,"|Elapsed time: %g s\n",resultDatabase.get_solve_time());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Elapsed time: %g s\n",resultDatabase.get_solve_time());
 
    PetscFinalize();
 

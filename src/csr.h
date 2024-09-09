@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2022 Brian Young                                          //
+//    Copyright (C) 2024 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -25,6 +25,9 @@
 #include <complex.h>
 #include <_hypre_parcsr_mv.h>
 #include <sys/resource.h>
+#include "prefix.h"
+
+void prefix ();
 
 #endif
 

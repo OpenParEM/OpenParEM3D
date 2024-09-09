@@ -18,13 +18,13 @@ materials.check.limits         true
 
 refinement.frequency           plan
 refinement.iteration.min       5
-refinement.iteration.max       30
+refinement.iteration.max       100
 refinement.required.passes     1
-refinement.tolerance           0.001
+refinement.relative.tolerance  0.001
+refinement.variable            S
 
 frequency.plan.point           26e9
 frequency.plan.point.refine    35e9
-
 
 reference.impedance            0
 //touchstone.format              MA

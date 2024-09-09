@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 //                                                                               //
 //    process3D - processor for automation of regression testing of OpenParEM3D  //
-//    Copyright (C) 2023 Brian Young                                             //
+//    Copyright (C) 2024 Brian Young                                             //
 //                                                                               //
 //    This program is free software: you can redistribute it and/or modify       //
 //    it under the terms of the GNU General Public License as published by       //
@@ -25,12 +25,12 @@ string routine;
 
 void printERROR (int lineNumber, int place)
 {
-   cout << "ERROR3120: " << processingFileName << ": " << routine << ": Incorrect formatting in line " << lineNumber << " at place " << place << "." << endl;
+   cout << "|ERROR3120: " << processingFileName << ": " << routine << ": Incorrect formatting in line " << lineNumber << " at place " << place << "." << endl;
 }
 
 void printERROR2 (int lineNumber)
 {
-   cout << "ERROR3121: " << processingFileName << ": " << routine << ": Incorrect number of entries at line " << lineNumber << "." << endl;
+   cout << "|ERROR3121: " << processingFileName << ": " << routine << ": Incorrect number of entries at line " << lineNumber << "." << endl;
 }
 
 bool is_valid_testVariable (string test)
@@ -68,7 +68,7 @@ void TestCase::print_as_testcase ()
    } else if (testFunction.compare("greaterthan") == 0) {
       cout << threshold << endl;
    } else {
-      cout << "ERROR" << endl;
+      cout << "|ERROR" << endl;
    }
 }
 
@@ -106,7 +106,7 @@ void TestCase::evaluate (ResultDatabase *testResultDatabase)
    Result *result=testResultDatabase->get_Result(frequency);
    if (result) {
       if (testVariable.compare("magS(dB)") == 0) {
-         foundValue=real(result->get_S(portOut,portIn));
+         foundValue=real(result->get_Sij(portIn-1,portOut-1));
 
          if (testFunction.compare("equal") == 0) {
             if (expectedValue == 0) error=abs(foundValue);
@@ -124,7 +124,7 @@ void TestCase::evaluate (ResultDatabase *testResultDatabase)
       }
 
       if (testVariable.compare("argS(deg)") == 0) {
-         foundValue=imag(result->get_S(portOut,portIn));
+         foundValue=imag(result->get_Sij(portIn-1,portOut-1));
 
          if (testFunction.compare("equal") == 0) {
             if (expectedValue == 0) error=abs(foundValue);
@@ -279,7 +279,7 @@ bool TestCaseDatabase::load (const char *filename)
          }
       }
    } else {
-      cout << "ERROR3122: Unable to open file \"" << filename << "\" for reading." << endl;
+      cout << "|ERROR3122: Unable to open file \"" << filename << "\" for reading." << endl;
       return true;
    }
 
@@ -367,7 +367,7 @@ void TestCaseDatabase::show_evaluation(ostream *out)
 
 void exit_on_fail(string filename)
 {
-   cout << "ERROR3123: Check the results file \"" << filename << "\"." << endl;
+   cout << "|ERROR3123: Check the results file \"" << filename << "\"." << endl;
 
    ofstream out;
    out.open(filename.c_str(),ofstream::out);
@@ -377,7 +377,7 @@ void exit_on_fail(string filename)
       out << buf << ",FAIL,-1,-1,-1" << endl;
       out.close();
    } else {
-      cout << "ERROR3124: Failed to open test results file \"" << filename << "\" for writing." << endl;
+      cout << "|ERROR3124: Failed to open test results file \"" << filename << "\" for writing." << endl;
    }
    exit(1);
 }
@@ -407,7 +407,7 @@ int main (int argc, char *argv[])
 
    init_project (&projData);
    if (load_project_file (projFile, &projData, "   ")) {
-      cout << "ERROR3125: Failed to load project file \"" << projFile << "\"." << endl;
+      cout << "|ERROR3125: Failed to load project file \"" << projFile << "\"." << endl;
       exit(1);
    }
    if (projData.debug_show_project) {print_project (&projData,"      ");}
@@ -441,7 +441,7 @@ int main (int argc, char *argv[])
       testCaseDatabase.show_evaluation(&out);
       out.close();
    } else {
-      cout << "ERROR3126: Failed to test results file \"" << testResultsFile << "\" for writing." << endl;
+      cout << "|ERROR3126: Failed to test results file \"" << testResultsFile << "\" for writing." << endl;
       exit_on_fail(testResultsFile);
    }
 

@@ -63,66 +63,42 @@ def get_commandSymbol (label,name):
         return label[0:2]
     return "null"
 
-def get_commandName (label):
+def get_commandName (label,showMessage):
     splitText=label[2:].split('(')
     if (len(splitText) != 2):
         App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted.\n")
         return "null"
     if (splitText[0] == ''):
-        App.Console.PrintError("ERROR: \"" + label + "\" is missing a name.\n")
+        if (showMessage):
+            App.Console.PrintError("ERROR: \"" + label + "\" is missing a name.\n")
         return "null"
     return splitText[0]
 
-def has_oneOption (label):
+def get_optionCount (label):
     splitText1=label.split('(')
     if (len(splitText1) != 2):
-        return False
+        return 0
 
     splitText2=splitText1[1].split(')')
     if (len(splitText2) != 2):
-        return False
+        return 0
 
     splitText3=splitText2[0].split(',')
-    if (len(splitText3) != 1):
-        return False
+    return len(splitText3) 
 
-    return True
-
-# 1 option - (option)
-def get_commandOption1 (label):
+def get_commandOption (label,index):
     splitText1=label.split('(')
     if (len(splitText1) != 2):
         App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted.\n")
         return "null"
 
-    splitText2=splitText1[1].split(')') 
+    splitText2=splitText1[1].split(')')
     if (len(splitText2) != 2):
         App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted.\n")
         return "null"
 
     splitText3=splitText2[0].split(',')
-    if (len(splitText3) != 1):
-        print ("splitText2[0]=" + splitText2[0] + "\n")
-        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted.\n")
-        return "null"
-
-    return splitText3[0]
-
-# 2 options - (option1,option2)
-# select with index=1 or index=2
-def get_commandOption2 (label,index):
-    splitText1=label.split('(')
-    if (len(splitText1) != 2):
-        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted.\n")
-        return "null"
-
-    splitText2=splitText1[1].split(')')  
-    if (len(splitText2) != 2):
-        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted.\n")
-        return "null"
-
-    splitText3=splitText2[0].split(',')
-    if (len(splitText3) != 2):
+    if (len(splitText3) < index):
         App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted.\n")
         return "null"
 
@@ -227,10 +203,12 @@ class Boundary:
 
 
 class Mode:
-    def __init__(self, portName, SportNumber, type):
+    def __init__(self, portName, SportNumber, type, net, scale):
         self.portName = portName
         self.SportNumber = SportNumber
         self.type = type
+        self.net = net
+        self.scale = scale
         self.paths = []
         self.directions = []
         self.category = "modal"
@@ -243,26 +221,41 @@ class Mode:
     def set_category(self,category):
         self.category=category
 
-    def print(self,file):
+    def printHead(self,file):
         if self.category == "modal":
             file.write("   Mode\n")
         if self.category == "line":
             file.write("   Line\n")
         file.write("      Sport=" + str(self.SportNumber) + "\n")
-        file.write("      type=" + self.type + "\n")
+        if (self.net != ""):
+            file.write("      net=" + str(self.net) + "\n")
+
+    def printPath(self,file):
+        file.write("      IntegrationPath\n")
+        file.write("         type=" + self.type + "\n")
+        if (self.scale != ""):
+            file.write("         scale=" + self.scale + "\n")
 
         i=0
         while (i < len(self.paths)):
             if i == 0:
-                file.write("      path=" + self.directions[0] + self.paths[0] + "\n")
+                file.write("         path=" + self.directions[0] + self.paths[0] + "\n")
             else:
-                file.write("      path" + self.directions[i] + "=" + self.paths[i] + "\n")
+                file.write("         path" + self.directions[i] + "=" + self.paths[i] + "\n")
             i=i+1
 
+        file.write("      EndIntegrationPath\n")
+
+    def printTail(self,file):
         if self.category == "modal":
             file.write("   EndMode\n")
         if self.category == "line":
             file.write("   EndLine\n")
+
+    def print(self,file):
+        printHead(self,file)
+        printPath(self,file)
+        printTail(self,file)
 
     def dump(self):
         if self.category == "modal":
@@ -285,6 +278,15 @@ class Mode:
             print("EndMode")
         if self.category == "line":
             print("EndLine")
+
+    def set_used(self):
+        self.used = True
+
+    def unset_used(self):
+        self.used = False
+
+    def is_used(self):
+        return self.used
 
     def check(self,pathList):
         fail = False
@@ -329,7 +331,11 @@ class Port:
     def add_mode(self,mode):
         self.modes.append(mode)
 
-    def print(self,file):
+    def reset_modes(self):
+        for mode in self.modes:
+           mode.reset()
+
+    def print(self,file,differentialPairList):
         file.write("Port\n")
         file.write("   name=" + str(self.portName) + "\n")
 
@@ -345,7 +351,32 @@ class Port:
         file.write("   impedance_calculation=" + self.impedance_calculation + "\n")
 
         for mode in self.modes:
-            mode.print(file)
+            mode.unset_used()
+
+        for mode in self.modes:
+            if (not mode.is_used()):
+                mode.set_used()
+                mode.printHead(file)
+                mode.printPath(file)
+        
+                for mode2 in self.modes:
+                    if (not mode2.is_used() and mode.SportNumber == mode2.SportNumber):
+                        mode2.set_used()
+                        mode2.printPath(file)
+
+                mode.printTail(file)
+
+        for diffPair in differentialPairList:
+            foundP = False
+            foundN = False
+            for mode in self.modes:
+                if (int(mode.SportNumber) == int(diffPair.Sport_P)):
+                    foundP = True
+                if (int(mode.SportNumber) == int(diffPair.Sport_N)):
+                    foundN = True
+            if (foundP and foundN):
+                diffPair.print(file)
+                diffPair.used = True
 
         file.write("EndPort\n")
         file.write("\n")
@@ -380,18 +411,62 @@ class Port:
             while (j < len(self.modes)):
                 if (self.modes[i].SportNumber == self.modes[j].SportNumber):
                     if (self.modes[i].type == self.modes[j].type):
-                        App.Console.PrintError("ERROR: Port \"" + str(self.portName) + "\" specifies modes and/or lines with duplicate S-port numbers " + str(self.modes[i].SportNumber) + "\n")
+                        App.Console.PrintError("ERROR: Port \"" + str(self.portName) + "\" specifies modes and/or lines with duplicate S-port numbers " + str(self.modes[i].SportNumber) + ".\n")
+                        fail = True
+                    if (self.modes[i].net != self.modes[j].net):
+                        App.Console.PrintError("ERROR: Port \"" + str(self.portName) + "\" Sport " + str(self.modes[i].SportNumber) + " specifies unmatched nets \"" + str(self.modes[i].net) + "\" and \"" + str(self.modes[j].net) + "\".\n")
                         fail = True
                 j = j+1
             i = i+1
 
         return fail
 
+class DifferentialPair:
+    def __init__(self, net, Sport_P, Sport_N):
+        self.net = net
+        self.Sport_P = Sport_P
+        self.Sport_N = Sport_N
+        self.used = False
+
+    def print(self,file):
+        file.write("   DifferentialPair\n")
+        if (self.net != ""):
+            file.write("      net=" + str(self.net) + "\n")
+        file.write("      Sport_P=" + str(self.Sport_P) + "\n")
+        file.write("      Sport_N=" + str(self.Sport_N) + "\n")
+        file.write("   EndDifferentialPair\n")
+
+    def check(self,modeList):
+        fail = False
+
+        if (self.Sport_P == self.Sport_N):
+            App.Console.PrintError("ERROR: Differential pair uses identical Sports of " + str(Sport_P) + ".\n")
+            fail = True
+
+        found_P = False
+        found_N = False
+        for mode in modeList:
+           if (int(self.Sport_P) == mode.SportNumber):
+               found_P = True
+           if (int(self.Sport_N) == mode.SportNumber):
+               found_N = True
+
+        if (not found_P):
+            App.Console.PrintError("ERROR: Differential pair calls for undefined Sport_P of " + str(self.Sport_P) + ".\n")
+            fail = True
+        if (not found_N):
+            App.Console.PrintError("ERROR: Differential pair calls for undefined Sport_N of " + str(self.Sport_N) + ".\n")
+            fail = True
+
+        return fail
+
+
+
 pathList = []
 boundaryList = []
 modeList = []
 portList = []
-
+differentialPairList = []
 
 doc = FreeCAD.ActiveDocument
 objs = FreeCAD.ActiveDocument.Objects
@@ -426,12 +501,18 @@ else:
                 commandSymbol=get_commandSymbol(label,name)
 
                 if (label[0:2] == "_P"):
-                    print ("processing:" + label)
+                    #print ("processing:" + label)
+                    #print ("   name:" + name)
                     recognizedCommand = True
 
                     nameText=label[2:]
                     if (nameText == ''):
                        App.Console.PrintError("ERROR: \"" + label +"\" does not include a name.\n")
+                       fail = True
+                       continue
+
+                    if (name[0:5] == "Clone"):
+                       App.Console.PrintError("ERROR: \"" + label +"\" specifies a clone.\n")
                        fail = True
                        continue
 
@@ -486,17 +567,36 @@ else:
                            newPath.add_point(x2,y2,z2)
                        pathList.append(newPath)
 
+                    if (name[0:7] == "Polygon"):
+                       newPath=Path(nameText,"true")
+                       for wire in obj.Shape.Wires:
+                          for vertex in wire.Vertexes:
+                             newPath.add_point(vertex.X,vertex.Y,vertex.Z)
+                       pathList.append(newPath)
+
                 if (commandSymbol == "_S"):
                     print ("processing:" + label)
                     recognizedCommand = True
 
-                    portName=get_commandName(label)
+                    portName=get_commandName(label,True)
                     if (portName == "null"):
                         fail = True
                         continue
 
-                    impedance=get_commandOption1(label)
+                    numOptions = get_optionCount(label)
+
+                    if (numOptions == 0):
+                        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted with missing parameters.\n")
+                        fail = True
+                        continue
+
+                    impedance=get_commandOption(label,1)
                     if (impedance == "null"):
+                        fail = True
+                        continue
+
+                    if (numOptions > 1):
+                        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted with excess parameters.\n")
                         fail = True
                         continue
 
@@ -532,50 +632,69 @@ else:
                     print ("processing:" + label)
                     recognizedCommand = True
 
-                    portName=get_commandName(label)
+                    portName=get_commandName(label,True)
                     if (portName == "null"):
                         fail = True
                         continue
 
                     type = ""
+                    fullTypeName = ""
                     material = ""
                     wave_impedance = ""
-                    if has_oneOption(label):
-                        type=get_commandOption1(label)
-                        if (type == "SI"):
-                            App.Console.PrintError("ERROR: \"" + label + "\" must include the material parameter.\n")
-                            fail = True
-                        if (type == "null"):
-                            fail = True
-                            continue
-                    else:
-                        type=get_commandOption2(label,1)
-                        if (type == "PEC" or type == "PMC"):
-                            App.Console.PrintError("ERROR: \"" + label + "\" must not include a second parameter.\n")
-                            fail = True
-                        if (type == "null"):
-                            fail = True
-                            continue
+                    numOptions = get_optionCount(label)
 
-                        material=get_commandOption2(label,2)
-                        if (material == "null"):
-                            fail = True
-                            continue
+                    if (numOptions == 0):
+                        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted with missing parameters.\n")
+                        fail = True
+                        continue
 
-                        wave_impedance=get_commandOption2(label,2)
-                        if (material == "null"):
-                            fail = True
-                            continue
+                    type=get_commandOption(label,1)
 
-                    fullTypeName=""
-                    if (type == "SI"): 
-                        fullTypeName="surface_impedance"
+                    if (type == "null"):
+                        fail = True
+                        continue
+
                     if (type == "PEC"):
                         fullTypeName="perfect_electric_conductor"
+                        if (numOptions > 1):
+                           App.Console.PrintError("ERROR: \"" + label + "\" must not include a second parameter.\n")
+                           fail = True
+                           continue
+
                     if (type == "PMC"):
                         fullTypeName="perfect_magnetic_conductor"
+                        if (numOptions > 1):
+                           App.Console.PrintError("ERROR: \"" + label + "\" must not include a second parameter.\n")
+                           fail = True
+                           continue
+
+                    if (type == "SI"):
+                        fullTypeName="surface_impedance"
+                        if (numOptions > 1):
+                            material=get_commandOption(label,2)
+                            if (material == "null"):
+                                fail = True
+                                continue
+
+                            if (numOptions > 2):
+                                App.Console.PrintError("ERROR: \"" + label + "\" includes too many parameters.\n")
+                                fail = True
+                                continue
+                        else:
+                            App.Console.PrintError("ERROR: \"" + label + "\" must include the material parameter.\n")
+                            fail = True
+                            continue
+
                     if (type == "radiation"):
                         fullTypeName="radiation"
+                        if (numOptions > 1):
+                            wave_impedance=get_commandOption(label,2)
+                            if (wave_impedance == "null"):
+                                fail = True
+                                continue
+
+                            if (numOptions > 2):
+                                App.Console.PrintError("ERROR: \"" + label + "\" includes too many parameters.\n")
 
                     paths=get_paths(label)
                     if (paths == "null"):
@@ -609,15 +728,27 @@ else:
                     print ("processing:" + label)
                     recognizedCommand = True
 
-                    portName=get_commandName(label)
+                    portName=get_commandName(label,True)
                     if (portName == "null"):
                         fail = True
                         continue
 
-                    Sport=get_commandOption2(label,1)
+                    Sport = ""
+                    type = ""
+                    net = ""
+                    scale = ""
+                    numOptions = get_optionCount(label)
+
+                    if (numOptions == 0):
+                        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted with missing parameters.\n")
+                        fail = True
+                        continue
+
+                    Sport=get_commandOption(label,1)
+
                     if (Sport == "null"):
-                       fail = True
-                       continue
+                        fail = True
+                        continue
 
                     try:
                         SportNumber=int(Sport)
@@ -626,8 +757,26 @@ else:
                         fail = True
                         continue
 
-                    type=get_commandOption2(label,2)
-                    if (type == "null"):
+                    if (numOptions > 1):
+                        type=get_commandOption(label,2)
+                        if (type == "null"):
+                            fail = True
+                            continue
+
+                    if (numOptions > 2):
+                        net=get_commandOption(label,3)
+                        if (net == "null"):
+                            fail = True
+                            continue
+
+                    if (numOptions > 3):
+                        scale=get_commandOption(label,4)
+                        if (scale == "null"):
+                            fail = True
+                            continue
+
+                    if (numOptions > 4):
+                        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted with excess parameters.\n")
                         fail = True
                         continue
 
@@ -636,7 +785,7 @@ else:
                         fail = True
                         continue
 
-                    newMode=Mode(portName,SportNumber,type)
+                    newMode=Mode(portName,SportNumber,type,net,scale)
                     if (commandSymbol == "_M"):
                         newMode.set_category("modal")
                     if (commandSymbol == "_L"):
@@ -663,6 +812,62 @@ else:
 
                     modeList.append(newMode)
 
+                if (commandSymbol == "_D"):
+                    print ("processing:" + label)
+                    recognizedCommand = True
+
+                    net=get_commandName(label,False)
+                    if (net == "null"):
+                        net=""
+                    else:
+                        App.Console.PrintError("ERROR: \"" + label + "\" incorrectly includes a label.\n")
+                        fail = True
+                        continue
+
+                    Sport_P = ""
+                    Sport_N = ""
+                    numOptions = get_optionCount(label)
+
+                    if (numOptions == 0):
+                        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted with missing parameters.\n")
+                        fail = True
+                        continue
+
+                    Sport_P=get_commandOption(label,1)
+
+                    if (Sport_P == "null"):
+                        fail = True
+                        continue
+
+                    try:
+                        SportNumber=int(Sport_P)
+                    except Exception:
+                        App.Console.PrintError("ERROR: \"" + label + "\" does not use an integer Sport_P number.\n")
+                        fail = True
+                        continue
+
+                    if (numOptions > 1):
+                        Sport_N=get_commandOption(label,2)
+
+                        if (Sport_N == "null"):
+                            fail = True
+                            continue
+
+                        try:
+                            SportNumber=int(Sport_N)
+                        except Exception:
+                            App.Console.PrintError("ERROR: \"" + label + "\" does not use an integer Sport_N number.\n")
+                            fail = True
+                            continue
+
+                    if (numOptions > 2):
+                        App.Console.PrintError("ERROR: \"" + label + "\" is incorrectly formatted with excess parameters.\n")
+                        fail = True
+                        continue
+
+                    newDiffPair=DifferentialPair(net,Sport_P,Sport_N)
+                    differentialPairList.append(newDiffPair)
+
                 if not recognizedCommand and label[0:1] == '_':
                     App.Console.PrintError("ERROR: \"" + label + "\" calls for the invalid command \"" + commandSymbol + "\".\n")
                     fail = True
@@ -682,13 +887,27 @@ else:
 
             # error checks
 
+            # modes
+            i=0
+            while (i < len(modeList)-1):
+                j=i+1
+                while (j < len(modeList)):
+                    if (modeList[i].net != "" and modeList[i].net == modeList[j].net and modeList[i].SportNumber != modeList[j].SportNumber):
+                        App.Console.PrintError("ERROR: Sport " + str(modeList[i].SportNumber) + " type \"" + str(modeList[i].type) + "\" and Sport " + str(modeList[j].SportNumber) + " type \"" + str(modeList[j].type) + "\" duplicate the net \"" + str(modeList[i].net) + "\".\n")
+                        fail = True
+                    j = j+1
+                i = i+1
+
+
+            # boundaries
             for boundary in boundaryList:
                 if boundary.check(pathList):
                     fail=True
 
+            # ports
             for port in portList:
                 if port.check(pathList):
-                    fail=True
+                    fail = True
 
             i=0
             while (i < len(portList)-1):
@@ -702,6 +921,49 @@ else:
 
             if sequential_Sport_check(portList):
                 fail = True
+
+            # differential pairs
+            for diffPair in differentialPairList:
+                if diffPair.check(modeList):
+                    fail = True
+
+            SportNumberList = []
+            for mode in modeList:
+                count=0
+                for diffPair in differentialPairList:
+                    if (int(diffPair.Sport_P) == mode.SportNumber):
+                        count = count + 1
+                    if (int(diffPair.Sport_N) == mode.SportNumber):
+                        count = count + 1
+                if (count > 1):
+                    found = False
+                    for s_num in SportNumberList:
+                        if (s_num == mode.SportNumber):
+                            found = True
+                    if (not found):
+                        SportNumberList.append(mode.SportNumber)
+                        App.Console.PrintError("ERROR: Sport " + str(mode.SportNumber) + " is assigned to more than one differential pair.\n")
+                        fail = True
+
+            for diffPair in differentialPairList:
+                for port in portList:
+                    foundP = False
+                    foundN = False
+                    for mode in port.modes:
+                        if (int(mode.SportNumber) == int(diffPair.Sport_P)):
+                            foundP = True
+                        if (int(mode.SportNumber) == int(diffPair.Sport_N)):
+                            foundN = True
+                    if (foundP and foundN):
+                        diffPair.used = True
+
+            for diffPair in differentialPairList:
+               if (not diffPair.used):
+                   App.Console.PrintError("ERROR: D(" + str(diffPair.Sport_P) + "," + str(diffPair.Sport_N) + ") is not assigned to a port.\n")
+                   fail = True
+
+            for diffPair in differentialPairList:
+                diffPair.used = False
 
             # write the file
 
@@ -725,8 +987,7 @@ else:
 
                 # ports
                 for port in portList:
-                    port.print(file)
-
+                    port.print(file,differentialPairList)
 
         except Exception:
             App.Console.PrintError("Undetermined fatal error while saving.\n")
@@ -735,6 +996,6 @@ else:
             if not fail:
                 App.Console.PrintMessage("Saved file " + SaveName + ".\n")
     except Exception:
-        App.Console.PrintError("Error Open file "+SaveName+"\n")
+        App.Console.PrintError("Error Open file "+SaveName+".\n")
 
 

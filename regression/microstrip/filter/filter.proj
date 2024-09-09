@@ -4,9 +4,9 @@ project.save.fields            false
 
 mesh.file                      filter.msh
 mesh.quality.limit             1e6
-mesh.refinement.fraction       0.0015
+//mesh.refinement.fraction       0.0015
 
-mesh.order                     2
+mesh.order                     3
 
 port.definition.file           filter_ports.txt
 
@@ -15,23 +15,26 @@ materials.global.name          global_materials.txt
 materials.local.path           ./
 materials.local.name           local_materials.txt
 materials.check.limits         true
+materials.default.boundary     copper
 
 refinement.frequency           plan 
-refinement.iteration.min       5
-refinement.iteration.max       50 // 24
+refinement.iteration.min       1
+refinement.iteration.max       20
 refinement.required.passes     1
-refinement.tolerance           0.02
+refinement.relative.tolerance  0.1
+refinement.absolute.tolerance  1e-06
+refinement.variable            SandH
 
-//frequency.plan.linear          0.5e9,4.5e9,0.1e9
-frequency.plan.point           1e9
+frequency.plan.point           2.5e9
 frequency.plan.point.refine    4e9
+frequency.plan.point.refine    3e9
 
 reference.impedance            50
 
 solution.temperature           20
-solution.2D.tolerance          1e-12
+solution.2D.tolerance          1e-08
 solution.3D.tolerance          1e-14
-solution.iteration.limit       10000
+solution.iteration.limit       30000
 solution.modes.buffer          0
 solution.accurate.residual     false
 solution.shift.invert          true
@@ -39,7 +42,7 @@ solution.use.initial.guess     true
 
 output.show.refining.mesh      false
 output.show.postprocessing     false
-output.show.iterations         true // false
+output.show.iterations         false
 
 test.create.cases              false
 test.show.detailed.cases       false

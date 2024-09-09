@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2022 Brian Young                                          //
+//    Copyright (C) 2024 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -84,6 +84,44 @@ RotatedMesh::~RotatedMesh ()
 // Gamma
 ///////////////////////////////////////////////////////////////////////////////////////////
 
+void Gamma::set (int Sport_, int modeNumber2D_, double alpha_, double beta_, double frequency_)
+{
+   Sport=Sport_;
+   modeNumber2D=modeNumber2D_;
+   alpha=alpha_;
+   beta=beta_;
+   frequency=frequency_;
+}
+
+bool Gamma::is_match (int Sport_, int modeNumber2D_)
+{
+   if (Sport != Sport_) return false;
+   if (modeNumber2D != modeNumber2D_) return false;
+   return true;
+}
+
+bool Gamma::is_match (int Sport_, int modeNumber2D_, double frequency_)
+{
+   if (Sport != Sport_) return false;
+   if (modeNumber2D != modeNumber2D_) return false;
+   if (!double_compare(frequency,frequency_,1e-12)) return false;
+   return true;
+}
+
+void Gamma::print()
+{
+   cout << "   Gamma:" << endl;
+   cout << "      Sport=" << Sport << endl;
+   cout << "      modeNumber2D=" << modeNumber2D << endl;
+   cout << "      alpha=" << alpha << endl;
+   cout << "      beta=" << beta << endl;
+   cout << "      frequency=" << frequency << endl;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// GammaDatabase
+///////////////////////////////////////////////////////////////////////////////////////////
+
 void GammaDatabase::reset ()
 {
    long unsigned int i=0;
@@ -91,14 +129,44 @@ void GammaDatabase::reset ()
       delete gammaList[i];
       i++;
    }
-
    gammaList.clear();
 }
 
-Gamma* GammaDatabase::getGamma (long unsigned int i)
+Gamma* GammaDatabase::getGamma (int Sport, int modeNumber2D, double frequency)
 {
-   if (i < gammaList.size()) return gammaList[i];
-   return nullptr;
+   Gamma* gamma=nullptr;
+   double frequencyDifference=DBL_MAX;
+   long unsigned int ikeep=-1,max=-1;
+
+   // get the result with the closest frequency
+   long unsigned int i=0;
+   while (i < gammaList.size()) {
+      if (gammaList[i]->is_match(Sport,modeNumber2D)) {
+         double gammaFrequency=gammaList[i]->get_frequency();
+         if (abs(frequency-gammaFrequency) < frequencyDifference) {
+            frequencyDifference=abs(frequency-gammaFrequency);
+            ikeep=i;
+         }
+      }
+      i++;
+   }
+
+   // only use the result if it is within a factor of 2
+   // Getting too far away with an initial guess in OpenParEM2D can cause an inaccurate solution.
+   if (ikeep != max && frequency/gammaList[ikeep]->get_frequency() <= 2 &&
+                       frequency/gammaList[ikeep]->get_frequency() >= 0.5) gamma=gammaList[ikeep];
+
+   return gamma;
+}
+
+void GammaDatabase::print ()
+{
+   cout << "GammaDatabase: " << this << endl;
+   long unsigned int i=0;
+   while (i < gammaList.size()) {
+      gammaList[i]->print();
+      i++;
+   }
 }
 
 GammaDatabase::~GammaDatabase ()
@@ -201,14 +269,14 @@ void OPEMIntegrationPoint::get_fields (complex<double> *fieldX_, complex<double>
 
 void OPEMIntegrationPoint::get_fieldValue (ParGridFunction *grid_re, ParGridFunction *grid_im)
 {
-   if (elementNumber >= 0) {
-      Vector ReValue,ImValue;
-      grid_re->GetVectorValue(elementNumber,integrationPoint,ReValue);
-      grid_im->GetVectorValue(elementNumber,integrationPoint,ImValue);
-      fieldX=complex<double>(ReValue.Elem(0),ImValue.Elem(0));
-      fieldY=complex<double>(ReValue.Elem(1),ImValue.Elem(1));
-      fieldZ=complex<double>(ReValue.Elem(2),ImValue.Elem(2));
-   }
+   if (elementNumber < 0) return;
+
+   Vector ReValue,ImValue;
+   grid_re->GetVectorValue(elementNumber,integrationPoint,ReValue);
+   grid_im->GetVectorValue(elementNumber,integrationPoint,ImValue);
+   fieldX=complex<double>(ReValue.Elem(0),ImValue.Elem(0));
+   fieldY=complex<double>(ReValue.Elem(1),ImValue.Elem(1));
+   fieldZ=complex<double>(ReValue.Elem(2),ImValue.Elem(2));
 }
 
 void OPEMIntegrationPoint::resetElementNumber ()
@@ -270,6 +338,8 @@ void OPEMIntegrationPointList::update (ParMesh *pmesh)
 
 void OPEMIntegrationPointList::get_fieldValues (ParGridFunction *grid_re, ParGridFunction *grid_im)
 {
+   if (!grid_re || !grid_im) return;
+
    long unsigned int i=0;
    while (i < points.size()) {
       points[i]->get_fieldValue(grid_re,grid_im);
@@ -415,6 +485,7 @@ void OPEMIntegrationPointList::resetElementNumbers ()
 
 void OPEMIntegrationPointList::print()
 {
+   cout << "reverse=" << reverse << endl;
    long unsigned int i=0;
    while (i < points.size()) {
       points[i]->print();
@@ -475,6 +546,8 @@ Boundary::Boundary(int startLine_, int endLine_)
    wave_impedance.set_lowerLimit(1e-6);
    wave_impedance.set_upperLimit(1e9);
    wave_impedance.set_checkLimits(true);
+
+   is_default=false;
 }
 
 bool Boundary::load(string *indent, inputFile *inputs)
@@ -494,8 +567,8 @@ bool Boundary::load(string *indent, inputFile *inputs)
 
       if (name.match_alias(&token)) {
          if (name.is_loaded()) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3014: Duplicate entry at line %d for previous entry at line %d.\n",
-                                         indent->c_str(),indent->c_str(),lineNumber,name.get_lineNumber());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3014: Duplicate entry at line %d for previous entry at line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber,name.get_lineNumber());
             fail=true;
          } else {
             name.set_keyword(token);
@@ -508,8 +581,8 @@ bool Boundary::load(string *indent, inputFile *inputs)
 
       if (type.match_alias(&token)) {
          if (type.is_loaded()) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3015: Duplicate entry at line %d for previous entry at line %d.\n",
-                                         indent->c_str(),indent->c_str(),lineNumber,type.get_lineNumber());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3015: Duplicate entry at line %d for previous entry at line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber,type.get_lineNumber());
             fail=true;
          } else {
             type.set_keyword(token);
@@ -522,8 +595,8 @@ bool Boundary::load(string *indent, inputFile *inputs)
 
       if (material.match_alias(&token)) {
          if (material.is_loaded()) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3016: Duplicate entry at line %d for previous entry at line %d.\n",
-                                         indent->c_str(),indent->c_str(),lineNumber,material.get_lineNumber());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3016: Duplicate entry at line %d for previous entry at line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber,material.get_lineNumber());
             fail=true;
          } else {
             material.set_keyword(token);
@@ -541,8 +614,8 @@ bool Boundary::load(string *indent, inputFile *inputs)
 
       if (token.compare("path") == 0) {
          if (found_first_path) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3017: Extraneous path= statement at line %d.\n",
-                                          indent->c_str(),indent->c_str(),lineNumber);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3017: Extraneous path= statement at line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber);
             fail=true;
          } else {
             bool reverse=false;
@@ -572,8 +645,8 @@ bool Boundary::load(string *indent, inputFile *inputs)
       if (token.compare("path+") == 0) {
          if (found_first_path) {
             if (value.substr(0,1).compare("+")  == 0 || value.substr(0,1).compare("-") == 0) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3018: Misformatted path at line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber);
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3018: Misformatted path at line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber);
                fail=true;
             } else {
 
@@ -593,8 +666,8 @@ bool Boundary::load(string *indent, inputFile *inputs)
                reverseList.push_back(false);
             }
          } else {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3019: Missing path= statement before line %d.\n",
-                                         indent->c_str(),indent->c_str(),lineNumber);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3019: Missing path= statement before line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber);
             fail=true;
          }
          recognized++;
@@ -603,8 +676,8 @@ bool Boundary::load(string *indent, inputFile *inputs)
       if (token.compare("path-") == 0) {
          if (found_first_path) {
             if (value.substr(0,1).compare("+") == 0 || value.substr(0,1).compare("-") == 0) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3020: Misformatted path at line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber);
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3020: Misformatted path at line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber);
                fail=true;
             } else {
 
@@ -624,8 +697,8 @@ bool Boundary::load(string *indent, inputFile *inputs)
                reverseList.push_back(true);
             }
          } else {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3021: Missing path= statement before line %d.\n",
-                                          indent->c_str(),indent->c_str(),lineNumber);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3021: Missing path= statement before line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber);
             fail=true;
          }
          recognized++;
@@ -633,8 +706,8 @@ bool Boundary::load(string *indent, inputFile *inputs)
 
       // should recognize one keyword
       if (recognized != 1) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3022: Unrecognized keyword at line %d.\n",
-                                       indent->c_str(),indent->c_str(),lineNumber);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3022: Unrecognized keyword at line %d.\n",
+                                                indent->c_str(),indent->c_str(),lineNumber);
          fail=true;
       }
       lineNumber=inputs->get_next_lineNumber(lineNumber);
@@ -676,25 +749,27 @@ bool Boundary::is_radiation()
 
 void Boundary::print()
 {
-   PetscPrintf(PETSC_COMM_WORLD,"Boundary\n");
-   PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",get_name().c_str());
-   PetscPrintf(PETSC_COMM_WORLD,"   type=%s\n",get_type().c_str());
-   if (is_surface_impedance() && type.is_loaded()) PetscPrintf(PETSC_COMM_WORLD,"   material=%s\n",get_material().c_str());
-   if (is_radiation()) PetscPrintf(PETSC_COMM_WORLD,"   wave_impedance=%g\n",get_wave_impedance());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Boundary\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",get_name().c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   type=%s\n",get_type().c_str());
+   if (is_surface_impedance() && type.is_loaded()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   material=%s\n",get_material().c_str());}
+   if (is_radiation()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   wave_impedance=%g\n",get_wave_impedance());}
    long unsigned int i=0;
    while (i < pathNameList.size()) {
       if (i == 0) {
-         if (reverseList[i]) PetscPrintf(PETSC_COMM_WORLD,"   path=-%s\n",pathNameList[i]->get_value().c_str());
-         else PetscPrintf(PETSC_COMM_WORLD,"   path=%s\n",pathNameList[i]->get_value().c_str());
+         if (reverseList[i]) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path=-%s\n",pathNameList[i]->get_value().c_str());}
+         else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path=%s\n",pathNameList[i]->get_value().c_str());}
       } else {
-         if (reverseList[i]) PetscPrintf(PETSC_COMM_WORLD,"   path-=%s\n",pathNameList[i]->get_value().c_str());
-         else PetscPrintf(PETSC_COMM_WORLD,"   path+=%s\n",pathNameList[i]->get_value().c_str());
+         if (reverseList[i]) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path-=%s\n",pathNameList[i]->get_value().c_str());}
+         else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path+=%s\n",pathNameList[i]->get_value().c_str());}
       }
       i++;
    }
-   PetscPrintf(PETSC_COMM_WORLD,"   attribute=%d\n",attribute);
-   PetscPrintf(PETSC_COMM_WORLD,"   rotated=%p\n",rotated);
-   PetscPrintf(PETSC_COMM_WORLD,"EndBoundary\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   attribute=%d\n",attribute);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   assignedToMesh=%d\n",assignedToMesh);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   rotated=%p\n",rotated);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   is_default=%s\n",convertLogic(is_default).c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"EndBoundary\n");
 
    return;
 }
@@ -705,42 +780,42 @@ bool Boundary::inBlock (int lineNumber)
    return false;
 }
 
-bool Boundary::check(string *indent, vector<Path *> pathList)
+bool Boundary::check (string *indent, vector<Path *> pathList)
 {
    bool fail=false;
 
    // name
    if (!name.is_loaded()) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3023: Boundary block at line %d must specify a name.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3023: Boundary block at line %d must specify a name.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       fail=true;
    }
 
    // type
    if (! type.is_loaded()) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3024: Block at line %d must specify a type.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3024: Block at line %d must specify a type.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       return true;
    }
 
    // must have a path
    if (pathNameList.size() == 0) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3025: Boundary block at line %d must specify a path.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3025: Boundary block at line %d must specify a path.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       fail=true;
    }
 
    // material
    if (is_surface_impedance()) {
       if (!material.is_loaded()) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3026: Boundary block at line %d must specify a material.\n",
-                                      indent->c_str(),indent->c_str(),startLine);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3026: Boundary block at line %d must specify a material.\n",
+                                                indent->c_str(),indent->c_str(),startLine);
          fail=true;
       }
    } else if (is_perfect_electric_conductor() || is_perfect_magnetic_conductor() || is_radiation()) {
       if (material.is_loaded()) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3027: Boundary block at line %d must not specify a material.\n",
-                                      indent->c_str(),indent->c_str(),startLine);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3027: Boundary block at line %d must not specify a material.\n",
+                                                indent->c_str(),indent->c_str(),startLine);
          fail=true;
       }
    }
@@ -748,8 +823,8 @@ bool Boundary::check(string *indent, vector<Path *> pathList)
    // wave_impedance
    if (is_surface_impedance() || is_perfect_electric_conductor() || is_perfect_magnetic_conductor()) {
       if (wave_impedance.is_loaded()) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3010: Boundary block at line %d must not specify a wave impedance.\n",
-                                      indent->c_str(),indent->c_str(),startLine);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3010: Boundary block at line %d must not specify a wave impedance.\n",
+                                                indent->c_str(),indent->c_str(),startLine);
          fail=true;
       }
    }
@@ -764,8 +839,8 @@ bool Boundary::check(string *indent, vector<Path *> pathList)
          j++;
       }
       if (! found) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3028: Boundary block at line %d specifies a non-existent path.\n",
-                                      indent->c_str(),indent->c_str(),startLine);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3028: Boundary block at line %d specifies a non-existent path.\n",
+                                                 indent->c_str(),indent->c_str(),startLine);
          fail=true;
       }
       i++;
@@ -777,8 +852,8 @@ bool Boundary::check(string *indent, vector<Path *> pathList)
       long unsigned int j=i+1;
       while (j < pathNameList.size()) {
          if (pathNameList[i]->get_value().compare(pathNameList[j]->get_value()) == 0) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3029: Boundary block at line %d duplicates path \"%s\".\n",
-                                         indent->c_str(),indent->c_str(),startLine,pathNameList[j]->get_value().c_str());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3029: Boundary block at line %d duplicates path \"%s\".\n",
+                                                   indent->c_str(),indent->c_str(),startLine,pathNameList[j]->get_value().c_str());
             fail=true;
          }
          j++;
@@ -863,8 +938,8 @@ bool Boundary::merge(vector<Path *> *pathList)
 bool Boundary::createRotated (vector<Path *> *pathList, string indent)
 {
    if (pathIndexList.size() != 1) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3178: Boundary at line %d is incorrectly formatted.\n",
-                                    indent.c_str(),indent.c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3141: Boundary at line %d is incorrectly formatted.\n",
+                                             indent.c_str(),indent.c_str(),startLine);
       return true;
    }
 
@@ -872,8 +947,8 @@ bool Boundary::createRotated (vector<Path *> *pathList, string indent)
    rotated=(*pathList)[pathIndexList[0]]->rotateToXYplane();
 
    if (! rotated) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3179: Boundary at line %d does not form a closed polygon with nonzero area.\n",
-                                    indent.c_str(),indent.c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3069: Boundary at line %d does not form a closed polygon with nonzero area.\n",
+                                             indent.c_str(),indent.c_str(),startLine);
       return true;
    }
    return false;
@@ -899,7 +974,7 @@ bool Boundary::is_triangleInside (DenseMatrix *pointMat)
 bool Boundary::is_overlapPath (vector<Path *> *pathList, Path *testPath)
 {
    if (pathIndexList.size() != 1) {
-      PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Boundary::is_overlapPath operation on a Boundary with an invalid path definition.\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Boundary::is_overlapPath operation on a Boundary with an invalid path definition.\n");
       return false;
    }
 
@@ -928,9 +1003,9 @@ bool Boundary::is_overlapPath (vector<Path *> *pathList, Path *testPath)
    return false;
 }
 
-void Boundary::addMassImpedanceIntegrator (double frequency, double temperature, ParMesh *pmesh, ParMixedBilinearForm *pmblf, 
-                                           MaterialDatabase *materialDatabase, vector<Array<int> *> &borderAttributesList,
-                                           vector<ConstantCoefficient *> &ZconstList, bool isReal)
+void Boundary::addImpedanceIntegrator (double frequency, double temperature, ParMesh *pmesh, ParBilinearForm *pmblf, 
+                                       MaterialDatabase *materialDatabase, vector<Array<int> *> &borderAttributesList,
+                                       vector<ConstantCoefficient *> &ZconstList, bool isReal)
 {
    if (is_perfect_electric_conductor() || is_perfect_magnetic_conductor()) return;
    if (isReal) return;
@@ -952,11 +1027,6 @@ void Boundary::addMassImpedanceIntegrator (double frequency, double temperature,
       Rs=get_wave_impedance();
    }
 
-//xxx
-//PetscMPIInt rank;
-//MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-//cout << rank << ": name=" << get_name() << "  type=" << get_type() << "  attribute=" << get_attribute() << "  Rs=" << Rs << endl;
-
    double coef=2*M_PI*frequency*4e-7*M_PI/Rs;
    ConstantCoefficient *Zconst=new ConstantCoefficient(coef);
 
@@ -967,84 +1037,37 @@ void Boundary::addMassImpedanceIntegrator (double frequency, double temperature,
    ZconstList.push_back(Zconst);
 }
 
+bool Boundary::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh, string indent)
+{
+   if (pathIndexList.size() != 1) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Boundary::snapToMeshBoundary operation on a Boundary with an invalid path definition.\n");
+      return false;
+   }
+
+   // snap the boundary to the mesh boundary
+   Path *path=(*pathList)[pathIndexList[0]];
+   if (path->snapToMeshBoundary(mesh)) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3178: Boundary \"%s\" failed to snap to the mesh boundary.\n",
+                                             indent.c_str(),indent.c_str(),get_name().c_str());
+      return true;
+   }
+
+   return false;
+}
+
 Boundary::~Boundary()
 {
    if (rotated != nullptr) {delete rotated; rotated=nullptr;}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-// Weights
+// Integration Path
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-Weights::Weights (int Sport_, complex<double> e0_, complex<double> e1_, complex<double> e2_, complex<double> e3_,
-                              complex<double> h0_, complex<double> h1_, complex<double> h2_, complex<double> h3_,
-                              complex<double> voltage2D_, complex<double> Zo2D_, complex<double> voltage3D_)
-{
-   drivenSport=Sport_;
-   e0=e0_; e1=e1_; e2=e2_; e3=e3_;
-   h0=h0_; h1=h1_; h2=h2_; h3=h3_;
-   voltage2D=voltage2D_;
-   Zo2D=Zo2D_;
-   voltage3D=voltage3D_;
-}
-
-bool Weights::isPortMatch (int Sport)
-{
-   if (drivenSport == Sport) return true;
-   return false;
-}
-
-complex<double> Weights::calculateSii ()
-{
-   return (e0/e2+h0/h2)/(e0/e2-h0/h2);
-}
-
-complex<double> Weights::calculateSij (Weights *driving) 
-{
-   complex<double> driving_c2=0.5*(driving->e0/driving->e2-driving->h0/driving->h2);
-
-   // method using voltage integrated from the 3D fields
-   return voltage3D/(driving_c2*driving->voltage3D)*sqrt(driving->Zo2D/Zo2D);
-
-   // methods using 2D modal voltage - induces energy conservation errors
-   //S=(e0+e1)/(e2+e3)*voltage2D/(driving_c1*driving->voltage2D)*sqrt(driving->Zo2D/Zo2D);
-   //S=e0/e2*voltage2D/(driving_c1*driving->voltage2D)*sqrt(driving->Zo2D/Zo2D);
-}
-
-void Weights::print (string indent)
-{
-   PetscPrintf(PETSC_COMM_WORLD,"%s   Weights:\n",indent.c_str());
-   PetscPrintf(PETSC_COMM_WORLD,"%s      drivenSport=%d\n",indent.c_str(),drivenSport);
-   PetscPrintf(PETSC_COMM_WORLD,"%s      e0=(%g,%g)\n",indent.c_str(),real(e0),imag(e0));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      e1=(%g,%g)\n",indent.c_str(),real(e1),imag(e1));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      e2=(%g,%g)\n",indent.c_str(),real(e2),imag(e2));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      e3=(%g,%g)\n",indent.c_str(),real(e3),imag(e3));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      h0=(%g,%g)\n",indent.c_str(),real(h0),imag(h0));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      h1=(%g,%g)\n",indent.c_str(),real(h1),imag(h1));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      h2=(%g,%g)\n",indent.c_str(),real(h2),imag(h2));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      h3=(%g,%g)\n",indent.c_str(),real(h3),imag(h3));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      voltage2D=(%g,%g)\n",indent.c_str(),real(voltage2D),imag(voltage2D));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      Zo2D=(%g,%g)\n",indent.c_str(),real(Zo2D),imag(Zo2D));
-   PetscPrintf(PETSC_COMM_WORLD,"%s      voltage3D=(%g,%g)\n",indent.c_str(),real(voltage3D),imag(voltage3D));
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-// Mode
-///////////////////////////////////////////////////////////////////////////////////////////
-
-Mode::Mode(int startLine_, int endLine_, string calculation_)
+IntegrationPath::IntegrationPath (int startLine_, int endLine_)
 {
    startLine=startLine_;
    endLine=endLine_;
-
-   // mode
-   Sport.push_alias("Sport");
-   Sport.set_loaded(false);
-   Sport.set_positive_required(true);
-   Sport.set_non_negative_required(false);
-   Sport.set_lowerLimit(1);
-   Sport.set_upperLimit(100);
-   Sport.set_checkLimits(true);
 
    // type
    type.push_alias("type");
@@ -1055,12 +1078,20 @@ Mode::Mode(int startLine_, int endLine_, string calculation_)
    type.set_upperLimit(0);
    type.set_checkLimits(false);
 
-   calculation=calculation_;
-   isUsed=false;
-   isSolutionLoaded=false;
+   // scale
+   scale.push_alias("scale");
+   scale.set_loaded(false);
+   scale.set_positive_required(true);
+   scale.set_non_negative_required(false);
+   scale.set_lowerLimit(1e-3);
+   scale.set_upperLimit(1e3);
+   scale.set_checkLimits(true);
+
+   // defaults
+   scale.set_dbl_value(1);
 }
 
-bool Mode::load(string *indent, inputFile *inputs)
+bool IntegrationPath::load(string *indent, inputFile *inputs)
 {
    bool fail=false;
    bool found_first_path=false;
@@ -1075,15 +1106,10 @@ bool Mode::load(string *indent, inputFile *inputs)
 
       int recognized=0;
 
-      if (Sport.match_alias(&token)) {
-         recognized++;
-         if (Sport.loadInt(&token, &value, lineNumber)) fail=true;
-      }
-
       if (type.match_alias(&token)) {
          if (type.is_loaded()) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3030: Duplicate entry at line %d for previous entry at line %d.\n",
-                                         indent->c_str(),indent->c_str(),lineNumber,type.get_lineNumber());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3030: Duplicate entry at line %d for previous entry at line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber,type.get_lineNumber());
             fail=true;
          } else {
             type.set_keyword(token);
@@ -1094,10 +1120,15 @@ bool Mode::load(string *indent, inputFile *inputs)
          recognized++;
       }
 
+      if (scale.match_alias(&token)) {
+         recognized++;
+         if (scale.loadDouble(&token, &value, lineNumber)) fail=true;
+      }
+
       if (token.compare("path") == 0) {
          if (found_first_path) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3031: Extraneous path= statement at line %d.\n",
-                                         indent->c_str(),indent->c_str(),lineNumber);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3031: Extraneous path= statement at line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber);
             fail=true;
          } else {
             bool reverse=false;
@@ -1127,8 +1158,8 @@ bool Mode::load(string *indent, inputFile *inputs)
       if (token.compare("path+") == 0) {
          if (found_first_path) {
             if (value.substr(0,1).compare("+")  == 0 || value.substr(0,1).compare("-") == 0) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3032: Misformatted path at line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber);
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3032: Misformatted path at line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber);
                fail=true;
             } else {
 
@@ -1148,8 +1179,8 @@ bool Mode::load(string *indent, inputFile *inputs)
                reverseList.push_back(false);
             }
          } else {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3033: Missing path= statement before line %d.\n",
-                                         indent->c_str(),indent->c_str(),lineNumber);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3033: Missing path= statement before line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber);
             fail=true;
          }
          recognized++;
@@ -1158,8 +1189,8 @@ bool Mode::load(string *indent, inputFile *inputs)
       if (token.compare("path-") == 0) {
          if (found_first_path) {
             if (value.substr(0,1).compare("+") == 0 || value.substr(0,1).compare("-") == 0) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3034: Misformatted path at line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber);
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3034: Misformatted path at line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber);
                fail=true;
             } else {
 
@@ -1179,8 +1210,8 @@ bool Mode::load(string *indent, inputFile *inputs)
                reverseList.push_back(true);
             }
          } else {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3035: Missing path= statement before line %d.\n",
-                                         indent->c_str(),indent->c_str(),lineNumber);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3035: Missing path= statement before line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber);
             fail=true;
          }
          recognized++;
@@ -1188,8 +1219,8 @@ bool Mode::load(string *indent, inputFile *inputs)
 
       // should recognize one keyword
       if (recognized != 1) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3036: Unrecognized keyword at line %d.\n",
-                                      indent->c_str(),indent->c_str(),lineNumber);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3036: Unrecognized keyword at line %d.\n",
+                                                indent->c_str(),indent->c_str(),lineNumber);
          fail=true;
       }
       lineNumber=inputs->get_next_lineNumber(lineNumber);
@@ -1198,40 +1229,35 @@ bool Mode::load(string *indent, inputFile *inputs)
    return fail;
 }
 
-bool Mode::inModeBlock (int lineNumber)
+bool IntegrationPath::inIntegrationPathBlock (int lineNumber)
 {
    if (lineNumber >= startLine && lineNumber <= endLine) return true;
    return false;
 }
 
-bool Mode::check(string *indent, vector<Path *> pathList)
+bool IntegrationPath::check (string *indent, vector<Path *> *pathList)
 {
    bool fail=false;
-
-   // Sport
-   if (!Sport.is_loaded()) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3037: Mode block at line %d must specify an Sport number.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
-      fail=true;
-   }
 
    // type
    if (type.is_loaded()) {
       if (!is_voltage() && !is_current()) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3038: Input at line %d must be \"voltage\" or \"current\".\n",
-                                      indent->c_str(),indent->c_str(),type.get_lineNumber());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3038: Input at line %d must be \"voltage\" or \"current\".\n",
+                                                indent->c_str(),indent->c_str(),type.get_lineNumber());
          fail=true;
       }
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3039: Mode block at line %d must specify a type.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3039: IntegreationPath block at line %d must specify a type.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       fail=true;
    }
 
+   // scale is optional
+
    // at least one path is specified
    if (pathNameList.size() == 0) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3040: Mode block at line %d must specify a path.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3040: IntegrationPath block at line %d must specify a path.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       fail=true;
    }
 
@@ -1240,13 +1266,13 @@ bool Mode::check(string *indent, vector<Path *> pathList)
    while (i < pathNameList.size()) {
       bool found=false;
       long unsigned int j=0;
-      while (j < pathList.size()) {
-         if (pathNameList[i]->get_value().compare(pathList[j]->get_name()) == 0) {found=true; break;}
+      while (j < pathList->size()) {
+         if (pathNameList[i]->get_value().compare((*pathList)[j]->get_name()) == 0) {found=true; break;}
          j++;
       }
       if (! found) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3041: Mode block at line %d specifies a non-existent path.\n",
-                                      indent->c_str(),indent->c_str(),startLine);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3041: IntegrationPath block at line %d specifies a non-existent path.\n",
+                                                indent->c_str(),indent->c_str(),startLine);
          fail=true;
       }
       i++;
@@ -1258,8 +1284,8 @@ bool Mode::check(string *indent, vector<Path *> pathList)
       long unsigned int j=i+1;
       while (j < pathNameList.size()) {
          if (pathNameList[i]->get_value().compare(pathNameList[j]->get_value()) == 0) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3042: Mode block at line %d duplicates path \"%s\".\n",
-                                         indent->c_str(),indent->c_str(),startLine,pathNameList[j]->get_value().c_str());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3042: IntegrationPath block at line %d duplicates path \"%s\".\n",
+                                                   indent->c_str(),indent->c_str(),startLine,pathNameList[j]->get_value().c_str());
             fail=true;
          }
          j++;
@@ -1270,10 +1296,9 @@ bool Mode::check(string *indent, vector<Path *> pathList)
    return fail;
 }
 
-bool Mode::checkBoundingBox (Vector *lowerLeft, Vector *upperRight, string *indent, double tol, vector<Path *> *pathList)
+bool IntegrationPath::checkBoundingBox (Vector *lowerLeft, Vector *upperRight, string *indent, double tol, vector<Path *> *pathList)
 {
    bool fail=false;
-
    long unsigned int i=0;
    while (i < pathIndexList.size()) {
       if ((*pathList)[pathIndexList[i]]->checkBoundingBox(lowerLeft, upperRight, indent, tol)) fail=true;
@@ -1282,10 +1307,258 @@ bool Mode::checkBoundingBox (Vector *lowerLeft, Vector *upperRight, string *inde
    return fail;
 }
 
-// for currents, paths must form 1 or more closed loops
-bool Mode::check_current_paths (string *indent, vector<Path *> *pathList, bool check_closed_loop)
+bool IntegrationPath::align (string *indent, vector<Path *> *pathList, double *area, bool check_closed_loop)
 {
    bool fail=false;
+   bool start_new_path;
+   double path_area;
+   long unsigned int path_index;
+   Path *path;
+   double x0,y0,z0,xend,yend,zend;
+   vector<long unsigned int> pathComponents;
+   vector<bool> used;
+
+   if (pathIndexList.size() == 0) {fail=true; return fail;}
+
+   long unsigned int i=0;
+   while (i < pathIndexList.size()) {
+      used.push_back(false);
+      i++;
+   }
+
+   *area=0;
+
+   // add the closed paths
+   i=0;
+   while (i < pathIndexList.size()) {
+      path=(*pathList)[pathIndexList[i]];
+      if (path->get_closed()) {
+         path_area=path->area();
+         if (path_area < 0) {
+            path_area=-path_area;
+            path->reverseOrder();
+         }
+         (*area)+=path_area;
+         used[i]=true;
+      }
+      i++;
+   }
+
+   // do the rest by linking the pieces together
+   // cycle until all paths are used
+
+   start_new_path=true;
+   path_area=0;
+
+   i=0;
+   while (i < pathIndexList.size()+1) {   // max possible number of loops + 1, enables topology error check
+
+      // get a path
+      path=nullptr;
+      long unsigned int j=0;
+      while (j < used.size()) {
+         if (!used[j]) {
+            if (start_new_path) {
+
+               path_area=0;
+
+               // pick a path with a dangling end, if that exists
+
+               Path *tpj=(*pathList)[pathIndexList[j]];
+               int match_start_count=0;
+               int match_end_count=0;
+               long unsigned int k=0;
+               while (k < used.size()) {
+                  if (!used[k] && k != j) {
+                     Path *tpk=(*pathList)[pathIndexList[k]];
+                     if (double_compare(tpk->get_point_x(0),tpj->get_point_x(0),1e-12) &&
+                         double_compare(tpk->get_point_y(0),tpj->get_point_y(0),1e-12) &&
+                         double_compare(tpk->get_point_z(0),tpj->get_point_z(0),1e-12)) match_start_count++;
+                     if (double_compare(tpk->get_point_x(0),tpj->get_point_x(tpj->get_points_size()-1),1e-12) &&
+                         double_compare(tpk->get_point_y(0),tpj->get_point_y(tpj->get_points_size()-1),1e-12) &&
+                         double_compare(tpk->get_point_z(0),tpj->get_point_z(tpj->get_points_size()-1),1e-12)) match_end_count++;
+                     if (double_compare(tpk->get_point_x(tpk->get_points_size()-1),tpj->get_point_x(0),1e-12) &&
+                         double_compare(tpk->get_point_y(tpk->get_points_size()-1),tpj->get_point_y(0),1e-12) &&
+                         double_compare(tpk->get_point_z(tpk->get_points_size()-1),tpj->get_point_z(0),1e-12)) match_start_count++;
+                     if (double_compare(tpk->get_point_x(tpk->get_points_size()-1),tpj->get_point_x(tpj->get_points_size()-1),1e-12) &&
+                         double_compare(tpk->get_point_y(tpk->get_points_size()-1),tpj->get_point_y(tpj->get_points_size()-1),1e-12) &&
+                         double_compare(tpk->get_point_z(tpk->get_points_size()-1),tpj->get_point_z(tpj->get_points_size()-1),1e-12)) match_end_count++;
+                  }
+                  k++;
+               }
+
+               // see if this is the last remaining available path
+               bool is_last=true;
+               k=j+1;
+               while (k < used.size()) {
+                  if (!used[k]) is_last=false;
+                  k++;
+               }
+
+               // keep the dangling path or the last unused path
+
+               if (match_start_count == 1 && match_end_count == 0) {
+                  path_index=j;
+                  path=(*pathList)[pathIndexList[path_index]];
+                  path->reverseOrder();
+                  used[path_index]=true;
+                  break;
+               }
+
+               if ((match_start_count == 0 && match_end_count == 1) || is_last) {
+                  path_index=j;
+                  path=(*pathList)[pathIndexList[path_index]];
+                  used[path_index]=true;
+                  break;
+               }
+            } else {
+               Path *tpj=(*pathList)[pathIndexList[j]];
+
+               if (double_compare(tpj->get_point_x(0),xend,1e-12) &&
+                   double_compare(tpj->get_point_y(0),yend,1e-12) &&
+                   double_compare(tpj->get_point_z(0),zend,1e-12)) {
+                  path_index=j;
+                  path=tpj;
+                  used[path_index]=true;
+                  break;
+               }
+
+               if (double_compare(tpj->get_point_x(tpj->get_points_size()-1),xend,1e-12) &&
+                   double_compare(tpj->get_point_y(tpj->get_points_size()-1),yend,1e-12) &&
+                   double_compare(tpj->get_point_z(tpj->get_points_size()-1),zend,1e-12)) {
+                  path_index=j;
+                  path=tpj;
+                  path->reverseOrder();
+                  used[path_index]=true;
+                  break;
+               }
+            }
+         }
+         j++;
+      }
+
+      // see if finished
+      if (!path) {
+         if (!start_new_path) {
+            if (check_closed_loop) {
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3186: IntegrationPath block at line %d is not closed.\n",
+                                                      indent->c_str(),indent->c_str(),startLine);
+               fail=true;
+            } // else, the area is not defined for a non-closed loop, so the computed area is a figure-of-merit
+         }
+
+         // reverse path if clockwise
+         if (path_area < 0) {
+            path_area=-path_area;
+            long unsigned int j=0;
+            while (j < pathComponents.size()) {
+               (*pathList)[pathIndexList[pathComponents[j]]]->reverseOrder();
+               j++;
+            }
+         }
+         (*area)+=path_area;
+
+         // check that all the segments have the same direction
+         int count_forward=0;
+         int count_reverse=0;
+         long unsigned int j=0;
+         while (j < pathComponents.size()) {
+            if (reverseList[pathComponents[j]]) count_reverse++;
+            else count_forward++;
+            j++;
+         }
+
+         if (count_forward*count_reverse != 0) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3193: IntegrationPath block at line %d has mixed segment directions.\n",
+                                                   indent->c_str(),indent->c_str(),startLine);
+            fail=true;
+         }
+
+         break;
+      }
+
+      // keep track of paths in this loop for reversing direction, if necessary
+      pathComponents.push_back(path_index);
+
+      if (start_new_path) {
+         start_new_path=false;
+         x0=path->get_point_x(0);
+         y0=path->get_point_y(0);
+         z0=path->get_point_z(0);
+      }
+
+      xend=path->get_point_x(path->get_points_size()-1);
+      yend=path->get_point_y(path->get_points_size()-1);
+      zend=path->get_point_z(path->get_points_size()-1);
+
+      path_area+=path->area();
+
+      // check if this loop is completed by comparing the end vs. the start
+      if (double_compare(x0,xend,1e-12) && double_compare(y0,yend,1e-12) && double_compare(z0,zend,1e-12)) {
+
+         // reverse path if clockwise
+         if (path_area < 0) {
+            path_area=-path_area;
+            long unsigned int j=0;
+            while (j < pathComponents.size()) {
+               (*pathList)[pathIndexList[pathComponents[j]]]->reverseOrder();
+               j++;
+            }
+         }
+
+         (*area)+=path_area;
+
+         // check that all the segments have the same direction
+         int count_forward=0;
+         int count_reverse=0;
+         long unsigned int j=0;
+         while (j < pathComponents.size()) {
+            if (reverseList[pathComponents[j]]) count_reverse++;
+            else count_forward++;
+            j++;
+         }
+
+         if (!fail && count_forward*count_reverse != 0) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3190: IntegrationPath block at line %d has mixed segment directions.\n",
+                                                   indent->c_str(),indent->c_str(),startLine);
+            fail=true;
+         }
+
+         pathComponents.clear();
+         start_new_path=true;
+         path_area=0;
+      }
+
+      i++;
+   }
+   // topology failure
+   if (i == pathIndexList.size()+1) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3185: IntegrationPath block at line %d topology error for path %ld.\n",
+                                              indent->c_str(),indent->c_str(),startLine,i+1);
+      fail=true;
+   }
+
+   // check for unused paths - should not occur
+   i=0;
+   while (i < used.size()) {
+      if (!used[i]) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3183: IntegrationPath block at line %d topology error for path %ld.\n",
+                                                 indent->c_str(),indent->c_str(),startLine,i+1);
+         fail=true;
+      }
+      i++;
+   }
+
+   return fail;
+}
+
+/* original all-in-one algorithm
+// for currents, paths must form 1 or more closed loops
+bool IntegrationPath::check_current_paths (string *indent, vector<Path *> *pathList, bool check_closed_loop)
+{
+   bool fail=false;
+
+cout << "using old IntegrationPath::check_current_paths" << endl;
 
    if (!is_current()) return fail;
 
@@ -1323,8 +1596,8 @@ bool Mode::check_current_paths (string *indent, vector<Path *> *pathList, bool c
                      connectedStart[i]=true;
                      connectedStart[j]=true;
                   } else {
-                     PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3043: Mode block at line %d topology error at (%g,%g,%g).\n",
-                                                  indent->c_str(),indent->c_str(),startLine,
+                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3043: Mode block at line %d topology error at (%g,%g,%g).\n",
+                                                            indent->c_str(),indent->c_str(),startLine,
                                                   (*pathList)[pathIndexList[j]]->get_startPoint()->get_point_value_x(),
                                                   (*pathList)[pathIndexList[j]]->get_startPoint()->get_point_value_y(),
                                                   (*pathList)[pathIndexList[j]]->get_startPoint()->get_point_value_z());
@@ -1338,8 +1611,8 @@ bool Mode::check_current_paths (string *indent, vector<Path *> *pathList, bool c
                      connectedStart[i]=true;
                      connectedEnd[j]=true;
                   } else {
-                     PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3044: Mode block at line %d topology error at (%g,%g,%g).\n",
-                                                  indent->c_str(),indent->c_str(),startLine,
+                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3044: Mode block at line %d topology error at (%g,%g,%g).\n",
+                                                            indent->c_str(),indent->c_str(),startLine,
                                                   (*pathList)[pathIndexList[j]]->get_endPoint()->get_point_value_x(),
                                                   (*pathList)[pathIndexList[j]]->get_endPoint()->get_point_value_y(),
                                                   (*pathList)[pathIndexList[j]]->get_endPoint()->get_point_value_z());
@@ -1353,8 +1626,8 @@ bool Mode::check_current_paths (string *indent, vector<Path *> *pathList, bool c
                      connectedEnd[i]=true;
                      connectedStart[j]=true;
                   } else {
-                     PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3045: Mode block at line %d topology error at (%g,%g,%g).\n",
-                                                  indent->c_str(),indent->c_str(),startLine,
+                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3045: Mode block at line %d topology error at (%g,%g,%g).\n",
+                                                            indent->c_str(),indent->c_str(),startLine,
                                                   (*pathList)[pathIndexList[j]]->get_startPoint()->get_point_value_x(),
                                                   (*pathList)[pathIndexList[j]]->get_startPoint()->get_point_value_y(),
                                                   (*pathList)[pathIndexList[j]]->get_startPoint()->get_point_value_z());
@@ -1368,8 +1641,8 @@ bool Mode::check_current_paths (string *indent, vector<Path *> *pathList, bool c
                      connectedEnd[i]=true;
                      connectedEnd[j]=true;
                   } else {
-                     PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3046: Mode block at line %d topology error at (%g,%g,%g).\n",
-                                                  indent->c_str(),indent->c_str(),startLine,
+                     prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3046: Mode block at line %d topology error at (%g,%g,%g).\n",
+                                                            indent->c_str(),indent->c_str(),startLine,
                                                   (*pathList)[pathIndexList[j]]->get_endPoint()->get_point_value_x(),
                                                   (*pathList)[pathIndexList[j]]->get_endPoint()->get_point_value_y(),
                                                   (*pathList)[pathIndexList[j]]->get_endPoint()->get_point_value_z());
@@ -1390,16 +1663,16 @@ bool Mode::check_current_paths (string *indent, vector<Path *> *pathList, bool c
       while (i < pathIndexList.size()) {
          if (! closed[i]) {
             if (! connectedStart[i]) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3047: Mode block at line %d topology error with dangling point at (%g,%g,%g).\n",
-                                            indent->c_str(),indent->c_str(),startLine,
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3047: Mode block at line %d topology error with dangling point at (%g,%g,%g).\n",
+                                                      indent->c_str(),indent->c_str(),startLine,
                                             (*pathList)[pathIndexList[i]]->get_startPoint()->get_point_value_x(),
                                             (*pathList)[pathIndexList[i]]->get_startPoint()->get_point_value_y(),
                                             (*pathList)[pathIndexList[i]]->get_startPoint()->get_point_value_z());
                fail=true;
             }
             if (! connectedEnd[i]) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3048: Mode block at line %d topology error with dangling point at (%g,%g,%g).\n",
-                                            indent->c_str(),indent->c_str(),startLine,
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3048: Mode block at line %d topology error with dangling point at (%g,%g,%g).\n",
+                                                      indent->c_str(),indent->c_str(),startLine,
                                             (*pathList)[pathIndexList[i]]->get_endPoint()->get_point_value_x(),
                                             (*pathList)[pathIndexList[i]]->get_endPoint()->get_point_value_y(),
                                             (*pathList)[pathIndexList[i]]->get_endPoint()->get_point_value_z());
@@ -1412,90 +1685,9 @@ bool Mode::check_current_paths (string *indent, vector<Path *> *pathList, bool c
 
    return fail;
 }
+*/
 
-void Mode::print(string indent)
-{
-   if (is_modal()) PetscPrintf(PETSC_COMM_WORLD,"%sMode\n",indent.c_str());
-   if (is_line()) PetscPrintf(PETSC_COMM_WORLD,"%sLine\n",indent.c_str());
-
-   PetscPrintf(PETSC_COMM_WORLD,"%s   type=%s\n",indent.c_str(),type.get_value().c_str());
-   long unsigned int i=0;
-   while (i < pathNameList.size()) {
-      if (i == 0) {
-         if (reverseList[i]) PetscPrintf(PETSC_COMM_WORLD,"%s   path=-%s\n",indent.c_str(),pathNameList[i]->get_value().c_str());
-         else PetscPrintf(PETSC_COMM_WORLD,"%s   path=%s\n",indent.c_str(),pathNameList[i]->get_value().c_str());
-      } else {
-         if (reverseList[i]) PetscPrintf(PETSC_COMM_WORLD,"%s   path-=%s\n",indent.c_str(),pathNameList[i]->get_value().c_str());
-         else PetscPrintf(PETSC_COMM_WORLD,"%s   path+=%s\n",indent.c_str(),pathNameList[i]->get_value().c_str());
-      }
-      i++;
-   }
-
-   PetscPrintf(PETSC_COMM_WORLD,"%s   isUsed=%s\n",indent.c_str(),convertLogic(isUsed).c_str());
-   PetscPrintf(PETSC_COMM_WORLD,"%s   isSolutionLoaded=%s\n",indent.c_str(),convertLogic(isSolutionLoaded).c_str());
-   PetscPrintf(PETSC_COMM_WORLD,"%s   modeNumber2D=%d\n",indent.c_str(),modeNumber2D);
-   i=0;
-   while (i < weightsList.size()) {
-      weightsList[i]->print(indent);
-      i++;
-   }
-   if (is_modal()) PetscPrintf(PETSC_COMM_WORLD,"%sEndMode\n",indent.c_str());
-   if (is_line()) PetscPrintf(PETSC_COMM_WORLD,"%sEndLine\n",indent.c_str());
-
-   return;
-}
-
-void printMatlabComplex(double re, double im)
-{
-   cout << setprecision(16) << scientific;
-   cout << re;
-   if (im >= 0) cout << " + ";
-   else cout << " - ";
-   cout << abs(im);
-   cout << "i";
-   cout << endl;
-}
-
-void Mode::printSolution()
-{
-   PetscMPIInt rank;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-   if (rank == 0) {
-      cout << "Mode S-port=" << get_Sport() << endl;
-      cout << "   alpha=" << alpha << endl;
-      cout << "   beta=" << beta << endl;
-
-      cout << "   E:" << endl;
-      int i=0;
-      while (i < eigenVecReEt->Size()) {
-         printMatlabComplex((*eigenVecReEt)(i),(*eigenVecImEt)(i));
-         i++;
-      }
-
-      i=0;
-      while (i < eigenVecReEz->Size()) {
-         printMatlabComplex((*eigenVecReEz)(i),(*eigenVecImEz)(i));
-         i++;
-      }
-
-      cout << "   H:" << endl;
-      i=0;
-      while (i < eigenVecReHt->Size()) {
-         printMatlabComplex((*eigenVecReHt)(i),(*eigenVecImHt)(i));
-         i++;
-      }
-
-      i=0;
-      while (i < eigenVecReHz->Size()) {
-         printMatlabComplex((*eigenVecReHz)(i),(*eigenVecImHz)(i));
-         i++;
-      }
-
-   }
-}
-
-bool Mode::assignPathIndices(vector<Path *> *pathList)
+bool IntegrationPath::assignPathIndices (vector<Path *> *pathList)
 {
    bool fail=false;
 
@@ -1521,7 +1713,18 @@ bool Mode::assignPathIndices(vector<Path *> *pathList)
    return fail;
 }
 
-bool Mode::is_enclosedByPath (vector<Path *> *pathList, Path *testPath)
+// snap the path to the mesh boundary, where possible
+void IntegrationPath::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh)
+{
+   long unsigned int i=0;
+   while (i < pathIndexList.size()) {
+      Path *path=(*pathList)[pathIndexList[i]];
+      path->snapToMeshBoundary(mesh);
+      i++;
+   }
+}
+
+bool IntegrationPath::is_enclosedByPath (vector<Path *> *pathList, Path *testPath)
 {
    long unsigned int i=0;
    while (i < pathIndexList.size()) {
@@ -1531,7 +1734,69 @@ bool Mode::is_enclosedByPath (vector<Path *> *pathList, Path *testPath)
    return true;
 }
 
-void Mode::output (ofstream *out, vector<Path *> *pathList, Path *rotatedPath, bool spin180degrees)
+// numerically integrate
+void IntegrationPath::calculateLineIntegral (ParMesh *pmesh, ParGridFunction *grid_re, ParGridFunction *grid_im)
+{
+   if (!grid_re || !grid_im) return;
+
+   integratedValue=complex<double>(0,0);
+   long unsigned int i=0;
+   while (i < pointsList.size()) {
+      OPEMIntegrationPointList *points=pointsList[i];
+      points->update(pmesh);
+      points->get_fieldValues(grid_re,grid_im);
+      points->assemble();
+      points->integrate();
+
+      if (points->get_reverse()) integratedValue-=get_scale()*points->get_integratedValue();
+      else                       integratedValue+=get_scale()*points->get_integratedValue();
+
+      i++;
+   }
+
+   if (is_voltage()) integratedValue=-integratedValue;
+}
+
+void IntegrationPath::resetElementNumbers ()
+{
+   long unsigned int i=0;
+   while (i < pointsList.size()) {
+      pointsList[i]->resetElementNumbers();
+      i++;
+   }
+}
+
+void IntegrationPath::print(string indent)
+{
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sIntegrationPath %p\n",indent.c_str(),this);
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   type=%s\n",indent.c_str(),get_type().c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   scale=%g\n",indent.c_str(),get_scale());
+
+   long unsigned int i=0;
+   while (i < pathNameList.size()) {
+      if (i == 0) {
+         if (reverseList[i]) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   path=-%s\n",indent.c_str(),pathNameList[i]->get_value().c_str());}
+         else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   path=%s\n",indent.c_str(),pathNameList[i]->get_value().c_str());}
+      } else {
+         if (reverseList[i]) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   path-=%s\n",indent.c_str(),pathNameList[i]->get_value().c_str());}
+         else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   path+=%s\n",indent.c_str(),pathNameList[i]->get_value().c_str());}
+      }
+      i++;
+   }
+
+   i=0;
+   while (i < pointsList.size()) {
+      pointsList[i]->print();
+      i++;
+   }
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndIntegrationPath\n",indent.c_str());
+
+   return;
+}
+
+void IntegrationPath::output (ofstream *out, vector<Path *> *pathList, Path *rotatedPath, bool spin180degrees, bool isModal, int modeNumber2D)
 {
    Path *path;
 
@@ -1540,18 +1805,19 @@ void Mode::output (ofstream *out, vector<Path *> *pathList, Path *rotatedPath, b
    while (i < pathIndexList.size()) {
       path=(*pathList)[pathIndexList[i]]->clone();
       path->rotateToPath(rotatedPath,spin180degrees);
-      path->output(out,2);  // drop the z component since the path is rotated
+      if (path->output(out,2)) *out << endl;  // drop the z component since the path is rotated
       delete path;
-      *out << endl;
+      (*pathList)[pathIndexList[i]]->set_hasOutput();
       i++;
    }
 
    // mode
-   if (is_modal()) *out << "Mode" << endl;
-   if (is_line()) *out << "Line" << endl;
-   if (is_modal()) *out << "   mode=" << modeNumber2D << endl;
-   if (is_line()) *out << "   line=" << modeNumber2D << endl;
+   if (isModal) *out << "Mode" << endl;
+   else         *out << "Line" << endl;
+   if (isModal) *out << "   mode=" << modeNumber2D << endl;
+   else         *out << "   line=" << modeNumber2D << endl;
    *out << "   type=" << get_type() << endl;
+   *out << "   scale=" << get_scale() << endl;
    i=0;
    while (i < pathNameList.size()) {
       if (i == 0) {
@@ -1563,42 +1829,59 @@ void Mode::output (ofstream *out, vector<Path *> *pathList, Path *rotatedPath, b
       }
       i++;
    }
-   if (is_modal()) *out << "EndMode" << endl;
-   if (is_line()) *out << "EndLine" << endl << endl;
+   if (isModal) *out << "EndMode" << endl;
+   else         *out << "EndLine" << endl << endl;
 }
 
-bool Mode::loadSolution(string *directory, string portName, size_t t_size, size_t z_size)
+IntegrationPath::~IntegrationPath ()
+{
+   long unsigned int i=0;
+   while (i < pathNameList.size()) {
+      if (pathNameList[i]) delete pathNameList[i];
+      i++;
+   }
+
+   i=0;
+   while (i < pointsList.size()) {
+      if (pointsList[i]) delete pointsList[i];
+      i++;
+   }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// FieldSet 
+///////////////////////////////////////////////////////////////////////////////////////////
+
+bool FieldSet::loadSolution(string *directory, string portName, size_t t_size, size_t z_size, int modeNumber2D)
 {
    char filename[128];
    size_t vecSize;
-
-   if (!isUsed) return false;
-
+   
    // cd to the project directory
 
    stringstream projDirectory;
    projDirectory << *directory << "/S" << portName;
-
+   
    try {
       std::filesystem::current_path(projDirectory.str().c_str());
    } catch (std::filesystem::filesystem_error const& ex) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3049: Missing project directory for the 2D solution of Port %s.\n",portName.c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3049: Missing project directory for the 2D solution of Port %s.\n",portName.c_str());
       return true;
    }
-
+   
    // cd to the temp directory
 
    stringstream tempDirectory;
    tempDirectory << "temp_S" << portName;
-
+   
    try {
       std::filesystem::current_path(tempDirectory.str().c_str());
    } catch (std::filesystem::filesystem_error const& ex) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3050: Missing temporary directory for the 2D solution of Port %s.\n",portName.c_str());
-      std::filesystem::current_path("../../");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3050: Missing temporary directory for the 2D solution of Port %s.\n",portName.c_str());
+      std::filesystem::current_path("../../"); 
       return true;
    }
-
+   
    // Efield
 
    sprintf(filename,"Efield_mode_%d.dat",modeNumber2D);
@@ -1609,22 +1892,22 @@ bool Mode::loadSolution(string *directory, string portName, size_t t_size, size_
       if (eVecImE) free(eVecImE);
       bool fail=loadData (&ssEigenVecE,&eVecReE,&eVecImE,&vecSize,filename);
       if (! fail) {
-
+     
          if (vecSize == t_size+z_size) {
-
+     
             // for building 2D grids
-
+     
             // Et
-
+     
             if (eigenVecReEt) delete eigenVecReEt;
             eigenVecReEt=new Vector(eVecReE,t_size);
-
+     
             if (eigenVecImEt) delete eigenVecImEt;
             eigenVecImEt=new Vector (eVecImE,t_size);
             // Ez
-
+     
             if (eigenVecReEz) delete eigenVecReEz;
-            eigenVecReEz=new Vector;
+            eigenVecReEz=new Vector; 
             eigenVecReEz->SetDataAndSize(eVecReE+t_size,z_size);
 
             if (eigenVecImEz) delete eigenVecImEz;
@@ -1632,7 +1915,7 @@ bool Mode::loadSolution(string *directory, string portName, size_t t_size, size_
             eigenVecImEz->SetDataAndSize(eVecImE+t_size,z_size);
 
          } else {
-            PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Mode::loadSolution: Mismatched data sizes.\n");
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: FieldSet::loadSolution: Mismatched data sizes.\n");
             std::filesystem::current_path("../../../");
             fail=true;
          }
@@ -1640,7 +1923,7 @@ bool Mode::loadSolution(string *directory, string portName, size_t t_size, size_
       ssEigenVecE.close();
       if (fail) return true;
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3051: Unable to open file \"%s\" for reading.\n",filename);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3051: Unable to open file \"%s\" for reading.\n",filename);
       std::filesystem::current_path("../../../");
       return true;
    }
@@ -1677,7 +1960,7 @@ bool Mode::loadSolution(string *directory, string portName, size_t t_size, size_
             eigenVecImHz->SetDataAndSize(eVecImH+t_size,z_size);
 
          } else {
-            PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Mode::loadSolution: Mismatched data sizes.\n");
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: FieldSet::loadSolution: Mismatched data sizes.\n");
             std::filesystem::current_path("../../../");
             fail=true;
          }
@@ -1685,7 +1968,7 @@ bool Mode::loadSolution(string *directory, string portName, size_t t_size, size_
       ssEigenVecE.close();
       if (fail) return true;
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3052: Unable to open file \"%s\" for reading.\n",filename);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3052: Unable to open file \"%s\" for reading.\n",filename);
       std::filesystem::current_path("../../../");
       return true;
    }
@@ -1693,18 +1976,14 @@ bool Mode::loadSolution(string *directory, string portName, size_t t_size, size_
    // cd back to the 3D project directory
    std::filesystem::current_path("../../../");
 
-   isSolutionLoaded=true;
-
    return false;
 }
 
 // scale by the largest Et component
-bool Mode::scaleSolution ()
+bool FieldSet::scaleSolution ()
 {
    double mag2,magMax=0;
    double indexMax=0;
-
-   if (!isUsed) return false;
 
    // find the max Et value
    int i=0;
@@ -1747,86 +2026,7 @@ bool Mode::scaleSolution ()
    return false;
 }
 
-// Set the voltage sign so that it aligns with the user's definition.
-// This drives the requirement that all ports must have a voltage line defined
-// even if using the PI definition for impedance.
-void Mode::setSign (double *realV, double *imagV)
-{
-   PetscMPIInt rank;
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-   if (!isUsed) return;
-
-   complex<double> scale=complex<double>(1,0);
-   if (*realV < 0) {
-      scale=-scale;
-      *realV=-*realV;
-      *imagV=-*imagV;
-   }
-
-   // scale Et, Ht
-
-   int i=0;
-   while (i < eigenVecReEt->Size()) {
-      complex<double> E=complex<double>((*eigenVecReEt)(i),(*eigenVecImEt)(i))/scale;
-      (*eigenVecReEt)(i)=real(E);
-      (*eigenVecImEt)(i)=imag(E);
-
-      complex<double> H=complex<double>((*eigenVecReHt)(i),(*eigenVecImHt)(i))/scale;
-      (*eigenVecReHt)(i)=real(H);
-      (*eigenVecImHt)(i)=imag(H);
-
-      i++;
-   }
-
-   // scale Ez, Hz
-   i=0;
-   while (i < eigenVecReEz->Size()) {
-      complex<double> E=complex<double>((*eigenVecReEz)(i),(*eigenVecImEz)(i))/scale;
-      (*eigenVecReEz)(i)=real(E);
-      (*eigenVecImEz)(i)=imag(E);
-
-      complex<double> H=complex<double>((*eigenVecReHz)(i),(*eigenVecImHz)(i))/scale;
-      (*eigenVecReHz)(i)=real(H);
-      (*eigenVecImHz)(i)=imag(H);
-
-      i++;
-   }
-}
-
-void Mode::fillX (Vec *X, Vec *Xdofs, Array<int> *ess_tdof_port_list, HYPRE_BigInt *offset_port)
-{
-   PetscScalar value;
-   HypreParVector *hypreRe=grid3DReEt->GetTrueDofs();
-   HypreParVector *hypreIm=grid3DImEt->GetTrueDofs();
-
-   HYPRE_BigInt *partitioningRe=hypreRe->Partitioning();
-
-   // Assumes partioning is the same for grid3DReEt and grid3DImEt
-
-   int i=0;
-   while (i < ess_tdof_port_list->Size()) {
-      int k=offset_port[0]+(*ess_tdof_port_list)[i];
-
-      if (k >= partitioningRe[0] && k < partitioningRe[1]) {
-         value=hypreRe->Elem(k-partitioningRe[0])+PETSC_i*hypreIm->Elem(k-partitioningRe[0]);
-         VecSetValue(*X,k,value,INSERT_VALUES);
-         VecSetValue(*Xdofs,k,1,INSERT_VALUES);
-      }
-
-      i++;
-   }
-
-   VecAssemblyBegin(*X);
-   VecAssemblyBegin(*Xdofs);
-   VecAssemblyEnd(*X);
-   VecAssemblyEnd(*Xdofs);
-
-   delete hypreRe;
-   delete hypreIm;
-}
-
-void Mode::build2Dgrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
+void FieldSet::build2Dgrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -1935,7 +2135,7 @@ void Mode::build2Dgrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *f
    }
 }
 
-void Mode::build3Dgrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
+void FieldSet::build3Dgrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
 {
    // E
 
@@ -1966,7 +2166,7 @@ void Mode::build3Dgrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *f
    *grid3DImHz=0.0;
 }
 
-void Mode::build2DModalGrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
+void FieldSet::build2DModalGrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
 {
    // E
 
@@ -1997,17 +2197,8 @@ void Mode::build2DModalGrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpa
    *grid2DmodalImHz=0.0;
 }
 
-void Mode::flipModalHsign(bool flip)
-{
-   if (flip) {
-      *grid2DReHt*=-1;
-      *grid2DImHt*=-1;
-      *grid2DReHz*=-1;
-      *grid2DImHz*=-1;
-   }
-}
-
-void Mode::fillIntegrationPoints (vector<Path *> *pathList)
+void FieldSet::fillIntegrationPoints (vector<Path *> *pathList, vector<long unsigned int> *pathIndexList,
+                                      vector<OPEMIntegrationPointList *> *pointsList, vector<bool> *reverseList)
 {
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -2018,9 +2209,9 @@ void Mode::fillIntegrationPoints (vector<Path *> *pathList)
 
    // loop through the paths
    long unsigned int iPath=0;
-   while (iPath < pathIndexList.size()) {
+   while (iPath < pathIndexList->size()) {
 
-      Path *path=(*pathList)[pathIndexList[iPath]];
+      Path *path=(*pathList)[(*pathIndexList)[iPath]];
 
       // loop through the path segments
 
@@ -2056,6 +2247,7 @@ void Mode::fillIntegrationPoints (vector<Path *> *pathList)
 
          // get points along the integration line
          OPEMIntegrationPointList *points=new OPEMIntegrationPointList();
+         points->set_reverse((*reverseList)[iPath]);
          int i=0;
          while (i < pointsCount) {
             OPEMIntegrationPoint *point=new OPEMIntegrationPoint(i,x1+i*(x2-x1)/(pointsCount-1),
@@ -2065,7 +2257,7 @@ void Mode::fillIntegrationPoints (vector<Path *> *pathList)
             i++;
          }
 
-         pointsList.push_back(points);
+         pointsList->push_back(points);
 
          j++;
       }
@@ -2074,26 +2266,883 @@ void Mode::fillIntegrationPoints (vector<Path *> *pathList)
    }
 }
 
-// numerically integrate
-complex<double> Mode::calculateLineIntegral (ParMesh *pmesh, vector<Path *> *pathList, ParGridFunction *grid_re, ParGridFunction *grid_im)
+void FieldSet::transfer_2Dsolution_2Dgrids_to_3Dgrids ()
 {
-   complex<double> integral=complex<double>(0,0);
+   // E
 
-   long unsigned int iPath=0;
-   while (iPath < pathIndexList.size()) {
-      OPEMIntegrationPointList *points=pointsList[iPath];
-      points->update(pmesh);
-      points->get_fieldValues(grid_re,grid_im);
-      points->assemble();
-      points->integrate();
+   ParTransferMap *port_to_full_ReEt=new ParTransferMap(*grid2DReEt,*grid3DReEt);
+   port_to_full_ReEt->Transfer(*grid2DReEt,*grid3DReEt);
+   delete port_to_full_ReEt; port_to_full_ReEt=nullptr;
 
-      if (reverseList[iPath]) integral-=points->get_integratedValue();
-      else                    integral+=points->get_integratedValue();
+   ParTransferMap *port_to_full_ImEt=new ParTransferMap(*grid2DImEt,*grid3DImEt);
+   port_to_full_ImEt->Transfer(*grid2DImEt,*grid3DImEt);
+   delete port_to_full_ImEt; port_to_full_ImEt=nullptr;
 
-      iPath++;
+   ParTransferMap *port_to_full_ReEz=new ParTransferMap(*grid2DReEz,*grid3DReEz);
+   port_to_full_ReEz->Transfer(*grid2DReEz,*grid3DReEz);
+   delete port_to_full_ReEz; port_to_full_ReEz=nullptr;
+
+   ParTransferMap *port_to_full_ImEz=new ParTransferMap(*grid2DImEz,*grid3DImEz);
+   port_to_full_ImEz->Transfer(*grid2DImEz,*grid3DImEz);
+   delete port_to_full_ImEz; port_to_full_ImEz=nullptr;
+
+   // H  
+
+   ParTransferMap *port_to_full_ReHt=new ParTransferMap(*grid2DReHt,*grid3DReHt);
+   port_to_full_ReHt->Transfer(*grid2DReHt,*grid3DReHt);
+   delete port_to_full_ReHt; port_to_full_ReHt=nullptr;
+
+   ParTransferMap *port_to_full_ImHt=new ParTransferMap(*grid2DImHt,*grid3DImHt);
+   port_to_full_ImHt->Transfer(*grid2DImHt,*grid3DImHt);
+   delete port_to_full_ImHt; port_to_full_ImHt=nullptr;
+
+   ParTransferMap *port_to_full_ReHz=new ParTransferMap(*grid2DReHz,*grid3DReHz);
+   port_to_full_ReHz->Transfer(*grid2DReHz,*grid3DReHz);
+   delete port_to_full_ReHz; port_to_full_ReHz=nullptr;
+
+   ParTransferMap *port_to_full_ImHz=new ParTransferMap(*grid2DImHz,*grid3DImHz);
+   port_to_full_ImHz->Transfer(*grid2DImHz,*grid3DImHz);
+   delete port_to_full_ImHz; port_to_full_ImHz=nullptr;
+}
+
+// transfer from 3D back to 2D to capture the orientation operations applied by MFEM
+void FieldSet::transfer_2Dsolution_3Dgrids_to_2Dgrids ()
+{
+   // E
+
+   ParTransferMap *port_to_full_ReEt=new ParTransferMap(*grid3DReEt,*grid2DmodalReEt);
+   port_to_full_ReEt->Transfer(*grid3DReEt,*grid2DmodalReEt);
+   delete port_to_full_ReEt; port_to_full_ReEt=nullptr;
+
+   ParTransferMap *port_to_full_ImEt=new ParTransferMap(*grid3DImEt,*grid2DmodalImEt);
+   port_to_full_ImEt->Transfer(*grid3DImEt,*grid2DmodalImEt);
+   delete port_to_full_ImEt; port_to_full_ImEt=nullptr;
+
+   ParTransferMap *port_to_full_ReEz=new ParTransferMap(*grid3DReEz,*grid2DmodalReEz);
+   port_to_full_ReEz->Transfer(*grid3DReEz,*grid2DmodalReEz);
+   delete port_to_full_ReEz; port_to_full_ReEz=nullptr;
+
+   ParTransferMap *port_to_full_ImEz=new ParTransferMap(*grid3DImEz,*grid2DmodalImEz);
+   port_to_full_ImEz->Transfer(*grid3DImEz,*grid2DmodalImEz);
+   delete port_to_full_ImEz; port_to_full_ImEz=nullptr;
+
+   // H
+
+   ParTransferMap *port_to_full_ReHt=new ParTransferMap(*grid3DReHt,*grid2DmodalReHt);
+   port_to_full_ReHt->Transfer(*grid3DReHt,*grid2DmodalReHt);
+   delete port_to_full_ReHt; port_to_full_ReHt=nullptr;
+
+   ParTransferMap *port_to_full_ImHt=new ParTransferMap(*grid3DImHt,*grid2DmodalImHt);
+   port_to_full_ImHt->Transfer(*grid3DImHt,*grid2DmodalImHt);
+   delete port_to_full_ImHt; port_to_full_ImHt=nullptr;
+
+   ParTransferMap *port_to_full_ReHz=new ParTransferMap(*grid3DReHz,*grid2DmodalReHz);
+   port_to_full_ReHz->Transfer(*grid3DReHz,*grid2DmodalReHz);
+   delete port_to_full_ReHz; port_to_full_ReHz=nullptr;
+
+   ParTransferMap *port_to_full_ImHz=new ParTransferMap(*grid3DImHz,*grid2DmodalImHz);
+   port_to_full_ImHz->Transfer(*grid3DImHz,*grid2DmodalImHz);
+   delete port_to_full_ImHz; port_to_full_ImHz=nullptr;
+}
+
+void FieldSet::save2DParaView(ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension, int Sport)
+{
+   if (!projData->debug_save_port_fields) return;
+
+   stringstream ss;
+   ss << projData->project_name << "_frequency_" << frequency << "_Sport_" << Sport;
+
+   stringstream ssParaView;
+   ssParaView << "ParaView_2D_port_" << projData->project_name;
+   if (add_extension) ssParaView << "_test";
+
+   ParaViewDataCollection *pd=nullptr;
+   pd=new ParaViewDataCollection(ss.str(),psubmesh2D);
+   pd->SetOwnData(false);
+   pd->SetPrefixPath(ssParaView.str());
+   pd->RegisterField("grid2DReEt",grid2DReEt);
+   pd->RegisterField("grid2DReEz",grid2DReEz);
+   pd->RegisterField("grid2DImEt",grid2DImEt);
+   pd->RegisterField("grid2DImEz",grid2DImEz);
+   pd->RegisterField("grid2DReHt",grid2DReHt);
+   pd->RegisterField("grid2DReHz",grid2DReHz);
+   pd->RegisterField("grid2DImHt",grid2DImHt);
+   pd->RegisterField("grid2DImHz",grid2DImHz);
+   pd->SetLevelsOfDetail(3);
+   pd->SetDataFormat(VTKFormat::ASCII);
+   pd->SetHighOrderOutput(true);
+   pd->Save();
+   delete pd;
+}
+
+void FieldSet::save3DParaView(ParMesh *pmesh, struct projectData *projData, double frequency, bool add_extension, int Sport)
+{
+   if (!projData->debug_save_port_fields) return;
+
+   stringstream ss;
+   ss << projData->project_name << "_frequency_" << frequency << "_Sport_" << Sport;
+
+   stringstream ssParaView;
+   ssParaView << "ParaView_3D_port_" << projData->project_name;
+   if (add_extension) ssParaView << "_test";
+
+   ParaViewDataCollection *pd=nullptr;
+   pd=new ParaViewDataCollection(ss.str(),pmesh);
+   pd->SetOwnData(false);
+   pd->SetPrefixPath(ssParaView.str());
+   pd->RegisterField("grid3DReEt",grid3DReEt);
+   pd->RegisterField("grid3DImEt",grid3DImEt);
+   pd->RegisterField("grid3DReEz",grid3DReEz);
+   pd->RegisterField("grid3DImEz",grid3DImEz);
+   pd->RegisterField("grid3DReHt",grid3DReHt);
+   pd->RegisterField("grid3DImHt",grid3DImHt);
+   pd->RegisterField("grid3DReHz",grid3DReHz);
+   pd->RegisterField("grid3DImHz",grid3DImHz);
+   pd->SetLevelsOfDetail(3);
+   pd->SetDataFormat(VTKFormat::ASCII);
+   pd->SetHighOrderOutput(true);
+   pd->Save();
+   delete pd;
+}
+
+void FieldSet::save2DModalParaView (ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension, int Sport)
+{
+   if (!projData->debug_save_port_fields) return;
+
+   stringstream ss;
+   ss << projData->project_name << "_frequency_" << frequency << "_Sport_" << Sport;
+
+   stringstream ssParaView;
+   ssParaView << "ParaView_modal_2D_" << projData->project_name;
+   if (add_extension) ssParaView << "_test";
+
+   ParaViewDataCollection *pd=nullptr;
+   pd=new ParaViewDataCollection(ss.str(),psubmesh2D);
+   pd->SetOwnData(false);
+   pd->SetPrefixPath(ssParaView.str());
+   pd->RegisterField("grid2DmodalReEt",grid2DmodalReEt);
+   pd->RegisterField("grid2DmodalImEt",grid2DmodalImEt);
+   pd->RegisterField("grid2DmodalReEz",grid2DmodalReEz);
+   pd->RegisterField("grid2DmodalImEz",grid2DmodalImEz);
+   pd->RegisterField("grid2DmodalReHt",grid2DmodalReHt);
+   pd->RegisterField("grid2DmodalImHt",grid2DmodalImHt);
+   pd->RegisterField("grid2DmodalReHz",grid2DmodalReHz);
+   pd->RegisterField("grid2DmodalImHz",grid2DmodalImHz);
+   pd->SetLevelsOfDetail(3);
+   pd->SetDataFormat(VTKFormat::ASCII);
+   pd->SetHighOrderOutput(true);
+   pd->Save();
+   delete pd;
+}
+
+void FieldSet::populateGamma (double frequency, GammaDatabase *gammaDatabase, int modeNumber2D, int Sport)
+{
+   Gamma *gamma=new Gamma();
+   gamma->set(Sport,modeNumber2D,alpha,beta,frequency);
+   gammaDatabase->push(gamma);
+}
+
+void flipSign (ParGridFunction *a)
+{
+   HypreParVector *hpv=a->GetTrueDofs();
+   (*hpv)*=-1;
+   a->Distribute(hpv);
+}
+
+void FieldSet::flip2DmodalSign ()
+{
+   flipSign(grid2DReEt);
+   flipSign(grid2DImEt);
+   flipSign(grid2DReEz);
+   flipSign(grid2DImEz);
+   flipSign(grid2DReHt);
+   flipSign(grid2DImHt);
+   flipSign(grid2DReHz);
+   flipSign(grid2DImHz);
+
+   flipSign(grid3DReEt);
+   flipSign(grid3DImEt);
+   flipSign(grid3DReEz);
+   flipSign(grid3DImEz);
+   flipSign(grid3DReHt);
+   flipSign(grid3DImHt);
+   flipSign(grid3DReHz);
+   flipSign(grid3DImHz);
+
+   flipSign(grid2DmodalReEt);
+   flipSign(grid2DmodalImEt);
+   flipSign(grid2DmodalReEz);
+   flipSign(grid2DmodalImEz);
+   flipSign(grid2DmodalReHt);
+   flipSign(grid2DmodalImHt);
+   flipSign(grid2DmodalReHz);
+   flipSign(grid2DmodalImHz);
+
+}
+
+void FieldSet::reset()
+{
+   if (eVecReE) {free(eVecReE); eVecReE=nullptr;}
+   if (eVecImE) {free(eVecImE); eVecImE=nullptr;}
+   if (eVecReH) {free(eVecReH); eVecReH=nullptr;}
+   if (eVecImH) {free(eVecImH); eVecImH=nullptr;}
+
+   if (eigenVecReEt) {delete eigenVecReEt; eigenVecReEt=nullptr;}
+   if (eigenVecImEt) {delete eigenVecImEt; eigenVecImEt=nullptr;}
+   if (eigenVecReEz) {delete eigenVecReEz; eigenVecReEz=nullptr;}
+   if (eigenVecImEz) {delete eigenVecImEz; eigenVecImEz=nullptr;}
+   if (eigenVecReHt) {delete eigenVecReHt; eigenVecReHt=nullptr;}
+   if (eigenVecImHt) {delete eigenVecImHt; eigenVecImHt=nullptr;}
+   if (eigenVecReHz) {delete eigenVecReHz; eigenVecReHz=nullptr;}
+   if (eigenVecImHz) {delete eigenVecImHz; eigenVecImHz=nullptr;}
+
+   if (grid2DReEt) {delete grid2DReEt; grid2DReEt=nullptr;}
+   if (grid2DImEt) {delete grid2DImEt; grid2DImEt=nullptr;}
+   if (grid2DReEz) {delete grid2DReEz; grid2DReEz=nullptr;}
+   if (grid2DImEz) {delete grid2DImEz; grid2DImEz=nullptr;}
+   if (grid2DReHt) {delete grid2DReHt; grid2DReHt=nullptr;}
+   if (grid2DImHt) {delete grid2DImHt; grid2DImHt=nullptr;}
+   if (grid2DReHz) {delete grid2DReHz; grid2DReHz=nullptr;}
+   if (grid2DImHz) {delete grid2DImHz; grid2DImHz=nullptr;}
+
+   if (grid3DReEt) {delete grid3DReEt; grid3DReEt=nullptr;}
+   if (grid3DImEt) {delete grid3DImEt; grid3DImEt=nullptr;}
+   if (grid3DReEz) {delete grid3DReEz; grid3DReEz=nullptr;}
+   if (grid3DImEz) {delete grid3DImEz; grid3DImEz=nullptr;}
+   if (grid3DReHt) {delete grid3DReHt; grid3DReHt=nullptr;}
+   if (grid3DImHt) {delete grid3DImHt; grid3DImHt=nullptr;}
+   if (grid3DReHz) {delete grid3DReHz; grid3DReHz=nullptr;}
+   if (grid3DImHz) {delete grid3DImHz; grid3DImHz=nullptr;}
+
+   if (grid2DmodalReEt) {delete grid2DmodalReEt; grid2DmodalReEt=nullptr;}
+   if (grid2DmodalImEt) {delete grid2DmodalImEt; grid2DmodalImEt=nullptr;}
+   if (grid2DmodalReEz) {delete grid2DmodalReEz; grid2DmodalReEz=nullptr;}
+   if (grid2DmodalImEz) {delete grid2DmodalImEz; grid2DmodalImEz=nullptr;}
+   if (grid2DmodalReHt) {delete grid2DmodalReHt; grid2DmodalReHt=nullptr;}
+   if (grid2DmodalImHt) {delete grid2DmodalImHt; grid2DmodalImHt=nullptr;}
+   if (grid2DmodalReHz) {delete grid2DmodalReHz; grid2DmodalReHz=nullptr;}
+   if (grid2DmodalImHz) {delete grid2DmodalImHz; grid2DmodalImHz=nullptr;}
+}
+
+FieldSet::~FieldSet()
+{
+   if (eVecReE) {free(eVecReE); eVecReE=nullptr;}
+   if (eVecImE) {free(eVecImE); eVecImE=nullptr;}
+   if (eVecReH) {free(eVecReH); eVecReH=nullptr;}
+   if (eVecImH) {free(eVecImH); eVecImH=nullptr;}
+
+   if (eigenVecReEt) {delete eigenVecReEt; eigenVecReEt=nullptr;}
+   if (eigenVecImEt) {delete eigenVecImEt; eigenVecImEt=nullptr;}
+   if (eigenVecReEz) {delete eigenVecReEz; eigenVecReEz=nullptr;}
+   if (eigenVecImEz) {delete eigenVecImEz; eigenVecImEz=nullptr;}
+   if (eigenVecReHt) {delete eigenVecReHt; eigenVecReHt=nullptr;}
+   if (eigenVecImHt) {delete eigenVecImHt; eigenVecImHt=nullptr;}
+   if (eigenVecReHz) {delete eigenVecReHz; eigenVecReHz=nullptr;}
+   if (eigenVecImHz) {delete eigenVecImHz; eigenVecImHz=nullptr;}
+
+   if (grid2DReEt) {delete grid2DReEt; grid2DReEt=nullptr;}
+   if (grid2DImEt) {delete grid2DImEt; grid2DImEt=nullptr;}
+   if (grid2DReEz) {delete grid2DReEz; grid2DReEz=nullptr;}
+   if (grid2DImEz) {delete grid2DImEz; grid2DImEz=nullptr;}
+   if (grid2DReHt) {delete grid2DReHt; grid2DReHt=nullptr;}
+   if (grid2DImHt) {delete grid2DImHt; grid2DImHt=nullptr;}
+   if (grid2DReHz) {delete grid2DReHz; grid2DReHz=nullptr;}
+   if (grid2DImHz) {delete grid2DImHz; grid2DImHz=nullptr;}
+
+   if (grid3DReEt) {delete grid3DReEt; grid3DReEt=nullptr;}
+   if (grid3DImEt) {delete grid3DImEt; grid3DImEt=nullptr;}
+   if (grid3DReEz) {delete grid3DReEz; grid3DReEz=nullptr;}
+   if (grid3DImEz) {delete grid3DImEz; grid3DImEz=nullptr;}
+   if (grid3DReHt) {delete grid3DReHt; grid3DReHt=nullptr;}
+   if (grid3DImHt) {delete grid3DImHt; grid3DImHt=nullptr;}
+   if (grid3DReHz) {delete grid3DReHz; grid3DReHz=nullptr;}
+   if (grid3DImHz) {delete grid3DImHz; grid3DImHz=nullptr;}
+
+   if (grid2DmodalReEt) {delete grid2DmodalReEt; grid2DmodalReEt=nullptr;}
+   if (grid2DmodalImEt) {delete grid2DmodalImEt; grid2DmodalImEt=nullptr;}
+   if (grid2DmodalReEz) {delete grid2DmodalReEz; grid2DmodalReEz=nullptr;}
+   if (grid2DmodalImEz) {delete grid2DmodalImEz; grid2DmodalImEz=nullptr;}
+   if (grid2DmodalReHt) {delete grid2DmodalReHt; grid2DmodalReHt=nullptr;}
+   if (grid2DmodalImHt) {delete grid2DmodalImHt; grid2DmodalImHt=nullptr;}
+   if (grid2DmodalReHz) {delete grid2DmodalReHz; grid2DmodalReHz=nullptr;}
+   if (grid2DmodalImHz) {delete grid2DmodalImHz; grid2DmodalImHz=nullptr;}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Mode
+///////////////////////////////////////////////////////////////////////////////////////////
+
+Mode::Mode(int startLine_, int endLine_, string calculation_)
+{
+   startLine=startLine_;
+   endLine=endLine_;
+
+   // mode
+   Sport.push_alias("Sport");
+   Sport.set_loaded(false);
+   Sport.set_positive_required(true);
+   Sport.set_non_negative_required(false);
+   Sport.set_lowerLimit(1);
+   Sport.set_upperLimit(100);
+   Sport.set_checkLimits(true);
+
+   // net
+   net.push_alias("net");
+   net.set_loaded(false);
+   net.set_positive_required(false);
+   net.set_non_negative_required(false);
+   net.set_lowerLimit(0);
+   net.set_upperLimit(0);
+   net.set_checkLimits(false);
+
+   // defaults
+
+   calculation=calculation_;
+}
+
+bool Mode::inIntegrationPathBlocks (int lineNumber)
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->inIntegrationPathBlock(lineNumber)) return true;
+      i++;
+   }
+   return false;
+}
+
+bool Mode::findIntegrationPathBlocks(inputFile *inputs)
+{
+   bool fail=false;
+   int start_lineNumber=startLine;
+   int stop_lineNumber=endLine;
+   int block_start,block_stop;
+
+   while (start_lineNumber < stop_lineNumber) {
+      if (inputs->findBlock(start_lineNumber,stop_lineNumber, &block_start, &block_stop,
+                                "IntegrationPath", "EndIntegrationPath", false)) {
+         fail=true;
+      } else {
+         if (block_start >= 0 && block_stop >= 0) {
+            IntegrationPath *newIntegrationPath=new IntegrationPath(block_start,block_stop);
+            integrationPathList.push_back(newIntegrationPath);
+         }
+      }
+      start_lineNumber=inputs->get_next_lineNumber(block_stop);
+   }
+   return fail;
+}
+
+bool Mode::load(string *indent, inputFile *inputs)
+{
+   bool fail=false;
+
+   // blocks
+
+   if (findIntegrationPathBlocks(inputs)) fail=true;
+
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->load(indent, inputs)) fail=true;
+      i++;
    }
 
-   return integral;
+   // keywords
+
+   int lineNumber=inputs->get_next_lineNumber(startLine);
+   int stopLineNumber=inputs->get_previous_lineNumber(endLine);
+   while (lineNumber <= stopLineNumber) {
+
+      if (!inIntegrationPathBlocks(lineNumber)) {
+
+         string token,value,line;
+         line=inputs->get_line(lineNumber);
+         get_token_pair(&line,&token,&value,&lineNumber,*indent);
+
+         int recognized=0;
+
+         if (Sport.match_alias(&token)) {
+            recognized++;
+            if (Sport.loadInt(&token, &value, lineNumber)) fail=true;
+         }
+
+         if (net.match_alias(&token)) {
+            if (net.is_loaded()) {
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3006: Duplicate entry at line %d for previous entry at line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber,net.get_lineNumber());
+               fail=true;
+            } else {
+               net.set_keyword(token);
+               net.set_value(value);
+               net.set_lineNumber(lineNumber);
+               net.set_loaded(true);
+            }
+            recognized++;
+         }
+
+         // should recognize one keyword
+         if (recognized != 1) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3174: Unrecognized keyword at line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber);
+            fail=true;
+         }
+      }
+      lineNumber=inputs->get_next_lineNumber(lineNumber);
+   }
+
+   return fail;
+}
+
+bool Mode::inModeBlock (int lineNumber)
+{
+   if (lineNumber >= startLine && lineNumber <= endLine) return true;
+   return false;
+}
+
+bool Mode::check (string *indent, vector<Path *> *pathList, bool is_modal, long unsigned int modeCount)
+{
+   bool fail=false;
+
+   // Sport
+   if (!Sport.is_loaded()) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3037: Mode block at line %d must specify an Sport number.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
+      fail=true;
+   }
+
+   // net is optional
+
+   // integration paths
+
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->check(indent,pathList)) fail=true;
+      i++;
+   }
+
+   if (fail) return fail;
+
+   bool foundVoltage=false;
+   bool foundCurrent=false;
+   i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->is_voltage()) {
+         if (foundVoltage) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3152: IntegrationPath block at line %d incorrectly specifies an additional voltage path.\n",
+                                                   indent->c_str(),indent->c_str(),integrationPathList[i]->get_startLine());
+            fail=true;
+         } else  foundVoltage=true;
+      }
+      if (integrationPathList[i]->is_current()) {
+         if (foundCurrent) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3142: IntegrationPath block at line %d incorrectly specifies an additional current path.\n",
+                                                   indent->c_str(),indent->c_str(),integrationPathList[i]->get_startLine());
+            fail=true;
+         } else  foundCurrent=true;
+      } 
+      i++;
+   }
+
+   // line calculation requires voltage and current if there is more than one mode
+   // The line calculation applies an algorithm using both to extract the voltages and currents for the impedance.
+   // For mode calculations, it is assumed that the user has the correct setup, so both are not needed.
+   if (is_modal) {
+      if (!foundVoltage && !foundCurrent) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3138: Mode block at line %d must specify a voltage or current integration path.\n",
+                                                indent->c_str(),indent->c_str(),startLine);
+         fail=true;
+      }
+   } else {
+      if (modeCount > 1 && !(foundVoltage && foundCurrent)) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3130: Mode block at line %d must specify both voltage and current integration paths.\n",
+                                                indent->c_str(),indent->c_str(),startLine);
+         fail=true;
+      }
+   }
+
+   return fail;
+}
+
+bool Mode::checkBoundingBox (Vector *lowerLeft, Vector *upperRight, string *indent, double tol, vector<Path *> *pathList)
+{
+   bool fail=false;
+
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->checkBoundingBox(lowerLeft,upperRight,indent,tol,pathList)) fail=true;
+      i++;
+   }
+
+   return fail;
+}
+
+bool Mode::has_voltage ()
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->get_type().compare("voltage") == 0) return true;
+      i++;
+   }
+
+   return false;
+}
+
+bool Mode::has_current ()
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->get_type().compare("current") == 0) return true;
+      i++;
+   }
+
+   return false;
+}
+
+bool Mode::align_current_paths (string *indent, vector<Path *> *pathList, bool check_closed_loop)
+{
+   bool fail=false;
+
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->is_current()) {
+         double path_area=0;
+         fail=integrationPathList[i]->align(indent,pathList,&path_area,check_closed_loop);
+
+         // should not occur
+         if (path_area < -1e-14) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3103: Mode block at line %d has a path defined in the clockwise direction.\n",
+                                                   indent->c_str(),indent->c_str(),startLine);
+            fail=true;
+         }
+      }
+
+      i++;
+   }
+
+   return fail;
+}
+
+void Mode::print(string indent)
+{
+   if (is_modal()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sMode %p\n",indent.c_str(),this);}
+   if (is_line()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sLine %p\n",indent.c_str(),this);}
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   Sport=%d\n",indent.c_str(),get_Sport());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   net=%s\n",indent.c_str(),get_net().c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   calculation=%s\n",indent.c_str(),calculation.c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   modeNumber2D=%d\n",indent.c_str(),modeNumber2D);
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   weight: ",indent.c_str());
+   long unsigned int i=0;
+   while (i < weight.size()) {
+      PetscPrintf(PETSC_COMM_WORLD,"(%g,%g),",real(weight[i]),imag(weight[i]));
+      i++;
+   }
+   PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   Cp: ",indent.c_str());
+   i=0;
+   while (i < Cp.size()) {
+      PetscPrintf(PETSC_COMM_WORLD,"(%g,%g),",real(Cp[i]),imag(Cp[i]));
+      i++;
+   }
+   PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   Cm: ",indent.c_str());
+   i=0;
+   while (i < Cm.size()) {
+      PetscPrintf(PETSC_COMM_WORLD,"(%g,%g),",real(Cm[i]),imag(Cm[i]));
+      i++;
+   }
+   PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+   if (is_modal()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndMode\n",indent.c_str());}
+   if (is_line()) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndLine\n",indent.c_str());}
+
+   return;
+}
+
+void printMatlabComplex(double re, double im)
+{
+   cout << setprecision(16) << scientific;
+   cout << re;
+   if (im >= 0) cout << " + ";
+   else cout << " - ";
+   cout << abs(im);
+   cout << "i";
+   cout << endl;
+}
+
+bool Mode::assignPathIndices(vector<Path *> *pathList)
+{
+   bool fail=false;
+
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->assignPathIndices(pathList)) {fail=true; break;}
+      i++;
+   }
+
+   return fail;
+}
+
+bool Mode::is_enclosedByPath (vector<Path *> *pathList, Path *testPath, long unsigned int *index)
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      *index=i;
+      if (!integrationPathList[i]->is_enclosedByPath(pathList,testPath)) return false;
+      i++;
+   }
+   return true;
+}
+
+void Mode::output (ofstream *out, vector<Path *> *pathList, Path *rotatedPath, bool spin180degrees)
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      integrationPathList[i]->output(out,pathList,rotatedPath,spin180degrees,is_modal(),modeNumber2D);
+      i++;
+   }
+}
+
+bool Mode::loadSolution (string *directory, string portName, size_t t_size, size_t z_size)
+{
+   return fields.loadSolution(directory,portName,t_size,z_size,modeNumber2D);
+}
+
+bool Mode::scaleSolution ()
+{
+   return fields.scaleSolution();
+}
+
+// X and Xdofs are partitioned on A
+// grid3DReEt and grid3DImEt are partitioned on fespace_ND
+// ess_tdof_port_list is partitioned on fespace_ND
+void Mode::fillX (Vec *X, Vec *Xdofs, Array<int> *ess_tdof_port_list, HYPRE_BigInt *offset_port, int drivingSet)
+{
+   PetscMPIInt rank,size;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+
+   // check for inclusion
+   if (weight[drivingSet-1] == 0) return;
+
+   // local tdof data
+   HypreParVector *hypreRe=fields.get_grid3DReEt()->GetTrueDofs();
+   HypreParVector *hypreIm=fields.get_grid3DImEt()->GetTrueDofs();
+
+   // global tdof data
+   Vector *data_re=hypreRe->GlobalVector();
+   Vector *data_im=hypreIm->GlobalVector();
+
+   // ess_tdof global data
+   int local_size=ess_tdof_port_list->Size();
+   int global_size=data_re->Size();
+   vector<int> global_ess(global_size);
+   global_ess.assign(global_size,0);
+
+   // collect ess marker data at zero
+   if (rank == 0) {
+
+      // local
+      int i=0;
+      while (i < local_size) {
+         global_ess[offset_port[0]+(*ess_tdof_port_list)[i]]=1;
+         i++;
+      }
+
+      // collected
+      i=1;
+      while (i < size) {
+         int transfer_size=0;
+         MPI_Recv(&transfer_size,1,MPI_INT,i,10000,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+
+         int k=0;
+         while (k < transfer_size) {
+            int location=0;
+            MPI_Recv(&location,1,MPI_INT,i,10001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+            global_ess[location]=1;
+            k++;
+         }
+         i++;
+      }
+   } else {
+      MPI_Send(&local_size,1,MPI_INT,0,10000,PETSC_COMM_WORLD);
+
+      int i=0;
+      while (i < local_size) {
+         int location=offset_port[0]+(*ess_tdof_port_list)[i];
+         MPI_Send(&location,1,MPI_INT,0,10001,PETSC_COMM_WORLD);
+         i++;
+      }
+   }
+
+   // send global to all ranks
+
+   if (rank == 0) {
+      int i=1;
+      while (i < size) {
+         int k=0;
+         while (k < global_size) {
+            int transfer=global_ess[k];
+            MPI_Send(&transfer,1,MPI_INT,i,20001,PETSC_COMM_WORLD);
+            k++;
+         }
+         i++;
+      }
+   } else {
+      int k=0;
+      while (k < global_size) {
+         int transfer=0;
+         MPI_Recv(&transfer,1,MPI_INT,0,20001,PETSC_COMM_WORLD,MPI_STATUS_IGNORE);
+         global_ess[k]=transfer;
+         k++;
+      }
+   }
+
+   // transfer to X
+   PetscScalar scale=weight[drivingSet-1];
+   PetscScalar value;
+   PetscInt low,high;
+   VecGetOwnershipRange(*X,&low,&high);
+   int i=0;
+   while (i < global_size) {
+      if (global_ess[i] == 1 && i >= low && i < high) {
+         value=(*data_re)[i]*scale+PETSC_i*(*data_im)[i]*scale;
+         VecSetValue(*X,i,value,ADD_VALUES);
+         VecSetValue(*Xdofs,i,1,ADD_VALUES);
+      }
+      i++;
+   }
+
+   VecAssemblyBegin(*X);
+   VecAssemblyBegin(*Xdofs);
+   VecAssemblyEnd(*X);
+   VecAssemblyEnd(*Xdofs);
+
+   delete hypreRe;
+   delete hypreIm;
+   delete data_re;
+   delete data_im;
+}
+
+void Mode::build2Dgrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
+{
+   fields.build2Dgrids(fes_ND,fes_H1);
+}
+
+void Mode::build3Dgrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
+{
+   fields.build3Dgrids(fes_ND,fes_H1);
+}
+
+void Mode::build2DModalGrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
+{
+   fields.build2DModalGrids(fes_ND,fes_H1);
+}
+
+void Mode::fillIntegrationPoints (vector<Path *> *pathList)
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      fields.fillIntegrationPoints(pathList,integrationPathList[i]->get_pathIndexList(),integrationPathList[i]->get_pointsList(),
+                                            integrationPathList[i]->get_reverseList());
+      i++;
+   }
+}
+
+IntegrationPath* Mode::get_voltageIntegrationPath ()
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->is_voltage()) return integrationPathList[i];
+      i++;
+   }
+   return nullptr;
+}
+
+IntegrationPath* Mode::get_currentIntegrationPath ()
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->is_current()) return integrationPathList[i];
+      i++;
+   }
+   return nullptr;
+}
+
+// integrate using the paths attached to the Mode
+void Mode::calculateLineIntegrals (ParMesh *pmesh, fem3D *fem)
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->is_voltage()) {
+         integrationPathList[i]->calculateLineIntegral(pmesh,fields.get_grid3DReEt(),fields.get_grid3DImEt());
+      }
+
+      if (integrationPathList[i]->is_current()) {
+         integrationPathList[i]->calculateLineIntegral(pmesh,fields.get_grid3DReHt(),fields.get_grid3DImHt());
+      }
+
+      i++;
+   }
+}
+
+// integrate using a given path
+void Mode::calculateLineIntegrals (ParMesh *pmesh, fem3D *fem, IntegrationPath *Vpath, IntegrationPath *Ipath)
+{
+   if (Vpath) Vpath->calculateLineIntegral(pmesh,fields.get_grid3DReEt(),fields.get_grid3DImEt());
+   if (Ipath) Ipath->calculateLineIntegral(pmesh,fields.get_grid3DReHt(),fields.get_grid3DImHt());
+}
+
+// align the directions of the voltages or currents
+void Mode::alignDirections (ParMesh *pmesh, fem3D *fem, IntegrationPath *Vpath, IntegrationPath *Ipath)
+{
+   // use the supplied Vpath and Ipath
+
+   calculateLineIntegrals (pmesh,fem,Vpath,Ipath);
+
+   // favor voltage over current
+
+   if (Vpath) {
+      if (abs(arg(Vpath->get_integratedValue())) > M_PI/2) {
+         flip2DmodalSign();
+      }
+      return;
+   }
+
+   if (Ipath) {
+      if (abs(arg(Ipath->get_integratedValue())) > M_PI/2) {
+         flip2DmodalSign();
+      }
+      return;
+   }
+
+   // use the paths defined for the mode
+
+   bool hasVoltage=false;
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->is_voltage()) hasVoltage=true;
+      i++;
+   }
+
+   i=0;
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]->is_voltage()) {
+         if (abs(arg(integrationPathList[i]->get_integratedValue())) > M_PI/2) {
+            flip2DmodalSign();
+            return;
+         }
+      }
+
+      if (!hasVoltage && integrationPathList[i]->is_current()) {
+         if (abs(arg(integrationPathList[i]->get_integratedValue())) > M_PI/2) {
+            flip2DmodalSign();
+         }
+      }
+      i++;
+   }
 }
 
 // use n x tangential field
@@ -2158,12 +3207,12 @@ complex<double> normalProduct(Coefficient *ReA, Coefficient *ImA,
    return normalProduct (ReA,ImA,&ReBn,&ImBn,grid_fes2D_L2,lf);
 }
 
-void Mode::calculateWeights (ParFiniteElementSpace *fes2D_L2,
-                             ParGridFunction *grid2DsolutionReEt, ParGridFunction *grid2DsolutionImEt,
-                             ParGridFunction *grid2DsolutionReEz, ParGridFunction *grid2DsolutionImEz,
-                             ParGridFunction *grid2DsolutionReHt, ParGridFunction *grid2DsolutionImHt,
-                             ParGridFunction *grid2DsolutionReHz, ParGridFunction *grid2DsolutionImHz,
-                             Vector normal, int Sport, complex<double> voltage2D, complex<double> Zo2D, complex<double> voltage3D)
+void Mode::calculateSplits (ParFiniteElementSpace *fes2D_L2,
+                            ParGridFunction *grid2DsolutionReEt, ParGridFunction *grid2DsolutionImEt,
+                            ParGridFunction *grid2DsolutionReEz, ParGridFunction *grid2DsolutionImEz,
+                            ParGridFunction *grid2DsolutionReHt, ParGridFunction *grid2DsolutionImHt,
+                            ParGridFunction *grid2DsolutionReHz, ParGridFunction *grid2DsolutionImHz,
+                            Vector normal)
 {
    VectorConstantCoefficient vccNormal(normal);
 
@@ -2176,443 +3225,235 @@ void Mode::calculateWeights (ParFiniteElementSpace *fes2D_L2,
 
    // mode
 
-   VectorGridFunctionCoefficient ReEmt(grid2DmodalReEt);
-   VectorGridFunctionCoefficient ImEmt(grid2DmodalImEt);
-   GridFunctionCoefficient ReEmz(grid2DmodalReEz);
-   GridFunctionCoefficient ImEmz(grid2DmodalImEz);
+   VectorGridFunctionCoefficient ReEmt(fields.get_grid2DmodalReEt());
+   VectorGridFunctionCoefficient ImEmt(fields.get_grid2DmodalImEt());
 
-   VectorGridFunctionCoefficient ReHmt(grid2DmodalReHt);
-   VectorGridFunctionCoefficient ImHmt(grid2DmodalImHt);
-   GridFunctionCoefficient ReHmz(grid2DmodalReHz);
-   GridFunctionCoefficient ImHmz(grid2DmodalImHz);
+   VectorGridFunctionCoefficient ReHmt(fields.get_grid2DmodalReHt());
+   VectorGridFunctionCoefficient ImHmt(fields.get_grid2DmodalImHt());
 
-   // solution 
+   // solution
 
    VectorGridFunctionCoefficient ReEst(grid2DsolutionReEt);
    VectorGridFunctionCoefficient ImEst(grid2DsolutionImEt);
 
-   GridFunctionCoefficient ReEsz(grid2DsolutionReEz);
-   GridFunctionCoefficient ImEsz(grid2DsolutionImEz);
-
    VectorGridFunctionCoefficient ReHst(grid2DsolutionReHt);
    VectorGridFunctionCoefficient ImHst(grid2DsolutionImHt);
 
-   GridFunctionCoefficient ReHsz(grid2DsolutionReHz);
-   GridFunctionCoefficient ImHsz(grid2DsolutionImHz);
-
-   // weight calculations
+   // splits
 
    complex<double> e0=tangentialInnerProduct(&ReEmt,&ImEmt,&ReEst,&ImEst,fes2D_L2_grid,&lf,&vccNormal);
-   complex<double> e1=normalProduct(&ReEmz,&ImEmz,&ReEsz,&ImEsz,fes2D_L2_grid,&lf);
    complex<double> e2=tangentialInnerProduct(&ReEmt,&ImEmt,&ReEmt,&ImEmt,fes2D_L2_grid,&lf,&vccNormal);
-   complex<double> e3=normalProduct(&ReEmz,&ImEmz,&ReEmz,&ImEmz,fes2D_L2_grid,&lf);
 
    complex<double> h0=tangentialInnerProduct(&ReHmt,&ImHmt,&ReHst,&ImHst,fes2D_L2_grid,&lf,&vccNormal);
-   complex<double> h1=normalProduct(&ReHmz,&ImHmz,&ReHsz,&ImHsz,fes2D_L2_grid,&lf);
    complex<double> h2=tangentialInnerProduct(&ReHmt,&ImHmt,&ReHmt,&ImHmt,fes2D_L2_grid,&lf,&vccNormal);
-   complex<double> h3=normalProduct(&ReHmz,&ImHmz,&ReHmz,&ImHmz,fes2D_L2_grid,&lf);
 
-   Weights *weights=new Weights (Sport,e0,e1,e2,e3,h0,h1,h2,h3,voltage2D,Zo2D,voltage3D);
-   weightsList.push_back(weights);
+   Cp.push_back(0.5*(e0/e2+h0/h2));
+   Cm.push_back(0.5*(e0/e2-h0/h2)); 
 }
 
-void Mode::clearWeights ()
+void Mode::transfer_2Dsolution_2Dgrids_to_3Dgrids ()
 {
-   long unsigned int i=0;
-   while (i < weightsList.size()) {
-      if (weightsList[i]) delete weightsList[i];
-      i++;
-   }
-   weightsList.clear();
-}
-
-complex<double> Mode::calculateSparameter (Mode *drivingMode)
-{
-   if (this == drivingMode) {
-      long unsigned int i=0;
-      while (i < weightsList.size()) {
-         if (weightsList[i]->isPortMatch(get_Sport())) return weightsList[i]->calculateSii();
-         i++;
-      }
-   } else {
-
-      Weights *from=nullptr;
-      Weights *to=nullptr;
-
-      long unsigned int i=0;
-      while (i < weightsList.size()) {
-         if (weightsList[i]->isPortMatch(drivingMode->get_Sport())) {
-            to=weightsList[i];
-            break;
-         }
-         i++;
-      }
-
-      i=0;
-      while (i < drivingMode->weightsList.size()) {
-         if (drivingMode->weightsList[i]->isPortMatch(drivingMode->get_Sport())) {
-            from=drivingMode->weightsList[i];
-            break;
-         }
-         i++;
-      }
-
-      if (from && to) return to->calculateSij(from);
-   }
-
-   return complex<double> (DBL_MAX,DBL_MAX);
-}
-
-double Mode::get_maxReflection ()
-{
-   double reflection;
-   double maxReflection=-DBL_MAX;
-
-   long unsigned int i=0;
-   while (i < weightsList.size()) {
-      if (get_Sport() != weightsList[i]->get_drivenSport()) {
-         reflection=20*log10(abs(1/weightsList[i]->calculateSii()));
-         if (reflection > maxReflection) maxReflection=reflection;
-      }
-      i++;
-   }
-
-   return maxReflection;
-}
-
-double Mode::get_maxReflection (int drivingSport)
-{
-   double reflection;
-   double maxReflection=-DBL_MAX;
-
-   if (get_Sport() == drivingSport) {
-      long unsigned int i=0;
-      while (i < weightsList.size()) {
-         if (get_Sport() != weightsList[i]->get_drivenSport()) {
-            reflection=20*log10(abs(1/weightsList[i]->calculateSii()));
-            if (reflection > maxReflection) maxReflection=reflection;
-         }
-         i++;
-      }
-   }
-
-   return maxReflection;
-}
-
-void Mode::printPortReflections ()
-{
-   double reflection;
-   PetscMPIInt rank;
-
-   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-   if (rank == 0) {
-      if (weightsList.size() > 1) cout << "|      S-port " << get_Sport() << ":" << endl;
-      long unsigned int i=0;
-      while (i < weightsList.size()) {
-         if (get_Sport() != weightsList[i]->get_drivenSport()) {
-            reflection=20*log10(abs(1/weightsList[i]->calculateSii()));
-            cout << "|         S-port " << weightsList[i]->get_drivenSport() << " reflection=" << reflection << " dB" << endl;
-         }
-         i++;
-      }
-   }
-}
-
-void Mode::transfer_2Dsolution_2Dgrids_to_3Dgrids()
-{
-   // E    
-
-   ParTransferMap *port_to_full_ReEt=new ParTransferMap(*grid2DReEt,*grid3DReEt);
-   port_to_full_ReEt->Transfer(*grid2DReEt,*grid3DReEt);
-   delete port_to_full_ReEt; port_to_full_ReEt=nullptr;
-
-   ParTransferMap *port_to_full_ImEt=new ParTransferMap(*grid2DImEt,*grid3DImEt);
-   port_to_full_ImEt->Transfer(*grid2DImEt,*grid3DImEt);
-   delete port_to_full_ImEt; port_to_full_ImEt=nullptr;
-
-   ParTransferMap *port_to_full_ReEz=new ParTransferMap(*grid2DReEz,*grid3DReEz);
-   port_to_full_ReEz->Transfer(*grid2DReEz,*grid3DReEz);
-   delete port_to_full_ReEz; port_to_full_ReEz=nullptr;
-
-   ParTransferMap *port_to_full_ImEz=new ParTransferMap(*grid2DImEz,*grid3DImEz);
-   port_to_full_ImEz->Transfer(*grid2DImEz,*grid3DImEz);
-   delete port_to_full_ImEz; port_to_full_ImEz=nullptr;
-
-   // H    
-
-   ParTransferMap *port_to_full_ReHt=new ParTransferMap(*grid2DReHt,*grid3DReHt);
-   port_to_full_ReHt->Transfer(*grid2DReHt,*grid3DReHt);
-   delete port_to_full_ReHt; port_to_full_ReHt=nullptr;
-
-   ParTransferMap *port_to_full_ImHt=new ParTransferMap(*grid2DImHt,*grid3DImHt);
-   port_to_full_ImHt->Transfer(*grid2DImHt,*grid3DImHt);
-   delete port_to_full_ImHt; port_to_full_ImHt=nullptr;
-
-   ParTransferMap *port_to_full_ReHz=new ParTransferMap(*grid2DReHz,*grid3DReHz);
-   port_to_full_ReHz->Transfer(*grid2DReHz,*grid3DReHz);
-   delete port_to_full_ReHz; port_to_full_ReHz=nullptr;
-
-   ParTransferMap *port_to_full_ImHz=new ParTransferMap(*grid2DImHz,*grid3DImHz);
-   port_to_full_ImHz->Transfer(*grid2DImHz,*grid3DImHz);
-   delete port_to_full_ImHz; port_to_full_ImHz=nullptr;
+   fields.transfer_2Dsolution_2Dgrids_to_3Dgrids();
 }
 
 // transfer from 3D back to 2D to capture the orientation operations applied by MFEM
-void Mode::transfer_2Dsolution_3Dgrids_to_2Dgrids()
+void Mode::transfer_2Dsolution_3Dgrids_to_2Dgrids ()
 {
-   // E
-
-   ParTransferMap *port_to_full_ReEt=new ParTransferMap(*grid3DReEt,*grid2DmodalReEt);
-   port_to_full_ReEt->Transfer(*grid3DReEt,*grid2DmodalReEt);
-   delete port_to_full_ReEt; port_to_full_ReEt=nullptr;
-
-   ParTransferMap *port_to_full_ImEt=new ParTransferMap(*grid3DImEt,*grid2DmodalImEt);
-   port_to_full_ImEt->Transfer(*grid3DImEt,*grid2DmodalImEt);
-   delete port_to_full_ImEt; port_to_full_ImEt=nullptr;
-
-   ParTransferMap *port_to_full_ReEz=new ParTransferMap(*grid3DReEz,*grid2DmodalReEz);
-   port_to_full_ReEz->Transfer(*grid3DReEz,*grid2DmodalReEz);
-   delete port_to_full_ReEz; port_to_full_ReEz=nullptr;
-
-   ParTransferMap *port_to_full_ImEz=new ParTransferMap(*grid3DImEz,*grid2DmodalImEz);
-   port_to_full_ImEz->Transfer(*grid3DImEz,*grid2DmodalImEz);
-   delete port_to_full_ImEz; port_to_full_ImEz=nullptr;
-
-   // H
-
-   ParTransferMap *port_to_full_ReHt=new ParTransferMap(*grid3DReHt,*grid2DmodalReHt);
-   port_to_full_ReHt->Transfer(*grid3DReHt,*grid2DmodalReHt);
-   delete port_to_full_ReHt; port_to_full_ReHt=nullptr;
-
-   ParTransferMap *port_to_full_ImHt=new ParTransferMap(*grid3DImHt,*grid2DmodalImHt);
-   port_to_full_ImHt->Transfer(*grid3DImHt,*grid2DmodalImHt);
-   delete port_to_full_ImHt; port_to_full_ImHt=nullptr;
-
-   ParTransferMap *port_to_full_ReHz=new ParTransferMap(*grid3DReHz,*grid2DmodalReHz);
-   port_to_full_ReHz->Transfer(*grid3DReHz,*grid2DmodalReHz);
-   delete port_to_full_ReHz; port_to_full_ReHz=nullptr;
-
-   ParTransferMap *port_to_full_ImHz=new ParTransferMap(*grid3DImHz,*grid2DmodalImHz);
-   port_to_full_ImHz->Transfer(*grid3DImHz,*grid2DmodalImHz);
-   delete port_to_full_ImHz; port_to_full_ImHz=nullptr;
+   fields.transfer_2Dsolution_3Dgrids_to_2Dgrids();
 }
 
-void Mode::save2DParaView(ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension)
+void Mode::save2DParaView (ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension)
 {
-   if (!projData->debug_save_port_fields) return;
-
-   stringstream ss;
-   ss << projData->project_name << "_frequency_" << frequency << "_Sport_" << get_Sport();
-
-   stringstream ssParaView;
-   ssParaView << "ParaView_2D_port_" << projData->project_name;
-   if (add_extension) ssParaView << "_test";
-
-   ParaViewDataCollection *pd=nullptr;
-   pd=new ParaViewDataCollection(ss.str(),psubmesh2D);
-   pd->SetOwnData(false);
-   pd->SetPrefixPath(ssParaView.str());
-   pd->RegisterField("grid2DReEt",grid2DReEt);
-   pd->RegisterField("grid2DReEz",grid2DReEz);
-   pd->RegisterField("grid2DImEt",grid2DImEt);
-   pd->RegisterField("grid2DImEz",grid2DImEz);
-   pd->RegisterField("grid2DReHt",grid2DReHt);
-   pd->RegisterField("grid2DReHz",grid2DReHz);
-   pd->RegisterField("grid2DImHt",grid2DImHt);
-   pd->RegisterField("grid2DImHz",grid2DImHz);
-   pd->SetLevelsOfDetail(3);
-   pd->SetDataFormat(VTKFormat::ASCII);
-   pd->SetHighOrderOutput(true);
-   pd->Save();
-   delete pd;
+   fields.save2DParaView(psubmesh2D,projData,frequency,add_extension,get_Sport());
 }
 
-void Mode::save3DParaView(ParMesh *pmesh, struct projectData *projData, double frequency, bool add_extension)
+void Mode::save3DParaView (ParMesh *pmesh, struct projectData *projData, double frequency, bool add_extension)
 {
-   if (!projData->debug_save_port_fields) return;
-
-   stringstream ss;
-   ss << projData->project_name << "_frequency_" << frequency << "_Sport_" << get_Sport();
-
-   stringstream ssParaView;
-   ssParaView << "ParaView_3D_port_" << projData->project_name;
-   if (add_extension) ssParaView << "_test";
-
-   ParaViewDataCollection *pd=nullptr;
-   pd=new ParaViewDataCollection(ss.str(),pmesh);
-   pd->SetOwnData(false);
-   pd->SetPrefixPath(ssParaView.str());
-   pd->RegisterField("grid3DReEt",grid3DReEt);
-   pd->RegisterField("grid3DImEt",grid3DImEt);
-   pd->RegisterField("grid3DReEz",grid3DReEz);
-   pd->RegisterField("grid3DImEz",grid3DImEz);
-   pd->RegisterField("grid3DReHt",grid3DReHt);
-   pd->RegisterField("grid3DImHt",grid3DImHt);
-   pd->RegisterField("grid3DReHz",grid3DReHz);
-   pd->RegisterField("grid3DImHz",grid3DImHz);
-   pd->SetLevelsOfDetail(3);
-   pd->SetDataFormat(VTKFormat::ASCII);
-   pd->SetHighOrderOutput(true);
-   pd->Save();
-   delete pd;
+   fields.save3DParaView(pmesh,projData,frequency,add_extension,get_Sport());
 }
 
-void Mode::save2DModalParaView(ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension)
+void Mode::save2DModalParaView (ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension)
 {
-   if (!projData->debug_save_port_fields) return;
-
-   stringstream ss;
-   ss << projData->project_name << "_frequency_" << frequency << "_Sport_" << get_Sport();
-
-   stringstream ssParaView;
-   ssParaView << "ParaView_modal_2D_" << projData->project_name;
-   if (add_extension) ssParaView << "_test";
-
-   ParaViewDataCollection *pd=nullptr;
-   pd=new ParaViewDataCollection(ss.str(),psubmesh2D);
-   pd->SetOwnData(false);
-   pd->SetPrefixPath(ssParaView.str());
-   pd->RegisterField("grid2DmodalReEt",grid2DmodalReEt);
-   pd->RegisterField("grid2DmodalImEt",grid2DmodalImEt);
-   pd->RegisterField("grid2DmodalReEz",grid2DmodalReEz);
-   pd->RegisterField("grid2DmodalImEz",grid2DmodalImEz);
-   pd->RegisterField("grid2DmodalReHt",grid2DmodalReHt);
-   pd->RegisterField("grid2DmodalImHt",grid2DmodalImHt);
-   pd->RegisterField("grid2DmodalReHz",grid2DmodalReHz);
-   pd->RegisterField("grid2DmodalImHz",grid2DmodalImHz);
-   pd->SetLevelsOfDetail(3);
-   pd->SetDataFormat(VTKFormat::ASCII);
-   pd->SetHighOrderOutput(true);
-   pd->Save();
-   delete pd;
+   fields.save2DModalParaView(psubmesh2D,projData,frequency,add_extension,get_Sport());
 }
 
 void Mode::resetElementNumbers ()
 {
    long unsigned int i=0;
-   while (i < pointsList.size()) {
-      pointsList[i]->resetElementNumbers();
+   while (i < integrationPathList.size()) {
+      integrationPathList[i]->resetElementNumbers();
       i++;
    }
 }
 
+// snap the path to the mesh boundary, where possible
+void Mode::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh)
+{
+   long unsigned int i=0;
+   while (i < integrationPathList.size()) {
+      integrationPathList[i]->snapToMeshBoundary(pathList,mesh);
+      i++;
+   }
+}
+
+void Mode::populateGamma (double frequency, GammaDatabase *gammaDatabase)
+{
+   fields.populateGamma(frequency,gammaDatabase,modeNumber2D,get_Sport());
+}
+
 void Mode::reset()
 {
-   isSolutionLoaded=false;
-
-   if (eVecReE) {free(eVecReE); eVecReE=nullptr;}
-   if (eVecImE) {free(eVecImE); eVecImE=nullptr;}
-   if (eVecReH) {free(eVecReH); eVecReH=nullptr;}
-   if (eVecImH) {free(eVecImH); eVecImH=nullptr;}
-
-   if (eigenVecReEt) {delete eigenVecReEt; eigenVecReEt=nullptr;}
-   if (eigenVecImEt) {delete eigenVecImEt; eigenVecImEt=nullptr;}
-   if (eigenVecReEz) {delete eigenVecReEz; eigenVecReEz=nullptr;}
-   if (eigenVecImEz) {delete eigenVecImEz; eigenVecImEz=nullptr;}
-   if (eigenVecReHt) {delete eigenVecReHt; eigenVecReHt=nullptr;}
-   if (eigenVecImHt) {delete eigenVecImHt; eigenVecImHt=nullptr;}
-   if (eigenVecReHz) {delete eigenVecReHz; eigenVecReHz=nullptr;}
-   if (eigenVecImHz) {delete eigenVecImHz; eigenVecImHz=nullptr;}
-
-   if (grid2DReEt) {delete grid2DReEt; grid2DReEt=nullptr;}
-   if (grid2DImEt) {delete grid2DImEt; grid2DImEt=nullptr;}
-   if (grid2DReEz) {delete grid2DReEz; grid2DReEz=nullptr;}
-   if (grid2DImEz) {delete grid2DImEz; grid2DImEz=nullptr;}
-   if (grid2DReHt) {delete grid2DReHt; grid2DReHt=nullptr;}
-   if (grid2DImHt) {delete grid2DImHt; grid2DImHt=nullptr;}
-   if (grid2DReHz) {delete grid2DReHz; grid2DReHz=nullptr;}
-   if (grid2DImHz) {delete grid2DImHz; grid2DImHz=nullptr;}
-
-   if (grid3DReEt) {delete grid3DReEt; grid3DReEt=nullptr;}
-   if (grid3DImEt) {delete grid3DImEt; grid3DImEt=nullptr;}
-   if (grid3DReEz) {delete grid3DReEz; grid3DReEz=nullptr;}
-   if (grid3DImEz) {delete grid3DImEz; grid3DImEz=nullptr;}
-   if (grid3DReHt) {delete grid3DReHt; grid3DReHt=nullptr;}
-   if (grid3DImHt) {delete grid3DImHt; grid3DImHt=nullptr;}
-   if (grid3DReHz) {delete grid3DReHz; grid3DReHz=nullptr;}
-   if (grid3DImHz) {delete grid3DImHz; grid3DImHz=nullptr;}
-
-   if (grid2DmodalReEt) {delete grid2DmodalReEt; grid2DmodalReEt=nullptr;}
-   if (grid2DmodalImEt) {delete grid2DmodalImEt; grid2DmodalImEt=nullptr;}
-   if (grid2DmodalReEz) {delete grid2DmodalReEz; grid2DmodalReEz=nullptr;}
-   if (grid2DmodalImEz) {delete grid2DmodalImEz; grid2DmodalImEz=nullptr;}
-   if (grid2DmodalReHt) {delete grid2DmodalReHt; grid2DmodalReHt=nullptr;}
-   if (grid2DmodalImHt) {delete grid2DmodalImHt; grid2DmodalImHt=nullptr;}
-   if (grid2DmodalReHz) {delete grid2DmodalReHz; grid2DmodalReHz=nullptr;}
-   if (grid2DmodalImHz) {delete grid2DmodalImHz; grid2DmodalImHz=nullptr;}
-
-   clearWeights();
+   fields.reset();
+   Cp.clear();
+   Cm.clear();
+   weight.clear();
 }
 
 Mode::~Mode()
 {
    long unsigned int i=0;
-   while (i < pathNameList.size()) {
-      if (pathNameList[i]) delete pathNameList[i];
+   while (i < integrationPathList.size()) {
+      if (integrationPathList[i]) delete integrationPathList[i];
       i++;
    }
+}
 
-   i=0;
-   while (i < pointsList.size()) {
-      if (pointsList[i]) delete pointsList[i];
-      i++;
+///////////////////////////////////////////////////////////////////////////////////////////
+// DifferentialPair
+///////////////////////////////////////////////////////////////////////////////////////////
+
+DifferentialPair::DifferentialPair (int startLine_, int endLine_)
+{
+   startLine=startLine_;
+   endLine=endLine_;
+
+   // Sport_P
+   Sport_P.push_alias("Sport_P");
+   Sport_P.set_loaded(false);
+   Sport_P.set_positive_required(true);
+   Sport_P.set_non_negative_required(false);
+   Sport_P.set_lowerLimit(1);
+   Sport_P.set_upperLimit(100);
+   Sport_P.set_checkLimits(true);
+
+   // Sport_N
+   Sport_N.push_alias("Sport_N");
+   Sport_N.set_loaded(false);
+   Sport_N.set_positive_required(true);
+   Sport_N.set_non_negative_required(false);
+   Sport_N.set_lowerLimit(1);
+   Sport_N.set_upperLimit(100);
+   Sport_N.set_checkLimits(true);
+}
+
+bool DifferentialPair::load(string *indent, inputFile *inputs)
+{
+   bool fail=false;
+
+   int lineNumber=inputs->get_next_lineNumber(startLine);
+   int stopLineNumber=inputs->get_previous_lineNumber(endLine);
+   while (lineNumber <= stopLineNumber) {
+
+      string token,value,line;
+      line=inputs->get_line(lineNumber);
+      get_token_pair(&line,&token,&value,&lineNumber,*indent);
+
+      int recognized=0;
+
+      if (Sport_P.match_alias(&token)) {
+         recognized++;
+         if (Sport_P.loadInt(&token, &value, lineNumber)) fail=true;
+      }
+
+      if (Sport_N.match_alias(&token)) {
+         recognized++;
+         if (Sport_N.loadInt(&token, &value, lineNumber)) fail=true;
+      }
+
+      // should recognize one keyword
+      if (recognized != 1) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3192: Unrecognized keyword at line %d.\n",
+                                                indent->c_str(),indent->c_str(),lineNumber);
+         fail=true;
+      }
+      lineNumber=inputs->get_next_lineNumber(lineNumber);
    }
 
-   i=0;
-   while (i < weightsList.size()) {
-      if (weightsList[i]) delete weightsList[i];
-      i++;
+   return fail;
+}
+
+bool DifferentialPair::is_loaded ()
+{
+   if (!Sport_P.is_loaded()) return false;
+   if (!Sport_N.is_loaded()) return false;
+   return true;
+}
+
+bool DifferentialPair::inDifferentialPairBlock (int lineNumber)
+{
+   if (lineNumber >= startLine && lineNumber <= endLine) return true;
+   return false;
+}
+
+bool DifferentialPair::check(string *indent)
+{
+   bool fail=false;
+
+   // Sport_P
+   if (!Sport_P.is_loaded()) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3104: DifferentialPair block at line %d must specify an Sport_P number.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
+      fail=true;
    }
 
-   if (eVecReE) {free(eVecReE); eVecReE=nullptr;}
-   if (eVecImE) {free(eVecImE); eVecImE=nullptr;}
-   if (eVecReH) {free(eVecReH); eVecReH=nullptr;}
-   if (eVecImH) {free(eVecImH); eVecImH=nullptr;}
+   // Sport_N
+   if (!Sport_N.is_loaded()) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3154: DifferentialPair block at line %d must specify an Sport_N number.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
+      fail=true;
+   }
 
-   if (eigenVecReEt) {delete eigenVecReEt; eigenVecReEt=nullptr;}
-   if (eigenVecImEt) {delete eigenVecImEt; eigenVecImEt=nullptr;}
-   if (eigenVecReEz) {delete eigenVecReEz; eigenVecReEz=nullptr;}
-   if (eigenVecImEz) {delete eigenVecImEz; eigenVecImEz=nullptr;}
-   if (eigenVecReHt) {delete eigenVecReHt; eigenVecReHt=nullptr;}
-   if (eigenVecImHt) {delete eigenVecImHt; eigenVecImHt=nullptr;}
-   if (eigenVecReHz) {delete eigenVecReHz; eigenVecReHz=nullptr;}
-   if (eigenVecImHz) {delete eigenVecImHz; eigenVecImHz=nullptr;}
+   // Cannot be same Sport
+   if (Sport_P.is_loaded() && Sport_N.is_loaded() && Sport_P.int_compare(&Sport_N)) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3184: DifferentialPair block at line %d specifies the same Sport_P and Sport_N numbers.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
+      fail=true;
+   }
 
-   if (grid2DReEt) {delete grid2DReEt; grid2DReEt=nullptr;}
-   if (grid2DImEt) {delete grid2DImEt; grid2DImEt=nullptr;}
-   if (grid2DReEz) {delete grid2DReEz; grid2DReEz=nullptr;}
-   if (grid2DImEz) {delete grid2DImEz; grid2DImEz=nullptr;}
-   if (grid2DReHt) {delete grid2DReHt; grid2DReHt=nullptr;}
-   if (grid2DImHt) {delete grid2DImHt; grid2DImHt=nullptr;}
-   if (grid2DReHz) {delete grid2DReHz; grid2DReHz=nullptr;}
-   if (grid2DImHz) {delete grid2DImHz; grid2DImHz=nullptr;}
+   return fail;
+}
 
-   if (grid3DReEt) {delete grid3DReEt; grid3DReEt=nullptr;}
-   if (grid3DImEt) {delete grid3DImEt; grid3DImEt=nullptr;}
-   if (grid3DReEz) {delete grid3DReEz; grid3DReEz=nullptr;}
-   if (grid3DImEz) {delete grid3DImEz; grid3DImEz=nullptr;}
-   if (grid3DReHt) {delete grid3DReHt; grid3DReHt=nullptr;}
-   if (grid3DImHt) {delete grid3DImHt; grid3DImHt=nullptr;}
-   if (grid3DReHz) {delete grid3DReHz; grid3DReHz=nullptr;}
-   if (grid3DImHz) {delete grid3DImHz; grid3DImHz=nullptr;}
+void DifferentialPair::print(string indent)
+{
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sDifferentialPair\n",indent.c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   Sport_P=%d\n",indent.c_str(),Sport_P.get_int_value());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   Sport_N=%d\n",indent.c_str(),Sport_N.get_int_value());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sEndDifferentialPair\n",indent.c_str());
+   return;
+}
 
-   if (grid2DmodalReEt) {delete grid2DmodalReEt; grid2DmodalReEt=nullptr;}
-   if (grid2DmodalImEt) {delete grid2DmodalImEt; grid2DmodalImEt=nullptr;}
-   if (grid2DmodalReEz) {delete grid2DmodalReEz; grid2DmodalReEz=nullptr;}
-   if (grid2DmodalImEz) {delete grid2DmodalImEz; grid2DmodalImEz=nullptr;}
-   if (grid2DmodalReHt) {delete grid2DmodalReHt; grid2DmodalReHt=nullptr;}
-   if (grid2DmodalImHt) {delete grid2DmodalImHt; grid2DmodalImHt=nullptr;}
-   if (grid2DmodalReHz) {delete grid2DmodalReHz; grid2DmodalReHz=nullptr;}
-   if (grid2DmodalImHz) {delete grid2DmodalImHz; grid2DmodalImHz=nullptr;}
+///////////////////////////////////////////////////////////////////////////////////////////
+// PortAttribute
+///////////////////////////////////////////////////////////////////////////////////////////
 
+void PortAttribute::print (string indent)
+{
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%sPortAttribute\n",indent.c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   attribute=%d\n",indent.c_str(),attribute);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s   adjacent_element_attribute=%d\n",indent.c_str(),adjacent_element_attribute);
+}
+
+bool PortAttribute::has_attribute (int attribute_)
+{
+   if (attribute == attribute_) return true;
+   return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Port
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-Port::Port(int startLine_, int endLine_)
+Port::Port (int startLine_, int endLine_)
 {
    startLine=startLine_;
    endLine=endLine_;
@@ -2649,30 +3490,43 @@ Port::Port(int startLine_, int endLine_)
 
    rotated_normal.SetSize(3);
    rotated_normal=0.0;
+
+   Ti=nullptr;
+   Tv=nullptr;
+   TiTvSize=0;
 }
 
-bool Port::load(string *indent, inputFile *inputs)
+bool Port::load (string *indent, inputFile *inputs)
 {
    bool fail=false;
    bool found_first_path=false;
 
-   // Mode and Line
+   // blocks
+
+   // modes
    if (findModeBlocks(inputs)) fail=true;
    if (findLineBlocks(inputs)) fail=true;
-
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->load(indent, inputs)) fail=true;
+      if (modeList[i]->load(indent,inputs)) fail=true;
       i++;
    }
 
-   // now the keywords
+   // differential pairs
+   if (findDifferentialPairBlocks(inputs)) fail=true;
+   i=0;
+   while (i < differentialPairList.size()) {
+      if (differentialPairList[i]->load(indent,inputs)) fail=true;
+      i++;
+   }
+
+   // keywords
 
    int lineNumber=inputs->get_next_lineNumber(startLine);
    int stopLineNumber=inputs->get_previous_lineNumber(endLine);
    while (lineNumber <= stopLineNumber) {
 
-      if (!inModeBlocks(lineNumber)) {
+      if (!inModeBlocks(lineNumber) && !inDifferentialPairBlocks(lineNumber)) {
 
          string token,value,line;
          line=inputs->get_line(lineNumber);
@@ -2682,8 +3536,8 @@ bool Port::load(string *indent, inputFile *inputs)
 
          if (name.match_alias(&token)) {
             if (name.is_loaded()) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3053: Duplicate entry at line %d for previous entry at line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber,impedance_definition.get_lineNumber());
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3053: Duplicate entry at line %d for previous entry at line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber,impedance_definition.get_lineNumber());
                fail=true;
             } else {
                name.set_keyword(token);
@@ -2696,8 +3550,8 @@ bool Port::load(string *indent, inputFile *inputs)
 
          if (impedance_definition.match_alias(&token)) {
             if (impedance_definition.is_loaded()) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3054: Duplicate entry at line %d for previous entry at line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber,impedance_definition.get_lineNumber());
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3054: Duplicate entry at line %d for previous entry at line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber,impedance_definition.get_lineNumber());
                fail=true;
             } else {
                impedance_definition.set_keyword(token);
@@ -2710,8 +3564,8 @@ bool Port::load(string *indent, inputFile *inputs)
 
          if (impedance_calculation.match_alias(&token)) {
             if (impedance_calculation.is_loaded()) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3055: Duplicate entry at line %d for previous entry at line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber,impedance_calculation.get_lineNumber());
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3055: Duplicate entry at line %d for previous entry at line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber,impedance_calculation.get_lineNumber());
                fail=true;
             } else {
                impedance_calculation.set_keyword(token);
@@ -2724,8 +3578,8 @@ bool Port::load(string *indent, inputFile *inputs)
 
          if (token.compare("path") == 0) {
             if (found_first_path) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3057: Extraneous path= statement at line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber);
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3057: Extraneous path= statement at line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber);
                fail=true;
             } else {
                bool reverse=false;
@@ -2755,8 +3609,8 @@ bool Port::load(string *indent, inputFile *inputs)
          if (token.compare("path+") == 0) {
             if (found_first_path) {
                if (value.substr(0,1).compare("+")  == 0 || value.substr(0,1).compare("-") == 0) {
-                  PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3058: Misformatted path at line %d.\n",
-                                               indent->c_str(),indent->c_str(),lineNumber);
+                  prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3058: Misformatted path at line %d.\n",
+                                                         indent->c_str(),indent->c_str(),lineNumber);
                   fail=true;
                } else {
 
@@ -2776,8 +3630,8 @@ bool Port::load(string *indent, inputFile *inputs)
                   reverseList.push_back(false);
                }
             } else {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3059: Missing path= statement before line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber);
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3059: Missing path= statement before line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber);
                fail=true;
             }
             recognized++;
@@ -2786,8 +3640,8 @@ bool Port::load(string *indent, inputFile *inputs)
          if (token.compare("path-") == 0) {
             if (found_first_path) {
                if (value.substr(0,1).compare("+") == 0 || value.substr(0,1).compare("-") == 0) {
-                  PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3060: Misformatted path at line %d.\n",
-                                               indent->c_str(),indent->c_str(),lineNumber);
+                  prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3060: Misformatted path at line %d.\n",
+                                                         indent->c_str(),indent->c_str(),lineNumber);
                   fail=true;
                } else {
 
@@ -2807,8 +3661,8 @@ bool Port::load(string *indent, inputFile *inputs)
                   reverseList.push_back(true);
                }
             } else {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3061: Missing path= statement before line %d.\n",
-                                            indent->c_str(),indent->c_str(),lineNumber);
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3061: Missing path= statement before line %d.\n",
+                                                      indent->c_str(),indent->c_str(),lineNumber);
                fail=true;
             }
             recognized++;
@@ -2816,8 +3670,8 @@ bool Port::load(string *indent, inputFile *inputs)
 
          // should recognize one keyword
          if (recognized != 1) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3062: Unrecognized keyword at line %d.\n",
-                                         indent->c_str(),indent->c_str(),lineNumber);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3062: Unrecognized keyword at line %d.\n",
+                                                   indent->c_str(),indent->c_str(),lineNumber);
             fail=true;
          }
       }
@@ -2843,7 +3697,7 @@ bool Port::inModeBlocks (int lineNumber)
    return false;
 }
 
-bool Port::findModeBlocks(inputFile *inputs)
+bool Port::findModeBlocks (inputFile *inputs)
 {
    bool fail=false;
    int start_lineNumber=startLine;
@@ -2865,7 +3719,7 @@ bool Port::findModeBlocks(inputFile *inputs)
    return fail;
 }
 
-bool Port::findLineBlocks(inputFile *inputs)
+bool Port::findLineBlocks (inputFile *inputs)
 {
    bool fail=false;
    int start_lineNumber=startLine;
@@ -2887,13 +3741,45 @@ bool Port::findLineBlocks(inputFile *inputs)
    return fail;
 }
 
-bool Port::check(string *indent, vector<Path *> pathList, bool check_closed_loop)
+bool Port::inDifferentialPairBlocks (int lineNumber)
+{
+   long unsigned int i=0;
+   while (i < differentialPairList.size()) {
+      if (differentialPairList[i]->inDifferentialPairBlock(lineNumber)) return true;
+      i++;
+   }
+   return false;
+}
+
+bool Port::findDifferentialPairBlocks (inputFile *inputs)
+{
+   bool fail=false;
+   int start_lineNumber=startLine;
+   int stop_lineNumber=endLine;
+   int block_start,block_stop;
+
+   while (start_lineNumber < stop_lineNumber) {
+      if (inputs->findBlock(start_lineNumber,stop_lineNumber, &block_start, &block_stop,
+                                "DifferentialPair", "EndDifferentialPair", false)) {
+         fail=true;
+      } else {
+         if (block_start >= 0 && block_stop >= 0) {
+            DifferentialPair *newDifferentialPair=new DifferentialPair(block_start,block_stop);
+            differentialPairList.push_back(newDifferentialPair);
+         }
+      }
+      start_lineNumber=inputs->get_next_lineNumber(block_stop);
+   }
+   return fail;
+}
+
+bool Port::check (string *indent, vector<Path *> *pathList, bool check_closed_loop)
 {
    bool fail=false;
 
    if (!name.is_loaded()) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3063: Port block at line %d must specify a name.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3063: Port block at line %d must specify a name.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       fail=true;
    }
 
@@ -2902,13 +3788,13 @@ bool Port::check(string *indent, vector<Path *> pathList, bool check_closed_loop
       if (!(impedance_definition.get_value().compare("VI") == 0 || 
             impedance_definition.get_value().compare("PV") == 0 ||
             impedance_definition.get_value().compare("PI") == 0)) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3064: Input at line %d must be \"VI\", \"PV\", or \"PI\".\n",
-                                      indent->c_str(),indent->c_str(),impedance_definition.get_lineNumber());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3064: Input at line %d must be \"VI\", \"PV\", or \"PI\".\n",
+                                                indent->c_str(),indent->c_str(),impedance_definition.get_lineNumber());
          fail=true;      
       }
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3065: Port block at line %d must specify an impedance definition.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3065: Port block at line %d must specify an impedance definition.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       fail=true;
    }
 
@@ -2916,20 +3802,20 @@ bool Port::check(string *indent, vector<Path *> pathList, bool check_closed_loop
    if (impedance_calculation.is_loaded()) {
       if (!(impedance_calculation.get_value().compare("modal") == 0 ||
             impedance_calculation.get_value().compare("line") == 0)) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3066: Input at line %d must be \"modal\" or \"line\".\n",
-                                      indent->c_str(),indent->c_str(),impedance_calculation.get_lineNumber());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3066: Input at line %d must be \"modal\" or \"line\".\n",
+                                                indent->c_str(),indent->c_str(),impedance_calculation.get_lineNumber());
          fail=true;
       }
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3067: Port block at line %d must specify an impedance calculation.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3067: Port block at line %d must specify an impedance calculation.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       fail=true;
    }
 
    // must have a path
    if (pathNameList.size() == 0) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3070: Port block at line %d must specify a path.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3070: Port block at line %d must specify a path.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       fail=true;
    }
 
@@ -2938,13 +3824,13 @@ bool Port::check(string *indent, vector<Path *> pathList, bool check_closed_loop
    while (i < pathNameList.size()) {
       bool found=false;
       long unsigned int j=0;
-      while (j < pathList.size()) {
-         if (pathNameList[i]->get_value().compare(pathList[j]->get_name()) == 0) {found=true; break;}
+      while (j < pathList->size()) {
+         if (pathNameList[i]->get_value().compare((*pathList)[j]->get_name()) == 0) {found=true; break;}
          j++;
       }
       if (! found) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3071: Port block at line %d specifies a non-existent path.\n",
-                                      indent->c_str(),indent->c_str(),startLine);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3071: Port block at line %d specifies a non-existent path.\n",
+                                                indent->c_str(),indent->c_str(),startLine);
          fail=true;
       }
       i++;
@@ -2956,8 +3842,8 @@ bool Port::check(string *indent, vector<Path *> pathList, bool check_closed_loop
       long unsigned int j=i+1;
       while (j < pathNameList.size()) {
          if (pathNameList[i]->get_value().compare(pathNameList[j]->get_value()) == 0) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3072: Port block at line %d duplicates path \"%s\".\n",
-                                         indent->c_str(),indent->c_str(),startLine,pathNameList[j]->get_value().c_str());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3072: Port block at line %d duplicates path \"%s\".\n",
+                                                   indent->c_str(),indent->c_str(),startLine,pathNameList[j]->get_value().c_str());
             fail=true;
          }
          j++;
@@ -2969,16 +3855,16 @@ bool Port::check(string *indent, vector<Path *> pathList, bool check_closed_loop
 
    // must have at least one mode
    if (modeList.size() == 0) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3073: Port block at line %d must specify at least one mode.\n",
-                                   indent->c_str(),indent->c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3097: Port block at line %d must specify at least one mode.\n",
+                                             indent->c_str(),indent->c_str(),startLine);
       fail=true;
    }
 
    // mode checks
    i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->check(indent,pathList)) fail=true;
-      if (modeList[i]->check_current_paths(indent,&pathList,check_closed_loop)) fail=true;
+      if (modeList[i]->check(indent,pathList,is_modal(),modeList.size())) fail=true;
+      if (modeList[i]->align_current_paths(indent,pathList,check_closed_loop)) fail=true;
       i++;
    }
 
@@ -2987,18 +3873,70 @@ bool Port::check(string *indent, vector<Path *> pathList, bool check_closed_loop
       bool found=false;
       i=0;
       while (i < modeList.size()) {
-         if (modeList[i]->is_voltage()) {found=true; break;}
+         if (modeList[i]->has_voltage()) {found=true; break;}
          i++;
       }
       if (!found) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3074: Port block at line %d must specify a voltage line.\n",
-                                      indent->c_str(),indent->c_str(),startLine);
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3074: Port block at line %d must specify a voltage line.\n",
+                                                indent->c_str(),indent->c_str(),startLine);
          fail=true;
       }
    }
 
    // modes must be enclosed by the port boundary
-   if (!fail && !is_modePathInside (indent,&pathList)) fail=true;
+   if (!fail && !is_modePathInside (indent,pathList)) fail=true;
+
+   // differential pair checks
+
+   // require line impedance definition
+   if (differentialPairList.size() > 0 && impedance_calculation.get_value().compare("line") != 0) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3084: Input at line %d must be \"line\" when differential pairs are specified.\n",
+                                             indent->c_str(),indent->c_str(),impedance_calculation.get_lineNumber());
+      fail=true;
+   }
+
+   // differential pair checks
+   i=0;
+   while (i < differentialPairList.size()) {
+      if (differentialPairList[i]->check(indent)) fail=true;
+      i++;
+   }
+
+   // differential pair ports must exist
+   i=0;
+   while (i < differentialPairList.size()) {
+
+      if (differentialPairList[i]->is_loaded()) {
+
+         // Sport_P
+         bool found=false;
+         long unsigned int j=0;
+         while (j < modeList.size()) {
+            if (differentialPairList[i]->get_Sport_P() == modeList[j]->get_Sport()) {found=true; break;}
+            j++;
+         }
+         if (!found) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3096: DifferentialPair block at line %d calls for an unspecified Mode or Line Sport for Sport_P.\n",
+                                                   indent->c_str(),indent->c_str(),differentialPairList[i]->get_startLine());
+            fail=true;
+         }
+
+         // Sport_N
+         found=false;
+         j=0;
+         while (j < modeList.size()) {
+            if (differentialPairList[i]->get_Sport_N() == modeList[j]->get_Sport()) {found=true; break;}
+            j++;
+         }
+         if (!found) {
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3073: DifferentialPair block at line %d calls for an unspecified Mode or Line Sport for Sport_N.\n",
+                                                   indent->c_str(),indent->c_str(),differentialPairList[i]->get_startLine());
+            fail=true;
+         }
+      }
+
+      i++;
+   }
 
    return fail;
 }
@@ -3006,7 +3944,7 @@ bool Port::check(string *indent, vector<Path *> pathList, bool check_closed_loop
 bool Port::is_overlapPath (Path *testPath)
 {
    if (pathIndexList.size() != 1) {
-      PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::is_overlapPath operation on a Port with an invalid path definition.\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::is_overlapPath operation on a Port with an invalid path definition.\n");
       return false;
    }
 
@@ -3043,7 +3981,7 @@ bool Port::assignPathIndices (vector<Path *> *pathList)
    while (i < pathNameList.size()) {
       bool found=false;
       long unsigned int j=0;
-      while (j < (*pathList).size()) {
+      while (j < pathList->size()) {
          if ((*pathList)[j]->get_name().compare(pathNameList[i]->get_value()) == 0) {
             pathIndexList.push_back(j);
             found=true;
@@ -3073,9 +4011,7 @@ vector<int> Port::get_SportList ()
 
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         SportList.push_back(modeList[i]->get_Sport());
-      }
+      SportList.push_back(modeList[i]->get_Sport());
       i++;
    }
 
@@ -3101,54 +4037,35 @@ bool Port::checkBoundingBox (Vector *lowerLeft, Vector *upperRight, string *inde
    return fail;
 }
 
-void Port::set2DModeNumbers()
+void Port::set2DModeNumbers ()
 {
    int modeNumber=1;
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->set_modeNumber2D(modeNumber);
-         modeNumber++;
-      }
+      modeList[i]->set_modeNumber2D(modeNumber);
+      modeNumber++;
       i++;
    }
 }
 
-void Port::fillUnused2DModeNumbers()
+void Port::print ()
 {
-   long unsigned int i=0;
-   while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-        long unsigned int j=0;
-        while (j < modeList.size()) {
-           if (!modeList[j]->get_isUsed() && modeList[i]->get_Sport() == modeList[j]->get_Sport()) {
-              modeList[j]->set_modeNumber2D(modeList[i]->get_modeNumber2D());
-           }
-           j++;
-         }
-      }
-      i++;
-   }
-}
-
-void Port::print()
-{
-   PetscPrintf(PETSC_COMM_WORLD,"Port\n");
-   PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",get_name().c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Port\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   name=%s\n",get_name().c_str());
    long unsigned int i=0;
    while (i < pathNameList.size()) {
       if (i == 0) {
-         if (reverseList[i]) PetscPrintf(PETSC_COMM_WORLD,"   path=-%s\n",pathNameList[i]->get_value().c_str());
-         else PetscPrintf(PETSC_COMM_WORLD,"   path=%s\n",pathNameList[i]->get_value().c_str());
+         if (reverseList[i]) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path=-%s\n",pathNameList[i]->get_value().c_str());}
+         else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path=%s\n",pathNameList[i]->get_value().c_str());}
       } else {
-         if (reverseList[i]) PetscPrintf(PETSC_COMM_WORLD,"   path-=%s\n",pathNameList[i]->get_value().c_str());
-         else PetscPrintf(PETSC_COMM_WORLD,"   path+=%s\n",pathNameList[i]->get_value().c_str());
+         if (reverseList[i]) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path-=%s\n",pathNameList[i]->get_value().c_str());}
+         else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   path+=%s\n",pathNameList[i]->get_value().c_str());}
       }
       i++;
    }
 
-   PetscPrintf(PETSC_COMM_WORLD,"   impedance_definition=%s\n",impedance_definition.get_value().c_str());
-   PetscPrintf(PETSC_COMM_WORLD,"   impedance_calculation=%s\n",impedance_calculation.get_value().c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   impedance_definition=%s\n",impedance_definition.get_value().c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   impedance_calculation=%s\n",impedance_calculation.get_value().c_str());
 
    i=0;
    while (i < modeList.size()) {
@@ -3156,46 +4073,92 @@ void Port::print()
       i++;
    }
 
-   PetscPrintf(PETSC_COMM_WORLD,"   attribute=%d\n",attribute);
-   PetscPrintf(PETSC_COMM_WORLD,"   meshFilename=%s\n",meshFilename.c_str());
-   PetscPrintf(PETSC_COMM_WORLD,"   modesFilename=%s\n",modesFilename.c_str());
+   i=0;
+   while (i < differentialPairList.size()) {
+      differentialPairList[i]->print("   ");
+      i++;
+   }
+
+   i=0;
+   while (i < attributeList.size()) {
+      attributeList[i]->print("   ");
+      i++;
+   }
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   assignedToMesh=%d\n",assignedToMesh);
+//   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   appliedPortABCreal=%d\n",appliedPortABCreal);
+//   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   appliedPortABCimag=%d\n",appliedPortABCimag);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   spin180degrees=%d\n",spin180degrees);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   meshFilename=%s\n",meshFilename.c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   modesFilename=%s\n",modesFilename.c_str());
    if (rotated) {
-      PetscPrintf(PETSC_COMM_WORLD,"   rotated=%p:\n",rotated);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"   rotated=%p:\n",rotated);
       rotated->print("      ");
-   } else PetscPrintf(PETSC_COMM_WORLD,"   rotated=%p\n",rotated);
-   PetscPrintf(PETSC_COMM_WORLD,"   outward normal=(%g,%g,%g)\n",normal(0),normal(1),normal(2));
-   PetscPrintf(PETSC_COMM_WORLD,"   rotated outward normal=(%g,%g,%g)\n",rotated_normal(0),rotated_normal(1),rotated_normal(2));
-   PetscPrintf(PETSC_COMM_WORLD,"EndPort\n");
+   } else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"   rotated=%p\n",rotated);}
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   outward normal=(%g,%g,%g)\n",normal(0),normal(1),normal(2));
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   rotated outward normal=(%g,%g,%g)\n",rotated_normal(0),rotated_normal(1),rotated_normal(2));
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Ti: TiTvSize=%d Ti=%p\n",TiTvSize,Ti); 
+   if (Ti) { 
+      int m=0;
+      while (m < TiTvSize) {
+         int n=0;
+         while (n < TiTvSize) {
+            double realVal=matrixGetRealValue(Ti,m+n*TiTvSize);
+            double imagVal=matrixGetImagValue(Ti,m+n*TiTvSize);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"      Ti[%d,%d]=(%g,%g)\n",m,n,realVal,imagVal);
+            n++;
+         }
+         m++;
+      }
+   }
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Tv: TiTvSize=%d Tv=%p\n",TiTvSize,Tv);
+   if (Tv) {
+      int m=0;
+      while (m < TiTvSize) {
+         int n=0;
+         while (n < TiTvSize) {
+            double realVal=matrixGetRealValue(Tv,m+n*TiTvSize);
+            double imagVal=matrixGetImagValue(Tv,m+n*TiTvSize);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"      Tv[%d,%d]=(%g,%g)\n",m,n,realVal,imagVal);
+            n++;
+         }
+         m++;
+      }
+   }
+
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"EndPort\n");
 
    return;
 }
 
-void Port::printPaths(vector<Path *> *pathList)
+void Port::printPaths (vector<Path *> *pathList)
 {
-   PetscPrintf(PETSC_COMM_WORLD,"Port=%s\n",get_name().c_str());
-   PetscPrintf(PETSC_COMM_WORLD,"   Paths:\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"Port=%s\n",get_name().c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Paths:\n");
    long unsigned int i=0;
    while (i < pathIndexList.size()) {
       (*pathList)[pathIndexList[i]]->print("      ");
       i++;
    }
-   PetscPrintf(PETSC_COMM_WORLD,"   Rotated Path:\n");
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   Rotated Path:\n");
    if (rotated) rotated->print("      ");
 }
 
-bool Port::createDirectory(string *tempDirectory)
+bool Port::createDirectory (string *tempDirectory)
 {
    if (std::filesystem::exists(tempDirectory->c_str())) {
       stringstream PortDir;
       PortDir << *tempDirectory << "/" << "S" << get_name();
       if (std::filesystem::create_directory(PortDir.str().c_str())) return false;
-      else PetscPrintf(PETSC_COMM_WORLD,"ERROR3075: Failed to create the port working directory \"%s\".\n",
-                                        PortDir.str().c_str());
+      else {prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3075: Failed to create the port working directory \"%s\".\n",
+                                                   PortDir.str().c_str());}
    }
    return true;
 }
 
-void Port::saveMesh(meshMaterialList *materials, string *directory, ParSubMesh *parSubMesh)
+void Port::saveMesh (MeshMaterialList *materials, string *directory, ParSubMesh *parSubMesh)
 {
    PetscMPIInt rank,size;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -3225,8 +4188,8 @@ void Port::saveMesh(meshMaterialList *materials, string *directory, ParSubMesh *
 
          serout.close();
       } else {
-         PetscPrintf(PETSC_COMM_WORLD,"ERROR3076: Failed to open file \"%s\" for writing.\n",
-                                      parSaveMeshFilename.str().c_str());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3076: Failed to open file \"%s\" for writing.\n",
+                                                parSaveMeshFilename.str().c_str());
       }
    } else {
 
@@ -3237,14 +4200,14 @@ void Port::saveMesh(meshMaterialList *materials, string *directory, ParSubMesh *
          parSubMesh->ParPrint(parout);
          parout.close();
       } else {
-         PetscPrintf(PETSC_COMM_WORLD,"ERROR3077: Failed to open file \"%s\" for writing.\n",
-                                      parSaveMeshFilename.str().c_str());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3077: Failed to open file \"%s\" for writing.\n",
+                                                parSaveMeshFilename.str().c_str());
       }
 
       // post-process the mesh to make it fully 2D and to flip the direction the port faces, if needed
       if (postProcessMesh(parSaveMeshFilename.str(),processed_parSaveMeshFilename.str())) {
-         PetscPrintf(PETSC_COMM_WORLD,"ERROR3078: Failed to post-process mesh file \"%s\".\n",
-                                      parSaveMeshFilename.str().c_str());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3078: Failed to post-process mesh file \"%s\".\n",
+                                                parSaveMeshFilename.str().c_str());
       }
    }
 
@@ -3264,14 +4227,14 @@ bool Port::postProcessMesh (string input_filename, string temp_output_filename)
    ifstream INPUT;
    INPUT.open(input_filename.c_str(),ifstream::in);
    if (!INPUT.is_open()) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3079: Failed to open file \"%s\" for reading.\n",input_filename.c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3079: Failed to open file \"%s\" for reading.\n",input_filename.c_str());
       return true;
    }
 
    ofstream OUTPUT;
    OUTPUT.open(temp_output_filename.c_str(),ofstream::out);
    if (!OUTPUT.is_open()) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3080: Failed to open file \"%s\" for writing.\n",temp_output_filename.c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3080: Failed to open file \"%s\" for writing.\n",temp_output_filename.c_str());
       INPUT.close();
       return true;
    }
@@ -3334,7 +4297,7 @@ bool Port::postProcessMesh (string input_filename, string temp_output_filename)
    return false;
 }
 
-void Port::save2Dsetup(struct projectData *projData, string *directory, double frequency, Gamma *gamma)
+void Port::save2Dsetup (struct projectData *projData, string *directory, double frequency, Gamma *gamma)
 {
    stringstream filename;
    filename << *directory << "/S" << get_name() << "/S" << get_name() << ".proj";
@@ -3343,7 +4306,6 @@ void Port::save2Dsetup(struct projectData *projData, string *directory, double f
    out.open(filename.str().c_str(),ofstream::out);
 
    if (out.is_open()) {
-
       out << "#OpenParEM2Dproject 1.0" << endl << endl;
       out << "project.save.fields                      true" << endl << endl;            // must save fields, so override the proj file
       out << "mesh.file                                " << meshFilename << endl;
@@ -3355,7 +4317,8 @@ void Port::save2Dsetup(struct projectData *projData, string *directory, double f
       out << "materials.global.path                    " << "../../" << projData->materials_global_path << endl;
       out << "materials.global.name                    " << projData->materials_global_name << endl;
       out << "materials.local.path                     " << "../../" << projData->materials_local_path << endl;
-      out << "materials.local.name                     " << projData->materials_local_name << endl << endl;
+      out << "materials.local.name                     " << projData->materials_local_name << endl;
+      out << "materials.check.limits                   " << projData->materials_check_limits << endl << endl;
       // do not independently refine the ports
       // The refinement variables are included in case the user wants to use refinement when running OpenParEM2D manually.
       out << "refinement.frequency                     none" << endl;
@@ -3363,7 +4326,7 @@ void Port::save2Dsetup(struct projectData *projData, string *directory, double f
       out << "refinement.iteration.min                 " << projData->refinement_iteration_min << endl;
       out << "refinement.iteration.max                 " << projData->refinement_iteration_max << endl;
       out << "refinement.required.passes               " << projData->refinement_required_passes << endl;
-      out << "refinement.tolerance                     " << projData->refinement_tolerance << endl << endl;
+      out << "refinement.tolerance                     " << projData->refinement_relative_tolerance << endl << endl;
 
       out << setprecision(15) << "frequency.plan.point                     " << frequency << endl << endl;
 
@@ -3382,7 +4345,7 @@ void Port::save2Dsetup(struct projectData *projData, string *directory, double f
          out << "solution.initial.alpha                   " << gamma->get_alpha() << endl;
       }
       if (gamma && gamma->get_beta() > 0) {
-         // align with with OpenParEM2D
+         // align the freqeuncy correction and multiplier with OpenParEM2D
          out << "solution.initial.beta                    " << gamma->get_beta()*frequency/gamma->get_frequency()*2 << endl;
       }
       out << "solution.shift.factor                    " << projData->solution_shift_factor << endl << endl;
@@ -3406,7 +4369,7 @@ void Port::save2Dsetup(struct projectData *projData, string *directory, double f
 
       out.close();
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3081: Failed to open file \"%s\" for writing.\n",filename.str().c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3081: Failed to open file \"%s\" for writing.\n",filename.str().c_str());
    }
 }
 
@@ -3417,11 +4380,11 @@ void Port::saveModeFile (struct projectData *projData, vector<Path *> *pathList,
    double xr1,yr1,zr1,xr2,yr2,zr2;
 
    if (pathIndexList.size() != 1) {
-      PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::saveModeFile operation on a Port with an invalid path definition.\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::saveModeFile operation on a Port with an invalid path definition.\n");
    }
 
    if (!rotated) {
-      PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::saveModeFile operation on a Port without a rotated path.\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::saveModeFile operation on a Port without a rotated path.\n");
    }
 
    Path *path=(*pathList)[pathIndexList[0]];
@@ -3430,7 +4393,8 @@ void Port::saveModeFile (struct projectData *projData, vector<Path *> *pathList,
 
    // set up the save file
    stringstream modeFilename;
-   modeFilename << boundaryDatabase->get_tempDirectory() << "/S" << get_name() << "/S" << get_name() << "_modes.txt";
+   if (is_modal()) modeFilename << boundaryDatabase->get_tempDirectory() << "/S" << get_name() << "/S" << get_name() << "_modes.txt";
+   else modeFilename << boundaryDatabase->get_tempDirectory() << "/S" << get_name() << "/S" << get_name() << "_lines.txt";
 
    ofstream modeFile;
    modeFile.open(modeFilename.str().c_str(),ofstream::out);
@@ -3456,8 +4420,8 @@ void Port::saveModeFile (struct projectData *projData, vector<Path *> *pathList,
             xr1=x1; yr1=y1; zr1=z1;
             xr2=x2; yr2=y2; zr2=z2;
 
-            rotated->rotatePoint(&xr1,&yr1,&zr1);
-            rotated->rotatePoint(&xr2,&yr2,&zr2);
+            rotated->rotatePoint(&xr1,&yr1,&zr1,spin180degrees);
+            rotated->rotatePoint(&xr2,&yr2,&zr2,spin180degrees);
 
             modeFile << "Path" << endl;
             modeFile << "   name=path" << pathNumber << endl;
@@ -3498,7 +4462,7 @@ void Port::saveModeFile (struct projectData *projData, vector<Path *> *pathList,
          i++;
       }
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3082: Failed to open file \"%s\" for writing.\n",modeFilename.str().c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3082: Failed to open file \"%s\" for writing.\n",modeFilename.str().c_str());
    }
 }
 
@@ -3541,8 +4505,8 @@ bool Port::merge(vector<Path *> *pathList)
 bool Port::createRotated (vector<Path *> *pathList, string indent)
 {
    if (pathIndexList.size() != 1) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3180: Port at line %d is incorrectly formatted.\n",
-                                    indent.c_str(),indent.c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3068: Port at line %d is incorrectly formatted.\n",
+                                             indent.c_str(),indent.c_str(),startLine);
       return true;
    }
 
@@ -3550,8 +4514,8 @@ bool Port::createRotated (vector<Path *> *pathList, string indent)
    rotated=(*pathList)[pathIndexList[0]]->rotateToXYplane();
 
    if (! rotated) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3179: Port at line %d does not form a closed polygon with nonzero area.\n",
-                                    indent.c_str(),indent.c_str(),startLine);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3140: Port at line %d does not form a closed polygon with nonzero area.\n",
+                                             indent.c_str(),indent.c_str(),startLine);
       return true;
    }
    return false;
@@ -3579,17 +4543,16 @@ bool Port::is_modePathInside (string *indent, vector<Path *> *pathList)
    bool fail=false;
 
    if (pathIndexList.size() != 1) {
-      PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::is_modePathInside operation on a Port with an invalid path definition.\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::is_modePathInside operation on a Port with an invalid path definition.\n");
       return false;
    }
 
    long unsigned i=0;
    while (i < modeList.size()) {
-      if (! modeList[i]->is_enclosedByPath(pathList,rotated)) {
-         if (modeList[i]->is_modal()) PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3083: Port %s Mode %d of type \"%s\" is not enclosed within the port.\n",
-            indent->c_str(),indent->c_str(),get_name().c_str(),modeList[i]->get_Sport(),modeList[i]->get_type().c_str());
-         if (modeList[i]->is_line()) PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3084: Port %s Line %d of type \"%s\" is not enclosed within the port.\n",
-            indent->c_str(),indent->c_str(),get_name().c_str(),modeList[i]->get_Sport(),modeList[i]->get_type().c_str());
+      long unsigned int index=-1; 
+      if (! modeList[i]->is_enclosedByPath(pathList,rotated,&index)) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3083: Port %s Mode %d of type \"%s\" is not enclosed within the port.\n",
+            indent->c_str(),indent->c_str(),get_name().c_str(),modeList[i]->get_Sport(),modeList[i]->get_type(index).c_str());
          fail=true;
       }
       i++;
@@ -3599,7 +4562,17 @@ bool Port::is_modePathInside (string *indent, vector<Path *> *pathList)
    return true;
 }
 
-void Port::create2Dmesh (int order, ParMesh *mesh3D, vector<ParSubMesh> *parSubMeshes, long unsigned int parSubMeshIndex, double tol)
+bool Port::has_attribute (int attribute)
+{
+   long unsigned int i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]->has_attribute(attribute)) return true;
+      i++;
+   }
+   return false;
+}
+
+bool Port::create2Dmesh (int order, ParMesh *mesh3D, vector<ParSubMesh> *parSubMeshes, long unsigned int parSubMeshIndex, double tol)
 {
    PetscMPIInt rank,size;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -3615,9 +4588,8 @@ void Port::create2Dmesh (int order, ParMesh *mesh3D, vector<ParSubMesh> *parSubM
    foundNormal=0;
    int i=0;
    while (i < mesh3D->GetNBE()) {
-      if (mesh3D->GetBdrAttribute(i) == attribute) {
+      if (has_attribute(mesh3D->GetBdrAttribute(i))) {
          if (!foundNormal) {
-
             ElementTransformation *elemTr=mesh3D->GetBdrElementTransformation(i);
             elemTr->SetIntPoint(&Geometries.GetCenter(elemTr->GetGeometryType()));
             CalcOrtho(elemTr->Jacobian(), normal);
@@ -3665,7 +4637,10 @@ void Port::create2Dmesh (int order, ParMesh *mesh3D, vector<ParSubMesh> *parSubM
    MPI_Bcast(&(normal(2)),1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
    MPI_Bcast(&foundNormal,1,MPI_INT,0,PETSC_COMM_WORLD);
 
-   if (!foundNormal) cout << "ASSERT: Port::create2Dmesh failed to find a normal." << endl;
+   if (!foundNormal) {
+     prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3180: The Port \"%s\" boundary is inconsistent with the general setup.\n",get_name().c_str());
+     return true;
+   }
 
    // reset the boundary attributes from indicating the port to indicating the material
    i=0;
@@ -3737,6 +4712,8 @@ void Port::create2Dmesh (int order, ParMesh *mesh3D, vector<ParSubMesh> *parSubM
    if (rotated_normal(2) < 0) spin180degrees=true;
 
    set_filenames();
+
+   return false;
 }
 
 void Port::set_filenames()
@@ -3746,18 +4723,14 @@ void Port::set_filenames()
    meshFilename=ssMeshFilename.str();
 
    stringstream ssModesFilename;
-   ssModesFilename << "S" << get_name() << "_modes.txt";
+   if (is_modal()) ssModesFilename << "S" << get_name() << "_modes.txt";
+   else ssModesFilename << "S" << get_name() << "_lines.txt";
    modesFilename=ssModesFilename.str();
 }
 
 void eh(MPI_Comm *comm, int *err, ...)
 {
-   PetscPrintf(PETSC_COMM_WORLD,"ERROR3085: Failed to spawn OpenParEM2D.  Manually remove the lock file.\n");
-  
-   // ToDo - Eliminate the MPI_Abort for a graceful exit.
-
-   // Abort to avoid hanging ranks
-   MPI_Abort (PETSC_COMM_WORLD,1);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3085: Failed to spawn OpenParEM2D.  Manually remove the lock file.\n");
 }
 
 bool Port::solve(string *directory, MPI_Comm *MPI_PORT_COMM)
@@ -3776,7 +4749,7 @@ bool Port::solve(string *directory, MPI_Comm *MPI_PORT_COMM)
    stringstream ssLock;
    ssLock << "." << "S" << get_name() << ".lock";
 
-   // argv 
+   // argv
    char *argv[2];
 
    char project[64];
@@ -3802,7 +4775,7 @@ bool Port::solve(string *directory, MPI_Comm *MPI_PORT_COMM)
          watchdog+=1;
          if (watchdog == 100000) { // ~100 seconds
             launch_success=false;
-            PetscPrintf(PETSC_COMM_WORLD,"ERROR3086: OpenParEM2D failed to launch for \"%s\"\n",project);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3086: OpenParEM2D failed to launch for \"%s\"\n",project);
             break;
          }
       }
@@ -3848,7 +4821,7 @@ bool Port::solve(string *directory, MPI_Comm *MPI_PORT_COMM)
          if (retVal > 0) fail=true;
          i++;
       }
-      if (fail) PetscPrintf(PETSC_COMM_WORLD,"ERROR3087: OpenParEM2D error in execution for Port \"%s\".\n",get_name().c_str());
+      if (fail) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3087: OpenParEM2D error in execution for Port \"%s\".\n",get_name().c_str());}
    }
 
    std::filesystem::current_path("../../");
@@ -3870,18 +4843,6 @@ bool Port::uses_voltage()
    return false;
 }
 
-void Port::markUsedModes ()
-{
-   long unsigned int i=0;
-   while (i < modeList.size()) {
-      if ((uses_current() && modeList[i]->is_current()) ||
-          (uses_voltage() && modeList[i]->is_voltage())) {
-         modeList[i]->set_isUsed();
-      }
-      i++;
-   }
-}
-
 bool Port::loadSizes_tz (string *directory)
 {
    char filename[128];
@@ -3897,7 +4858,7 @@ bool Port::loadSizes_tz (string *directory)
    try {
       std::filesystem::current_path(projDirectory.str().c_str());
    } catch (std::filesystem::filesystem_error const& ex) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3088: Missing project directory for the 2D solution of Port %s.\n",get_name().c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3088: Missing project directory for the 2D solution of Port %s.\n",get_name().c_str());
       return true;
    }
 
@@ -3909,7 +4870,7 @@ bool Port::loadSizes_tz (string *directory)
    try {
       std::filesystem::current_path(tempDirectory.str().c_str());
    } catch (std::filesystem::filesystem_error const& ex) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3089: Missing temporary directory for the 2D solution of Port %s.\n",get_name().c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3089: Missing temporary directory for the 2D solution of Port %s.\n",get_name().c_str());
       std::filesystem::current_path("../../");
       return true;
    }
@@ -3935,17 +4896,17 @@ bool Port::loadSizes_tz (string *directory)
             count++;
          }
          if (! found) {
-            PetscPrintf(PETSC_COMM_WORLD,"ERROR3090: Failed to parse data in file \"%s\".\n",filename);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3090: Failed to parse data in file \"%s\".\n",filename);
             fail=true;
          }
       } else {
-          PetscPrintf(PETSC_COMM_WORLD,"ERROR3091: Failed to read data in file \"%s\".\n",filename);
+          prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3091: Failed to read data in file \"%s\".\n",filename);
           fail=true;
       }
       ss_size_t.close();
       if (fail) return true;
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3092: Unable to open file \"%s\" for reading.\n",filename);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3092: Unable to open file \"%s\" for reading.\n",filename);
       std::filesystem::current_path("../../../");
       return true;
    }
@@ -3971,17 +4932,17 @@ bool Port::loadSizes_tz (string *directory)
             count++;
          }
          if (! found) {
-            PetscPrintf(PETSC_COMM_WORLD,"ERROR3093: Failed to parse data in file \"%s\".\n",filename);
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3093: Failed to parse data in file \"%s\".\n",filename);
             fail=true;
          }
       } else {   
-          PetscPrintf(PETSC_COMM_WORLD,"ERROR3094: Failed to read data in file \"%s\".\n",filename);
+          prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3094: Failed to read data in file \"%s\".\n",filename);
           fail=true;
       }
       ss_size_z.close();
       if (fail) return true;
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3095: Unable to open file \"%s\" for reading.\n",filename);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3095: Unable to open file \"%s\" for reading.\n",filename);
       std::filesystem::current_path("../../../");
       return true;
    }
@@ -3992,34 +4953,9 @@ bool Port::loadSizes_tz (string *directory)
    return false;
 }
 
-bool Port::set_alphaBeta (double alpha, double beta, int mode)
+bool Port::load_modeMetrics (string *directory, double frequency)
 {
-   int assignCount=0;
-   long unsigned int i=0;
-   while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed() && modeList[i]->get_modeNumber2D() == mode) {
-         modeList[i]->set_alpha(alpha);
-         modeList[i]->set_beta(beta);
-         assignCount++;
-      }
-      i++;
-   }
-
-   if (assignCount == 0) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3096: Failed to assign propagation constant for Port \"%s\".\n",get_name().c_str());
-      return true;
-   }
-
-   if (assignCount > 1) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3097: Assigned propagation constant to more than one mode for Port \"%s\".\n",get_name().c_str());
-      return true;
-   }
-
-   return false;
-}
-
-bool Port::load_gammaZ (string *directory, double frequency)
-{
+   bool fail=false;
    char filename[128];
    double NpTodB=20*log10(exp(1));
    double eps0=8.8541878176e-12;
@@ -4037,7 +4973,7 @@ bool Port::load_gammaZ (string *directory, double frequency)
    try {
       std::filesystem::current_path(projDirectory.str().c_str());
    } catch (std::filesystem::filesystem_error const& ex) {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3098: Missing project directory for the 2D solution of Port %s.\n",get_name().c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3098: Missing project directory for the 2D solution of Port %s.\n",get_name().c_str());
       return true;
    }
 
@@ -4069,17 +5005,16 @@ bool Port::load_gammaZ (string *directory, double frequency)
       }
       CSV.close();
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3099: Unable to open file \"%s\" for reading.\n",filename);
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3099: Unable to open file \"%s\" for reading.\n",filename);
       std::filesystem::current_path("../../");
       return true;
    }
 
    // pull out the needed data
    if (tokenList.size() > 0) {
-      bool fail=false;
       int modal_impedance_calculation=0;
       int mode_count=0;
-      double alpha=0,beta=0;
+      double alpha=0,beta=0,ReZ=0,ImZ=0,ReV=0,ImV=0,ReI=0,ImI=0,RePz=0,ImPz=0;
 
       // impedance type and mode count
 
@@ -4092,164 +5027,83 @@ bool Port::load_gammaZ (string *directory, double frequency)
          entry++;
       } else fail=true;
 
-      if (mode_count != get_modeCount()) {
-         PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::load_gammaZ mismatched mode counts for Port \"%s\".\n",get_name().c_str());
+      if (mode_count != (int)get_modeCount()) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::load_modeMetrics mismatched mode counts for Port \"%s\".\n",get_name().c_str());
          fail=true;
       }
 
       if ((is_modal() && modal_impedance_calculation == 0) ||
           (!is_modal() && modal_impedance_calculation == 1)) {
-         PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::load_gammaZ mismatched impedance calculation for Port \"%s\".\n",get_name().c_str());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::load_modeMetrics mismatched impedance calculation for Port \"%s\".\n",get_name().c_str());
          fail=true;
       }
 
-      // alpha and beta
+      int i=0;
+      while (i < mode_count) {
+         if (entry+10 < (int)tokenList.size()+1) {
 
-      if ((int)tokenList.size() >= entry+mode_count*2) {
-         int i=0;
-         while (i < mode_count) {
-            if (is_double(&tokenList[entry])) alpha=stod(tokenList[entry]); else fail=true;   // dB/m
+            // alpha
+            if (processInputNumber(tokenList[entry],&alpha)) fail=true;  // dB/m
             alpha/=NpTodB;   // MKS units
             entry++;
 
-            if (is_double(&tokenList[entry])) beta=stod(tokenList[entry]); else fail=true;  // beta/ko
+            // beta
+            if (processInputNumber(tokenList[entry],&beta)) fail=true;   // beta/ko
             beta*=ko;        // MKS units
             entry++;
 
-            if (!fail) set_alphaBeta(alpha,beta,i+1);
+            // impedance 
+            if (processInputNumber(tokenList[entry],&ReZ)) fail=true;
+            entry++;
+            if (processInputNumber(tokenList[entry],&ImZ)) fail=true;
+            entry++;
 
-            i++;
-         }
+            // voltage
+            if (processInputNumber(tokenList[entry],&ReV)) fail=true;
+            entry++;
+            if (processInputNumber(tokenList[entry],&ImV)) fail=true;
+            entry++;
 
-      } else fail=true;
+            // current
+            if (processInputNumber(tokenList[entry],&ReI)) fail=true;
+            entry++;
+            if (processInputNumber(tokenList[entry],&ImI)) fail=true;
+            entry++;
 
-      // impedance count
-      int impedanceEntries=0;
-      if ((int)tokenList.size() >= entry && is_int(&tokenList[entry])) impedanceEntries=stoi(tokenList[entry]); else fail=true;
-      entry++;
+            // Pz
+            if (processInputNumber(tokenList[entry],&RePz)) fail=true;
+            entry++;
+            if (processInputNumber(tokenList[entry],&ImPz)) fail=true;
+            entry++;
 
-      if (modal_impedance_calculation && impedanceEntries != mode_count) {
-         PetscPrintf (PETSC_COMM_WORLD,"ERROR3100: Port impedance results are inconsistent with the mode count.\n");
-         fail=true;
-      }
-
-      if (!modal_impedance_calculation && impedanceEntries != mode_count*mode_count) {
-         PetscPrintf (PETSC_COMM_WORLD,"ERROR3101: Port impedance results are inconsistent with the mode count.\n");
-         fail=true;
-      }
-
-      if (fail) return fail;
-
-      // impedance
-
-      if ((int)tokenList.size() >= entry+impedanceEntries) {
-
-         ReZ2D.SetSize(mode_count,mode_count);
-         ReZ2D=0.;
-
-         ImZ2D.SetSize(mode_count,mode_count);
-         ImZ2D=0.;
-
-         if (modal_impedance_calculation) {
-            int i=0;
-            while (i < mode_count) {
-               if (is_double(&tokenList[entry])) ReZ2D(i,i)=stod(tokenList[entry]); else fail=true;
-               entry++;
-
-               if (is_double(&tokenList[entry])) ImZ2D(i,i)=stod(tokenList[entry]); else fail=true;
-               entry++;
-
-               i++;
-            }
-         } else {
-            int i=0;
-            while (i < mode_count) {
-               int j=0;
-               while (j < mode_count) {
-                  if (is_double(&tokenList[entry])) ReZ2D(i,j)=stod(tokenList[entry]); else fail=true;
-                  entry++;
-
-                  if (is_double(&tokenList[entry])) ImZ2D(i,j)=stod(tokenList[entry]); else fail=true;
-                  entry++;
-
-                  j++;
+            // save with the mode
+            long unsigned int j=0;
+            while (j < modeList.size()) {
+               if (i+1 == modeList[j]->get_modeNumber2D()) {
+                  modeList[j]->set_alpha(alpha);
+                  modeList[j]->set_beta(beta);
+                  modeList[j]->set_impedance(ReZ,ImZ);
+                  modeList[j]->set_voltage(ReV,ImV);
+                  modeList[j]->set_current(ReI,ImI);
+                  modeList[j]->set_Pz(RePz,ImPz);
                }
-               i++;
+               j++;
             }
-         }
 
-      } else fail=true;
-
-      // voltage count
-      int voltageEntries=0;
-      if ((int)tokenList.size() >= entry && is_int(&tokenList[entry])) voltageEntries=stoi(tokenList[entry]); else fail=true;
-      entry++;
-
-      if (modal_impedance_calculation && voltageEntries != mode_count) {
-         PetscPrintf (PETSC_COMM_WORLD,"ERROR3102: Port voltage results are inconsistent with the mode count.\n");
-         fail=true;
-      }
-
-      if (!modal_impedance_calculation && voltageEntries != mode_count*mode_count) {
-         PetscPrintf (PETSC_COMM_WORLD,"ERROR3103: Port voltage results are inconsistent with the mode count.\n");
-         fail=true;
-      }
-
-      if (fail) return fail;
-
-      // voltage
-
-      if ((int)tokenList.size() >= entry+voltageEntries) {
-
-         ReV2D.SetSize(mode_count,mode_count);
-         ReV2D=0.;
-
-         ImV2D.SetSize(mode_count,mode_count);
-         ImV2D=0.;
-
-         if (modal_impedance_calculation) {
-            int i=0;
-            while (i < mode_count) {
-               if (is_double(&tokenList[entry])) ReV2D(i,i)=stod(tokenList[entry]); else fail=true;
-               entry++;
-
-               if (is_double(&tokenList[entry])) ImV2D(i,i)=stod(tokenList[entry]); else fail=true;
-               entry++;
-
-               i++;
-            }
          } else {
-            int i=0;
-            while (i < mode_count) {
-               int j=0;
-               while (j < mode_count) {
-                  if (is_double(&tokenList[entry])) ReV2D(i,j)=stod(tokenList[entry]); else fail=true;
-                  entry++;
-
-                  if (is_double(&tokenList[entry])) ImV2D(i,j)=stod(tokenList[entry]); else fail=true;
-                  entry++;
-
-                  j++;
-               }
-               i++;
-            }
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::load_modeMetrics found insufficient data for Port \"%s\".\n",get_name().c_str());
+            fail=true;
          }
-
-      } else fail=true;
-
-      if (fail) {
-         PetscPrintf(PETSC_COMM_WORLD,"ERROR3104: Failed to extract computed parameters for Port \"%s\".\n",get_name().c_str());
-         std::filesystem::current_path("../../");
-         return true;
+         i++;
       }
    } else {
-      PetscPrintf(PETSC_COMM_WORLD,"ERROR3105: Missing computed results for Port \"%s\".\n",get_name().c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3105: Missing computed results for Port \"%s\".\n",get_name().c_str());
    }
 
    // cd back to the 3D project directory
    std::filesystem::current_path("../../");
 
-   return false;
+   return fail;
 }
 
 bool Port::loadSolution (string *directory, double frequency)
@@ -4258,41 +5112,141 @@ bool Port::loadSolution (string *directory, double frequency)
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
    loadSizes_tz(directory);
-   load_gammaZ(directory,frequency);
+   load_modeMetrics(directory,frequency);
+   loadTiTv(directory);
 
    long unsigned int i=0;
    while (i < modeList.size()) {
       if (modeList[i]->loadSolution(directory,get_name(),t_size,z_size)) return true;
       if (modeList[i]->scaleSolution()) return true;
-      int index=modeList[i]->get_modeNumber2D()-1;
-      modeList[i]->setSign(&(ReV2D(index,index)),&(ImV2D(index,index)));
       i++;
    }
 
    return false;
 }
 
-// for the first mode found
-bool Port::getGamma (Gamma *gamma, double frequency)
+bool Port::loadTiTv (string *directory)
 {
-   long unsigned int i=0;
-   while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         gamma->set(modeList[i]->get_alpha(),modeList[i]->get_beta(),frequency);
-         return false;
-      }
-      i++;
+   // cd to the project directory
+
+   stringstream projDirectory;
+   projDirectory << *directory << "/S" << get_name();
+
+   try {
+      std::filesystem::current_path(projDirectory.str().c_str());
+   } catch (std::filesystem::filesystem_error const& ex) {
+      return true;
    }
-   return true;
+
+   // cd to the temp directory
+
+   stringstream tempDirectory;
+   tempDirectory << "temp_S" << get_name();
+
+   try {
+      std::filesystem::current_path(tempDirectory.str().c_str());
+   } catch (std::filesystem::filesystem_error const& ex) {
+      std::filesystem::current_path("../../");
+      return true;
+   }
+
+   // load
+
+   ifstream TiTv;
+   TiTv.open("TiTv.dat",ifstream::in);
+   if (TiTv.is_open()) {
+
+      int lineCount;
+      bool inTi=false;
+      bool inTv=false;
+      int n=-1;
+
+      string line;
+      while (getline(TiTv,line)) {
+
+         stringstream ssLine(line);
+
+         if (inTi) {
+            if (n >= 0) {
+               if (Ti == nullptr) Ti=(lapack_complex_double *) malloc(n*n*sizeof(lapack_complex_double));
+
+               int row,col;
+               double realVal,imagVal;
+               string value;
+               int index=0;
+               while (std::getline(ssLine,value,',')) {
+                  if (index == 0) row=stoi(value);
+                  if (index == 1) col=stoi(value);
+                  if (index == 2) realVal=stod(value);
+                  if (index == 3) imagVal=stod(value);
+                  index++;
+               }
+
+               matrixSetValue(Ti,row+col*n,realVal,imagVal);
+               lineCount++;
+               if (lineCount == n*n) {
+                  inTi=false;
+                  n=-1;
+               }
+            } else {
+               n=stoi(line);
+               TiTvSize=n;
+            }
+         }
+         if (line.compare("Ti:") == 0) {
+            inTi=true;
+            lineCount=0;
+         }
+
+         if (inTv) {
+            if (n >= 0) {
+               if (Tv == nullptr) Tv=(lapack_complex_double *) malloc(n*n*sizeof(lapack_complex_double));
+
+               int row,col;
+               double realVal,imagVal;
+               string value;
+               int index=0;
+               while (std::getline(ssLine,value,',')) {
+                  if (index == 0) row=stoi(value);
+                  if (index == 1) col=stoi(value);
+                  if (index == 2) realVal=stod(value);
+                  if (index == 3) imagVal=stod(value);
+                  index++;
+               }
+
+               matrixSetValue(Tv,row+col*n,realVal,imagVal);
+               lineCount++;
+               if (lineCount == n*n) {
+                  inTv=false;
+                  n=-1;
+               }
+            } else {
+               n=stoi(line);
+               TiTvSize=n;
+            }
+         }
+         if (line.compare("Tv:") == 0) {
+            inTv=true;
+            lineCount=0;
+         }
+
+         ssLine.str("");
+         ssLine.clear();
+      }
+      TiTv.close();
+   } 
+
+   // cd back to the 3D project directory
+   std::filesystem::current_path("../../../");
+
+   return false;
 }
 
 void Port::build2Dgrids()
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->build2Dgrids(fes2D_ND,fes2D_H1);
-      }
+      modeList[i]->build2Dgrids(fes2D_ND,fes2D_H1);
       i++;
    }
 }
@@ -4301,9 +5255,7 @@ void Port::build3Dgrids(ParFiniteElementSpace *fes3D_ND, ParFiniteElementSpace *
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->build3Dgrids(fes3D_ND,fes3D_H1);
-      }
+      modeList[i]->build3Dgrids(fes3D_ND,fes3D_H1);
       i++;
    }
 }
@@ -4312,9 +5264,7 @@ void Port::build2DModalGrids()
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->build2DModalGrids(fes2D_ND,fes2D_H1);
-      }
+      modeList[i]->build2DModalGrids(fes2D_ND,fes2D_H1);
       i++;
    }
 }
@@ -4346,15 +5296,9 @@ void Port::build2DSolutionGrids ()
    *grid2DsolutionImHz=0.0;
 }
 
-int Port::get_modeCount()
+long unsigned int Port::get_modeCount ()
 {
-   int count=0;
-   long unsigned int i=0;
-   while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) count++;
-      i++;
-   }
-   return count;
+   return modeList.size();
 }
 
 int Port::get_SportCount()
@@ -4362,12 +5306,83 @@ int Port::get_SportCount()
    int count=0;
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         if (modeList[i]->get_Sport() > count) count=modeList[i]->get_Sport();
-      }
+      if (modeList[i]->get_Sport() > count) count=modeList[i]->get_Sport();
       i++;
    }
    return count;
+}
+
+int Port::get_minSportCount ()
+{
+   int count=INT_MAX;
+   long unsigned int i=0;
+   while (i < modeList.size()) {
+      if (modeList[i]->get_Sport() < count) count=modeList[i]->get_Sport();
+      i++;
+   }
+   return count;
+}
+
+int Port::get_maxSportCount ()
+{
+   int count=0;
+   long unsigned int i=0;
+   while (i < modeList.size()) {
+      if (modeList[i]->get_Sport() > count) count=modeList[i]->get_Sport();
+      i++;
+   }
+   return count;
+}
+
+int Port::get_attribute (int adjacent_element_attribute)
+{
+   long unsigned int i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]->get_adjacent_element_attribute() == adjacent_element_attribute) {
+         return attributeList[i]->get_attribute();
+      }
+      i++;
+   }
+
+   // assign
+   i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]->get_adjacent_element_attribute() < 0) {
+         attributeList[i]->set_adjacent_element_attribute(adjacent_element_attribute);
+         return attributeList[i]->get_attribute();
+      }
+      i++;
+   } 
+
+   // out of slots - should not happen
+   cout << "ASSERT: Port::get_attribute out of slots." << endl;
+
+   return -1;
+}
+
+int Port::get_last_attribute ()
+{
+   int attribute=-1;
+
+   long unsigned int i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]->get_attribute() > attribute) attribute=attributeList[i]->get_attribute();
+      i++;
+   }
+
+   return attribute;
+}
+
+int Port::get_adjacent_element_attribute (int attribute)
+{
+   long unsigned int i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]->get_attribute() == attribute) {
+         return attributeList[i]->get_adjacent_element_attribute();
+      }
+      i++;
+   }
+   return -1;
 }
 
 void Port::printSolution (string indent)
@@ -4380,29 +5395,10 @@ void Port::printSolution (string indent)
       cout << indent << indent << "t_size=" << t_size << endl;
       cout << indent << indent << "z_size=" << z_size << endl;
 
-      if (is_modal()) {
-         int i=0;
-         while (i < get_modeCount()) {
-            cout << indent << indent << "Z[" << i+1 << "]=(" << ReZ2D(i,i) << "," << ImZ2D(i,i) << ")" << endl;
-            i++;
-         }
-      } else {
-         int i=0;
-         while (i < get_modeCount()) {
-            cout << indent << indent;
-            int j=0;
-            while (j < get_modeCount()) {
-               cout << "Z[" << i+1 << "," << j+1 << "]=(" << ReZ2D(i,j) << "," << ImZ2D(i,j) << "), ";
-               j++;
-            }
-            cout << endl;
-            i++;
-         }
-      }
-
       long unsigned int i=0;
       while (i < modeList.size()) {
-         modeList[i]->printSolution();
+//ToDo: need to re-write printSolution for Mode
+//         modeList[i]->printSolution();
          i++;
       }
    }
@@ -4412,8 +5408,16 @@ void Port::build_essTdofList (ParFiniteElementSpace *fespace, ParMesh *pmesh)
 {
    Array<int> border_attributes;
    border_attributes.SetSize(pmesh->bdr_attributes.Max());
-   border_attributes=0;               // default to nothing
-   border_attributes[attribute-1]=1;  // enable this port
+   border_attributes=0;
+
+   // enable this port
+   long unsigned int i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]->get_adjacent_element_attribute() >= 0) {
+         border_attributes[attributeList[i]->get_attribute()-1]=1;
+      }
+      i++;
+   }
 
    if (ess_tdof_list) delete ess_tdof_list;
    ess_tdof_list=new Array<int>;
@@ -4421,173 +5425,164 @@ void Port::build_essTdofList (ParFiniteElementSpace *fespace, ParMesh *pmesh)
    offset=fespace->GetTrueDofOffsets();
 }
 
-void Port::fillX (Vec *X, Vec *Xdofs, int drivingSport)
+void Port::fillX (Vec *X, Vec *Xdofs, int drivingSet)
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         if (modeList[i]->get_Sport() == drivingSport) {
-            modeList[i]->fillX(X,Xdofs,ess_tdof_list,offset);
-            break;
-         }
-      }
+      modeList[i]->fillX(X,Xdofs,ess_tdof_list,offset,drivingSet);
       i++;
    }
 }
 
-// ToDo: include Inv_mur
-bool Port::addMassPortIntegrators (ParMesh *pmesh, ParMixedBilinearForm *pmblf, PWConstCoefficient *Inv_mur, vector<Array<int> *> &borderAttributesList,
-                                   vector<ConstantCoefficient *> &alphaConstList, vector<ConstantCoefficient *> &betaConstList, bool isReal)
+// ToDo: mur is not correctly applied to all terms, so fix
+bool Port::addPortIntegrators (ParMesh *pmesh, ParBilinearForm *pmblf, PWConstCoefficient *Inv_mur, PWConstCoefficient *neg_ko2_Re_er, PWConstCoefficient *neg_ko2_Im_er,
+                               vector<Array<int> *> &borderAttributesList, vector<ConstantCoefficient *> &ReInvGammaConstList, vector<ConstantCoefficient *> &ImInvGammaConstList,
+                               vector<ConstantCoefficient *> &RekConstList, vector<ConstantCoefficient *> &ImkConstList,
+                               bool isReal, int drivingSet, bool solution_check_homogeneous, string indent)
 {
-   bool fail=false;
+   if (isDriving(drivingSet)) return false;
 
+   // set the gamma to the largest for the port to avoid passivity violations
    bool found=false;
-   double alpha=0;
-   double beta=0;
+   complex<double> max_gamma=complex<double>(0,0);
+   complex<double> min_gamma=complex<double>(DBL_MAX,DBL_MAX);
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         alpha=modeList[i]->get_alpha();
-         beta=modeList[i]->get_beta();
-         found=true;
-         break;
-      }
+      complex<double> test=complex<double>(modeList[i]->get_alpha(),modeList[i]->get_beta());
+      if (abs(test) > abs(max_gamma)) max_gamma=test;
+      if (abs(test) < abs(min_gamma)) min_gamma=test;
+      found=true;
       i++;
    }
    if (!found) {
-      fail=true;
-      cout << "ASSERT: Port::addMassPortIntegrators failed to find a mode to use." << endl;
+      cout << "ASSERT: Port::addPortIntegrators failed to find a mode to use." << endl;
    }
 
-   Array<int> *border_attributes=new Array<int>;
-   border_attributes->SetSize(pmesh->bdr_attributes.Max());
-   (*border_attributes)=0;                // default to nothing
-   (*border_attributes)[attribute-1]=1;   // enable this port
+   // check for homogenous setup for multi-mode ports
+   if (modeList.size() > 1 && solution_check_homogeneous) {
+      double tolerance=0.05;   // seems reasonable but no calculation to back it up
+      bool fail=false;
+      if (abs(max_gamma) == 0) {   // should not happen
+         if (abs(min_gamma) > tolerance) fail=true;
+      } else {
+         if (abs((max_gamma-min_gamma)/max_gamma) > tolerance) fail=true;
+      }
+      if (fail) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%s%sERROR3182: Port \"%s\" is insufficiently homogeneous.\n",
+                                                indent.c_str(),indent.c_str(),indent.c_str(),get_name().c_str());
+         return true;
+      }
+   }
 
-   ConstantCoefficient *alphaConst=new ConstantCoefficient(alpha);
-   ConstantCoefficient *betaConst=new ConstantCoefficient(beta);
+   double ReInvGamma=real(1/max_gamma);
+   double ImInvGamma=imag(1/max_gamma);
 
-   if (isReal) pmblf->AddBoundaryIntegrator(new VectorFEMassIntegrator(*alphaConst),*border_attributes);
-   else pmblf->AddBoundaryIntegrator(new VectorFEMassIntegrator(*betaConst),*border_attributes);
+   // cycle through areas with unique materials
+   i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]->get_adjacent_element_attribute() >= 0) {
+         ConstantCoefficient *ReInvGammaConst=new ConstantCoefficient(ReInvGamma);
+         ConstantCoefficient *ImInvGammaConst=new ConstantCoefficient(ImInvGamma);
 
-   // save for later deleting
-   borderAttributesList.push_back(border_attributes);
-   alphaConstList.push_back(alphaConst);
-   betaConstList.push_back(betaConst);
+         // set -epsr*ko^2/max_gamma for this area
 
-   return fail;
-}
+         complex<double> compVal=complex<double>((*neg_ko2_Re_er)(attributeList[i]->get_adjacent_element_attribute()),
+                                                 (*neg_ko2_Im_er)(attributeList[i]->get_adjacent_element_attribute()))/max_gamma;
 
-void Port::flipModalHsign(long unsigned int mode)
-{
-   long unsigned int j=0;
-   long unsigned int i=0;
-   while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         if (j == mode) {
-            modeList[i]->flipModalHsign(!spin180degrees);
-            break;
+         double Rek=real(compVal);
+         double Imk=imag(compVal);
+
+         ConstantCoefficient *RekConst=new ConstantCoefficient(Rek);
+         ConstantCoefficient *ImkConst=new ConstantCoefficient(Imk);
+
+         // enable each section of the port corresponding to each unique material area
+         Array<int> *border_attributes=new Array<int>;
+         border_attributes->SetSize(pmesh->bdr_attributes.Max());
+         *border_attributes=0;
+         (*border_attributes)[attributeList[i]->get_attribute()-1]=1;
+
+         // set the first-order absorbing boundary condition
+         if (isReal) {
+            pmblf->AddBoundaryIntegrator(new CurlCurlIntegrator(*ReInvGammaConst),*border_attributes);
+            pmblf->AddBoundaryIntegrator(new VectorFEMassIntegrator(*RekConst),*border_attributes);
+         } else {
+            pmblf->AddBoundaryIntegrator(new CurlCurlIntegrator(*ImInvGammaConst),*border_attributes);
+            pmblf->AddBoundaryIntegrator(new VectorFEMassIntegrator(*ImkConst),*border_attributes);
          }
-         j++;
+
+         // save for later deleting
+         borderAttributesList.push_back(border_attributes);
+         ReInvGammaConstList.push_back(ReInvGammaConst);
+         ImInvGammaConstList.push_back(ImInvGammaConst);
+         RekConstList.push_back(RekConst);
+         ImkConstList.push_back(ImkConst);
       }
       i++;
    }
+
+   return false;
 }
 
 void Port::extract2Dmesh (ParMesh *pmesh, vector<ParSubMesh> *parSubMeshes)
 {
-   Array<int> border_attributes(1);
-   border_attributes[0]=attribute;
+   int count=0;
+   long unsigned int i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]->get_adjacent_element_attribute() >= 0) count++;
+      i++;
+   }
+
+   Array<int> border_attributes;
+   border_attributes.SetSize(count);
+
+   int index=0;
+   i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]->get_adjacent_element_attribute() >= 0) {
+         border_attributes[index]=attributeList[i]->get_attribute();
+         index++;
+      }
+      i++;
+   }
 
    ParSubMesh pmesh2D=ParSubMesh::CreateFromBoundary(*pmesh,border_attributes);
    parSubMeshes->push_back(pmesh2D);
 }
 
-void Port::set_V3Dsize (int size)
-{
-   ReV3D.SetSize(size,size);
-   ReV3D=0.;
-
-   ImV3D.SetSize(size,size);
-   ImV3D=0.;
-}
-
-void Port::calculateWeights (Mode *drivingMode)
-{
-   int i,j;
-
-   i=drivingMode->get_Sport()-1;
-
-   long unsigned int k=0;
-   while (k < modeList.size()) {
-      if (modeList[k]->get_isUsed()) {
-
-         // 2D
-         int index2D=modeList[k]->get_modeNumber2D();
-
-         // 3D
-         j=modeList[k]->get_Sport()-1;
-         modeList[k]->calculateWeights(fes2D_L2,grid2DsolutionReEt,grid2DsolutionImEt,grid2DsolutionReEz,grid2DsolutionImEz,grid2DsolutionReHt,
-                                       grid2DsolutionImHt,grid2DsolutionReHz,grid2DsolutionImHz,normal,
-                                       drivingMode->get_Sport(),
-                                       complex<double>(ReV2D(index2D-1,index2D-1),ImV2D(index2D-1,index2D-1)),
-                                       complex<double>(ReZ2D(index2D-1,index2D-1),ImZ2D(index2D-1,index2D-1)),
-                                       complex<double>(ReV3D(i,j),ImV3D(i,j)));
-      }
-      k++;
-   }
-}
-
-double Port::get_maxReflection ()
-{
-   double reflection;
-   double maxReflection=-DBL_MAX;
-
-   long unsigned int i=0;
-   while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         reflection=modeList[i]->get_maxReflection();
-         if (reflection > maxReflection) maxReflection=reflection;
-      }
-      i++;
-   }
-
-   return maxReflection;
-}
-
-double Port::get_maxReflection (int drivingSport)
-{
-   double reflection;
-   double maxReflection=-DBL_MAX;
-
-   long unsigned int i=0;
-   while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         reflection=modeList[i]->get_maxReflection(drivingSport);
-         if (reflection > maxReflection) maxReflection=reflection;
-      }
-      i++;
-   }
-
-   return maxReflection;
-}
-
-void Port::printPortReflections ()
+void Port::addWeight (complex<double> value)
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->printPortReflections();
-      }
+      modeList[i]->addWeight(value);
       i++;
    }
+}
+
+void Port::calculateSplits ()
+{
+   long unsigned int i=0;
+   while (i < modeList.size()) {
+      modeList[i]->calculateSplits(fes2D_L2,grid2DsolutionReEt,grid2DsolutionImEt,grid2DsolutionReEz,grid2DsolutionImEz,grid2DsolutionReHt,
+                                   grid2DsolutionImHt,grid2DsolutionReHz,grid2DsolutionImHz,normal);
+      i++;
+   }
+}
+
+bool Port::isDriving (int drivingSet)
+{
+   long unsigned int i=0;
+   while (i < modeList.size()) {
+      if (modeList[i]->get_weight(drivingSet-1) != 0) return true;
+      i++;
+   }
+   return false;
 }
 
 Mode* Port::getDrivingMode (int drivingSport)
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed() && modeList[i]->get_Sport() == drivingSport) {
+      if (modeList[i]->get_Sport() == drivingSport) {
          return modeList[i];
       }
       i++;
@@ -4599,70 +5594,69 @@ void Port::fillIntegrationPoints (vector<Path *> *pathList)
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->is_voltage()) {
-         modeList[i]->fillIntegrationPoints(pathList);
-      }
+      modeList[i]->fillIntegrationPoints(pathList);
       i++;
    }
 }
 
-void Port::calculateVoltages (ParMesh *pmesh, vector<Path *> *pathList, ParGridFunction *grid_re, ParGridFunction *grid_im, Mode* drivingMode)
+void Port::calculateLineIntegrals (ParMesh *pmesh, fem3D *fem)
 {
-   complex<double> voltage;
-
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->is_voltage()) {
-         voltage=-modeList[i]->calculateLineIntegral (pmesh,pathList,grid_re,grid_im);
-         ReV3D(drivingMode->get_Sport()-1,modeList[i]->get_Sport()-1)=real(voltage);
-         ImV3D(drivingMode->get_Sport()-1,modeList[i]->get_Sport()-1)=imag(voltage);
-      }
+      modeList[i]->calculateLineIntegrals(pmesh,fem);
       i++;
    }
 }
 
-void Port::calculateSparameter (Result *result, Mode *drivingMode)
+void Port::alignDirections (ParMesh *pmesh, fem3D *fem)
 {
-   complex<double> S;
+   complex<double> VkeepValue=complex<double>(-DBL_MAX,-DBL_MAX);
+   complex<double> IkeepValue=complex<double>(-DBL_MAX,-DBL_MAX);
+   IntegrationPath *Vpath=nullptr;
+   IntegrationPath *Ipath=nullptr;
 
+   // use the first mode for the alignment direction
+   if (is_line()) {
+      if (modeList.size() > 0) {
+         Vpath=modeList[0]->get_voltageIntegrationPath();
+         Ipath=modeList[0]->get_currentIntegrationPath();
+      }
+   }
+
+   if (Vpath) VkeepValue=Vpath->get_integratedValue();
+   if (Ipath) IkeepValue=Ipath->get_integratedValue();
+
+   // align
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         if (modeList[i]->get_Sport() == drivingMode->get_Sport()) {
-            int index2D=modeList[i]->get_modeNumber2D();
-            complex<double> Zo=complex<double>(ReZ2D(index2D-1,index2D-1),ImZ2D(index2D-1,index2D-1));
-            result->set_Zo(Zo);
-         }
-         S=modeList[i]->calculateSparameter(drivingMode);
-         result->push_S(S,modeList[i]->get_Sport(),drivingMode->get_Sport());
-      }
+      modeList[i]->alignDirections(pmesh,fem,Vpath,Ipath);
       i++;
    }
+
+   // restore values
+   if (Vpath) Vpath->set_integratedValue(VkeepValue);
+   if (Ipath) Ipath->set_integratedValue(IkeepValue);
 }
 
-void Port::transfer_2Dsolution_2Dgrids_to_3Dgrids()
+void Port::transfer_2Dsolution_2Dgrids_to_3Dgrids ()
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->transfer_2Dsolution_2Dgrids_to_3Dgrids();
-      }
+      modeList[i]->transfer_2Dsolution_2Dgrids_to_3Dgrids();
       i++;    
    }
 }
 
-void Port::transfer_2Dsolution_3Dgrids_to_2Dgrids()
+void Port::transfer_2Dsolution_3Dgrids_to_2Dgrids ()
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->transfer_2Dsolution_3Dgrids_to_2Dgrids();
-      }
+      modeList[i]->transfer_2Dsolution_3Dgrids_to_2Dgrids();
       i++;
    }
 }
 
-void Port::transfer_3Dsolution_3Dgrids_to_2Dgrids(fem3D *fem)
+void Port::transfer_3Dsolution_3Dgrids_to_2Dgrids (fem3D *fem)
 {
    // E
 
@@ -4701,13 +5695,11 @@ void Port::transfer_3Dsolution_3Dgrids_to_2Dgrids(fem3D *fem)
 //   delete full_to_port_ImHz; full_to_port_ImHz=nullptr;
 }
 
-void Port::save2DParaView(ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension)
+void Port::save2DParaView (ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension)
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->save2DParaView(psubmesh2D,projData,frequency,add_extension);
-      }
+      modeList[i]->save2DParaView(psubmesh2D,projData,frequency,add_extension);
       i++;
    }
 }
@@ -4716,9 +5708,7 @@ void Port::save3DParaView(ParMesh *pmesh, struct projectData *projData, double f
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->save3DParaView(pmesh,projData,frequency,add_extension);
-      }
+      modeList[i]->save3DParaView(pmesh,projData,frequency,add_extension);
       i++;
    }
 }
@@ -4753,13 +5743,11 @@ void Port::save2DSolutionParaView(ParSubMesh *psubmesh2D, struct projectData *pr
    delete pd;
 }
 
-void Port::save2DModalParaView(ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension)
+void Port::save2DModalParaView (ParSubMesh *psubmesh2D, struct projectData *projData, double frequency, bool add_extension)
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-         modeList[i]->save2DModalParaView(psubmesh2D,projData,frequency,add_extension);
-      }
+      modeList[i]->save2DModalParaView(psubmesh2D,projData,frequency,add_extension);
       i++;
    }
 }
@@ -4768,9 +5756,41 @@ void Port::resetElementNumbers ()
 {
    long unsigned int i=0;
    while (i < modeList.size()) {
-      if (modeList[i]->get_isUsed()) {
-          modeList[i]->resetElementNumbers();
-      }
+      modeList[i]->resetElementNumbers();
+      i++;
+   }
+}
+
+bool Port::snapToMeshBoundary (vector<Path *> *pathList, Mesh *mesh, string indent)
+{
+   if (pathIndexList.size() != 1) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"ASSERT: Port::snapToMeshBoundary operation on a Port with an invalid path definition.\n");
+      return false;
+   }
+
+   // snap the port to the mesh boundary
+   Path *path=(*pathList)[pathIndexList[0]];
+   if (path->snapToMeshBoundary(mesh)) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3102: Port \"%s\" failed to snap to the mesh.\n",
+                                             indent.c_str(),indent.c_str(),get_name().c_str());
+      return true;
+   }
+
+   // snap the mode path to the mesh boundary
+   long unsigned int i=0;
+   while (i < modeList.size()) {
+      modeList[i]->snapToMeshBoundary(pathList,mesh);
+      i++;
+   }
+
+   return false;
+}
+
+void Port::populateGamma (double frequency, GammaDatabase *gammaDatabase)
+{
+   long unsigned int i=0;
+   while (i < modeList.size()) {
+      modeList[i]->populateGamma(frequency,gammaDatabase);
       i++;
    }
 }
@@ -4809,7 +5829,38 @@ void Port::reset()
    if (grid2DsolutionImHz) {delete grid2DsolutionImHz; grid2DsolutionImHz=nullptr;}
 }
 
-Port::~Port()
+void Port::aggregateDifferentialPairList (vector<DifferentialPair *> *aggregateList)
+{
+   long unsigned int i=0;
+   while (i < differentialPairList.size()) {
+      aggregateList->push_back(differentialPairList[i]);
+      i++;
+   }
+}
+
+void Port::buildAggregateModeList (vector<Mode *> *aggregateModeList)
+{
+   long unsigned int i=0;
+   while (i < modeList.size()) {
+      aggregateModeList->push_back(modeList[i]);
+      i++;
+   }
+}
+
+bool Port::has_mode (Mode *mode, long unsigned int *index)
+{
+   long unsigned int i=0;
+   while (i < modeList.size()) {
+      if (modeList[i] == mode) {
+         *index=i;
+         return true;
+      }
+      i++;
+   }
+   return false;
+}
+
+Port::~Port ()
 {
    long unsigned int i=0;
    while (i < pathNameList.size()) {
@@ -4826,6 +5877,21 @@ Port::~Port()
       i++;
    }
 
+   i=0;
+   while (i < attributeList.size()) {
+      if (attributeList[i]) {
+         delete attributeList[i];
+         attributeList[i]=nullptr;
+      }
+      i++;
+   }
+
+   i=0;
+   while (i < differentialPairList.size()) {
+      delete differentialPairList[i];
+      i++;
+   }
+
    if (rotated) {delete rotated;}
 
    if (fec2D_ND) {delete fec2D_ND; fec2D_ND=nullptr;}
@@ -4838,13 +5904,16 @@ Port::~Port()
    if (fes2D_L2) {delete fes2D_L2; fes2D_L2=nullptr;}
 
    if (ess_tdof_list) {delete ess_tdof_list; ess_tdof_list=nullptr;}
+
+   if (Ti) {free(Ti); Ti=nullptr;}
+   if (Tv) {free(Tv); Tv=nullptr;}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // BoundaryDatabase
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-bool BoundaryDatabase::findSourceFileBlocks()
+bool BoundaryDatabase::findSourceFileBlocks ()
 {
    bool fail=false;
    int start_lineNumber=inputs.get_first_lineNumber();
@@ -4869,7 +5938,7 @@ bool BoundaryDatabase::findSourceFileBlocks()
    return fail;
 }
 
-bool BoundaryDatabase::findPathBlocks()
+bool BoundaryDatabase::findPathBlocks ()
 {
    bool fail=false;
    int start_lineNumber=inputs.get_first_lineNumber();
@@ -4894,7 +5963,7 @@ bool BoundaryDatabase::findPathBlocks()
    return fail;
 }
 
-bool BoundaryDatabase::findBoundaryBlocks()
+bool BoundaryDatabase::findBoundaryBlocks ()
 {
    bool fail=false;
    int start_lineNumber=inputs.get_first_lineNumber();
@@ -4919,7 +5988,7 @@ bool BoundaryDatabase::findBoundaryBlocks()
    return fail;
 }
 
-bool BoundaryDatabase::findPortBlocks()
+bool BoundaryDatabase::findPortBlocks ()
 {
    bool fail=false;
    int start_lineNumber=inputs.get_first_lineNumber();
@@ -4944,20 +6013,25 @@ bool BoundaryDatabase::findPortBlocks()
    return fail;
 }
 
-bool BoundaryDatabase::load(const char *filename, bool check_closed_loop) {
+bool BoundaryDatabase::load (const char *filename, bool check_closed_loop) {
    bool fail=false;
    int dim=3;
 
    if (strcmp(filename,"") == 0) return false;  // this file is optional
 
-   PetscPrintf(PETSC_COMM_WORLD,"   loading port definition file \"%s\"\n",filename);
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"   loading port definition file \"%s\"\n",filename);
 
    if (inputs.load(filename)) return true;
+   if (inputs.get_size() == 0) {
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3106: File is has no valid content.\n",
+                                             indent.c_str(),indent.c_str());
+      return true;
+   }
    inputs.createCrossReference();
 
    if (inputs.checkVersion(version_name, version_value)) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3106: Version mismatch.  Expecting the first line to be: %s %s\n",
-                                   indent.c_str(),indent.c_str(),version_name.c_str(),version_value.c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3100: Version mismatch.  Expecting the first line to be: %s %s\n",
+                                             indent.c_str(),indent.c_str(),version_name.c_str(),version_value.c_str());
       return true;
    }
 
@@ -5017,20 +6091,20 @@ bool BoundaryDatabase::load(const char *filename, bool check_closed_loop) {
    if (check(check_closed_loop)) fail=true;
 
    // subdivide the paths to eliminate partial overlaps
-//xxx
 // ToDo
 // This is corrupting the path.  Need to fix.
 //   if (!fail) subdivide_paths();
 
 
-   if (fail) PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3107: Failed to load port definitions.\n",indent.c_str(),indent.c_str());
+   if (fail) {prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3107: Failed to load port definitions.\n",indent.c_str(),indent.c_str());}
 
    return fail;
 }
 
-void BoundaryDatabase::print()
+void BoundaryDatabase::print ()
 {
-   PetscPrintf(PETSC_COMM_WORLD,"%s %s\n",version_name.c_str(),version_value.c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s %s\n",version_name.c_str(),version_value.c_str());
+   prefix(); PetscPrintf(PETSC_COMM_WORLD,"drivingSetName=%s\n",drivingSetName.c_str());
 
    long unsigned int i=0;
    while (i < sourceFileList.size()) {
@@ -5057,7 +6131,7 @@ void BoundaryDatabase::print()
    }
 }
 
-bool BoundaryDatabase::inBlocks(int lineNumber)
+bool BoundaryDatabase::inBlocks (int lineNumber)
 {
    long unsigned int i=0;
    while (i < pathList.size()) {
@@ -5087,13 +6161,13 @@ bool BoundaryDatabase::inBlocks(int lineNumber)
 }
 
 
-bool BoundaryDatabase::check(bool check_closed_loop)
+bool BoundaryDatabase::check (bool check_closed_loop)
 {
    bool fail=false;
 
    // Source
    if (sourceFileList.size() > 1) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3108: Only one File block is allowed.\n",indent.c_str(),indent.c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3108: Only one File block is allowed.\n",indent.c_str(),indent.c_str());
       fail=true;
    }
 
@@ -5117,8 +6191,8 @@ bool BoundaryDatabase::check(bool check_closed_loop)
       while (pathList.size() > 0 && i < pathList.size()-1 && j < pathList.size()) {
          if (pathList[i]->name_is_loaded() && pathList[j]->name_is_loaded()) {
             if (pathList[i]->get_name().compare(pathList[j]->get_name()) == 0) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3109: name at line %d duplicates the name at line %d.\n",
-                                            indent.c_str(),indent.c_str(),pathList[j]->get_name_lineNumber(),pathList[i]->get_name_lineNumber());
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3109: name at line %d duplicates the name at line %d.\n",
+                                                      indent.c_str(),indent.c_str(),pathList[j]->get_name_lineNumber(),pathList[i]->get_name_lineNumber());
                fail=true;
             }
          }
@@ -5142,8 +6216,8 @@ bool BoundaryDatabase::check(bool check_closed_loop)
       while (boundaryList.size() > 0 && i < boundaryList.size()-1 && j < boundaryList.size()) {
          if (boundaryList[i]->name_is_loaded() && boundaryList[j]->name_is_loaded()) {
             if (boundaryList[i]->get_name().compare(boundaryList[j]->get_name()) == 0) {
-               PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3110: name at line %d duplicates the name at line %d.\n",
-                                            indent.c_str(),indent.c_str(),boundaryList[j]->get_name_lineNumber(),boundaryList[i]->get_name_lineNumber());
+               prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3110: name at line %d duplicates the name at line %d.\n",
+                                                      indent.c_str(),indent.c_str(),boundaryList[j]->get_name_lineNumber(),boundaryList[i]->get_name_lineNumber());
                fail=true;
             }
          }
@@ -5157,7 +6231,7 @@ bool BoundaryDatabase::check(bool check_closed_loop)
 
    i=0;
    while (i < portList.size()) {
-      if (portList[i]->check(&indent,pathList,check_closed_loop)) fail=true;
+      if (portList[i]->check(&indent,&pathList,check_closed_loop)) fail=true;
       i++;
    }
 
@@ -5165,7 +6239,7 @@ bool BoundaryDatabase::check(bool check_closed_loop)
    i=1;  // skip the first line, which is the version information
    while (i < inputs.get_size()) {
       if (! inBlocks(inputs.get_lineNumber(i))) {
-         PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3111: Invalid input at line %d.\n",indent.c_str(),indent.c_str(),inputs.get_lineNumber(i));
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3111: Invalid input at line %d.\n",indent.c_str(),indent.c_str(),inputs.get_lineNumber(i));
          fail=true;
       }
       i++;
@@ -5201,12 +6275,12 @@ bool BoundaryDatabase::checkSportNumbering()
    sort(fullList.begin(),fullList.end());
 
    if (fullList.size() == 0) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3112: No S-parameter ports are defined.\n",indent.c_str(),indent.c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3112: No S-parameter ports are defined.\n",indent.c_str(),indent.c_str());
       fail=true;
    }
 
    if (!fail && fullList[0] != 1) {
-      PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3113: S-parameter ports must start numbering with 1.\n",indent.c_str(),indent.c_str());
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3113: S-parameter ports must start numbering with 1.\n",indent.c_str(),indent.c_str());
       fail=true;
    }
 
@@ -5214,7 +6288,7 @@ bool BoundaryDatabase::checkSportNumbering()
       i=0;
       while (i < fullList.size()-1) {
          if (fullList[i] != fullList[i+1]-1) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3114: S-parameter ports are not numbered sequentially.\n",indent.c_str(),indent.c_str());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3114: S-parameter ports are not numbered sequentially.\n",indent.c_str(),indent.c_str());
             fail=true;
          }
          i++;
@@ -5247,7 +6321,7 @@ bool BoundaryDatabase::check_scale (Mesh *mesh, int order)
    }
 
    if (fail) {
-      PetscPrintf(PETSC_COMM_WORLD,"         Bounding box: (%g,%g,%g) to (%g,%g,%g)\n",
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"         Bounding box: (%g,%g,%g) to (%g,%g,%g)\n",
          lowerLeft[0],lowerLeft[1],lowerLeft[2],upperRight[0],upperRight[1],upperRight[2]);
    }
 
@@ -5264,8 +6338,8 @@ bool BoundaryDatabase::check_overlaps ()
       long unsigned int j=0;
       while (j < portList.size()) {
          if (i != j && portList[i]->is_overlapPath(pathList[portList[j]->get_pathIndex(0)])) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3115: Port %s and Port %s overlap.\n",
-               indent.c_str(),indent.c_str(),portList[i]->get_name().c_str(),portList[j]->get_name().c_str());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3115: Port %s and Port %s overlap.\n",
+                                                   indent.c_str(),indent.c_str(),portList[i]->get_name().c_str(),portList[j]->get_name().c_str());
             fail=true;
          }
          j++;
@@ -5279,8 +6353,8 @@ bool BoundaryDatabase::check_overlaps ()
       long unsigned int j=0;
       while (j < boundaryList.size()) {
          if (boundaryList[j]->is_overlapPath(&pathList,pathList[portList[i]->get_pathIndex(0)])) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3116: Port %s and Boundary %s overlap.\n",
-               indent.c_str(),indent.c_str(),portList[i]->get_name().c_str(),boundaryList[j]->get_name().c_str());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3116: Port %s and Boundary %s overlap.\n",
+                                                   indent.c_str(),indent.c_str(),portList[i]->get_name().c_str(),boundaryList[j]->get_name().c_str());
             fail=true;
          }
          j++;
@@ -5294,8 +6368,8 @@ bool BoundaryDatabase::check_overlaps ()
       long unsigned int j=0;
       while (j < boundaryList.size()) {
          if (i != j && boundaryList[i]->is_overlapPath(&pathList,pathList[boundaryList[j]->get_pathIndex(0)])) {
-            PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3117: Boundary %s and Boundary %s overlap.\n",
-               indent.c_str(),indent.c_str(),boundaryList[i]->get_name().c_str(),boundaryList[j]->get_name().c_str());
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3117: Boundary %s and Boundary %s overlap.\n",
+                                                   indent.c_str(),indent.c_str(),boundaryList[i]->get_name().c_str(),boundaryList[j]->get_name().c_str());
             fail=true;
          }
          j++;
@@ -5320,27 +6394,69 @@ void BoundaryDatabase::subdivide_paths ()
    }
 }
 
-void BoundaryDatabase::create2Dmeshes(int order, ParMesh *mesh3D, vector<ParSubMesh> *parSubMeshes)
+bool BoundaryDatabase::is_line ()
 {
    long unsigned int i=0;
    while (i < portList.size()) {
-      portList[i]->create2Dmesh (order,mesh3D,parSubMeshes,i,tol);
+      if (portList[i]->is_modal()) return false;
       i++;
    }
+   return true;
+}
+
+bool BoundaryDatabase::is_modal ()
+{
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      if (portList[i]->is_line()) return false;
+      i++;
+   }
+   return true;
+}
+
+bool BoundaryDatabase::is_mixed_mode ()
+{
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      if (portList[i]->is_mixed_mode()) return true;
+      i++;
+   }
+   return false;
+}
+
+bool BoundaryDatabase::create2Dmeshes (int order, ParMesh *mesh3D, vector<ParSubMesh> *parSubMeshes)
+{
+   bool fail=false;
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      if (portList[i]->create2Dmesh(order,mesh3D,parSubMeshes,i,tol)) fail=true;
+      i++;
+   }
+   return fail;
 }
 
 // assign unique attributes for the ports and boundaries
-void BoundaryDatabase::assignAttributes ()
+void BoundaryDatabase::assignAttributes (Mesh *mesh)
 {
+   // max number of material regions
+   int regions=mesh->attributes.Max();
+
    // 0 is not allowed by MFEM
    // 1 is reserved for PEC as the default
-   // so start with 2
-   int attribute=2;
+   // so start with 2 unless a default boundary has been set
+
+   int attribute=getLastAttribute()+1;
+   if (attribute < 2) attribute=2;
 
    long unsigned int i=0;
    while (i < portList.size()) {
-      portList[i]->set_attribute(attribute);
-      attribute++;
+      long unsigned int j=1;
+      while (j <= (long unsigned int)regions) {
+         PortAttribute *newPortAttribute=new PortAttribute(attribute,-1);  // not yet assigned to an element; may not use all of these
+         portList[i]->push_portAttribute(newPortAttribute);
+         attribute++;
+         j++;
+      }
       i++;
    }
 
@@ -5356,45 +6472,72 @@ void BoundaryDatabase::assignAttributes ()
    }
 }
 
-Port* BoundaryDatabase::get_port (int attribute)
+Boundary* BoundaryDatabase::get_defaultBoundary ()
 {
    long unsigned int i=0;
-   while (i < portList.size()) {
-      if (portList[i]->get_attribute() == attribute) return portList[i];
+   while (i < boundaryList.size()) {
+      if (boundaryList[i]->is_default_boundary()) return boundaryList[i];
       i++;
    }
    return nullptr;
 }
 
 // mark the mesh boundaries with attributes into the ports and boundaries
-void BoundaryDatabase::markMeshBoundaries (Mesh *mesh)
+bool BoundaryDatabase::markMeshBoundaries (Mesh *mesh)
 {
    DenseMatrix pointMat(3,3);
 
-   // loop through the boundary elements
+   // mark everything with a default
+
+   int default_attribute=1;  // PEC
+   Boundary *default_boundary=get_defaultBoundary();
+   if (default_boundary) {
+      default_attribute=default_boundary->get_attribute();
+      default_boundary->set_assignedToMesh();
+   }
+
    int i=0;
+   while (i < mesh->GetNBE()) {
+      mesh->SetBdrAttribute(i,default_attribute);
+      i++;
+   }
+
+   // set boundaries to ports and non-default boundaries - overwrites the default attribute
+
+   // loop through the mesh boundary elements
+   i=0;
    while (i < mesh->GetNBE()) {
 
       int attribute=-1;
       if (mesh->GetBdrElementType(i) == Element::TRIANGLE) {
+
+         int adjacent_element_number;
+         int info;
+         mesh->GetBdrElementAdjacentElement (i,adjacent_element_number,info);
+         int adjacent_element_attribute=mesh->GetAttribute(adjacent_element_number);
+
          mesh->GetBdrPointMatrix(i,pointMat);
 
          // loop through the ports
          long unsigned int j=0;
          while (j < portList.size()) {
             if (portList[j]->is_triangleInside(&pointMat)) {
-                attribute=portList[j]->get_attribute();
+                attribute=portList[j]->get_attribute(adjacent_element_attribute);
+                portList[j]->set_assignedToMesh();
                 break;
             }
             j++;
          }
 
-         // loop through the boundaries
+         // loop through the boundaries, excluding the default
          j=0;
          while (j < boundaryList.size()) {
-            if (boundaryList[j]->is_triangleInside(&pointMat)) { 
-                attribute=boundaryList[j]->get_attribute();
-                break;
+            if (!boundaryList[j]->is_default_boundary()) {
+               if (boundaryList[j]->is_triangleInside(&pointMat)) { 
+                   attribute=boundaryList[j]->get_attribute();
+                   boundaryList[j]->set_assignedToMesh();
+                   break;
+               }
             }
             j++;
          }
@@ -5402,13 +6545,38 @@ void BoundaryDatabase::markMeshBoundaries (Mesh *mesh)
 
       if (attribute > 0) {
          mesh->SetBdrAttribute(i,attribute);
-      } else {
-         // set to 1 as the PEC default
-         mesh->SetBdrAttribute(i,1);          
       }
 
       i++;
    }
+
+   // check that all ports and boundaries are assigned
+
+   bool missingAssignment=false;
+
+   long unsigned int j=0;
+   while (j < portList.size()) {
+      if (!portList[j]->is_assignedToMesh()) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3181: Port \"%s\" could not be assigned to the mesh boundary.\n",
+                                                indent.c_str(),indent.c_str(),portList[j]->get_name().c_str());
+         missingAssignment=true;
+      }
+      j++;
+   }
+
+   j=0;
+   while (j < boundaryList.size()) {
+      if (!boundaryList[j]->is_assignedToMesh()) {
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"%s%sERROR3179: Boundary \"%s\" could not be assigned to the mesh boundary.\n",
+                                                indent.c_str(),indent.c_str(),boundaryList[j]->get_name().c_str());
+         missingAssignment=true;
+      }
+      j++;
+   }
+
+   mesh->SetAttributes(); // recalculates the support data structures
+
+   return missingAssignment;
 }
 
 int BoundaryDatabase::getLastAttribute ()
@@ -5417,7 +6585,7 @@ int BoundaryDatabase::getLastAttribute ()
 
    long unsigned int i=0;
    while (i < portList.size()) {
-      if (portList[i]->get_attribute() > attribute) attribute=portList[i]->get_attribute();
+      if (portList[i]->get_last_attribute() > attribute) attribute=portList[i]->get_last_attribute();
       i++;
    }
 
@@ -5430,7 +6598,7 @@ int BoundaryDatabase::getLastAttribute ()
    return attribute;
 }
 
-bool BoundaryDatabase::setDefaultMeshBoundary (struct projectData *projData, Mesh *mesh,
+bool BoundaryDatabase::createDefaultBoundary (struct projectData *projData, Mesh *mesh,
                                                MaterialDatabase *materialDatabase, BoundaryDatabase *boundaryDatabase)
 {
    // nothing to do if PEC
@@ -5440,34 +6608,30 @@ bool BoundaryDatabase::setDefaultMeshBoundary (struct projectData *projData, Mes
    string default_material_name=projData->materials_default_boundary;
    Material *default_material=materialDatabase->get(default_material_name);
    if (! default_material) {
-      PetscPrintf(PETSC_COMM_WORLD,
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,
          "%sERROR3007: \"%s\" specified by material.default.boundary in the project file does not exist in the materials database.\n",
          indent.c_str(),projData->materials_default_boundary);
       return true;
    }
 
+   stringstream ss;
+   ss << projData->materials_default_boundary << "_default_boundary";
+
    // create a Boundary to hold the default boundary - note that this includes a reduced set of information
    int new_attribute=getLastAttribute()+1;
+   if (new_attribute < 2) new_attribute=2;  // 0 is not allowed in MFEM, and 1 is reserved for PEC
    Boundary *default_boundary=new Boundary(0,0);
    default_boundary->set_attribute(new_attribute);
-   default_boundary->set_name("default_boundary");
+   default_boundary->set_name(ss.str());
+   default_boundary->set_default_boundary();
    default_boundary->set_type("surface_impedance");
    default_boundary->set_material(default_material_name);
    boundaryList.push_back(default_boundary);
 
-   // sweep through the mesh and replace attributes of 1 with this attribute
-   // converts from PEC to the new Boundary
-   int i=0;
-   while (i < mesh->GetNBE()) {
-      int attribute=mesh->GetBdrAttribute(i);
-      if (attribute == 1) mesh->SetBdrAttribute(i,new_attribute);
-      i++;
-   }
-
    return false;
 }
 
-void BoundaryDatabase::savePortMeshes (meshMaterialList *materials, vector<ParSubMesh> *parSubMeshes)
+void BoundaryDatabase::savePortMeshes (MeshMaterialList *materials, vector<ParSubMesh> *parSubMeshes)
 {
    long unsigned int i=0;
    while (i < portList.size()) {
@@ -5476,11 +6640,13 @@ void BoundaryDatabase::savePortMeshes (meshMaterialList *materials, vector<ParSu
    }
 }
 
+// The initial guess is for the first 2D mode.
+// Can only provide one initial guess to an eigenvalue solution [OpenParEM2D] that (optionally) produces several modes on output.
 void BoundaryDatabase::save2Dsetups (struct projectData *projData, double frequency, GammaDatabase *gammaDatabase)
 {
    long unsigned int i=0;
    while (i < portList.size()) {
-      portList[i]->save2Dsetup(projData,&tempDirectory,frequency,gammaDatabase->getGamma(i));
+      portList[i]->save2Dsetup(projData,&tempDirectory,frequency,gammaDatabase->getGamma(portList[i]->get_minSportCount(),1,frequency));
       i++;
    }
 }
@@ -5525,7 +6691,7 @@ void BoundaryDatabase::extract2Dmesh(ParMesh *pmesh, vector<ParSubMesh> *parSubM
    }
 }
 
-bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSubMesh> *parSubMeshes, double frequency, meshMaterialList *meshMaterials,
+bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSubMesh> *parSubMeshes, double frequency, MeshMaterialList *meshMaterials,
                                    struct projectData *projData, GammaDatabase *gammaDatabase)
 {
    bool fail=false;
@@ -5536,7 +6702,7 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
    MPI_Comm MPI_PORT_COMM;
 
-   create2Dmeshes(mesh_order,pmesh,parSubMeshes); 
+   if (create2Dmeshes(mesh_order,pmesh,parSubMeshes)) {fail=true; return fail;}
 
    savePortMeshes(meshMaterials,parSubMeshes);
    if (rank == 0) {
@@ -5546,9 +6712,9 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
 
    long unsigned int i=0;
    while (i < portList.size()) {
-      PetscPrintf(PETSC_COMM_WORLD,"----------------------------------------------------------------------------------------------------------------------------------\n");
-      PetscPrintf(PETSC_COMM_WORLD,"Port \"%s\"\n",portList[i]->get_name().c_str());
-      PetscPrintf(PETSC_COMM_WORLD,"----------------------------------------------------------------------------------------------------------------------------------\n");
+      //prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ------------------------------------------------------------------------------------------------------------------------------------\n");
+      prefix(); PetscPrintf(PETSC_COMM_WORLD,"         Port \"%s\" ...\n",portList[i]->get_name().c_str());
+      //prefix(); PetscPrintf(PETSC_COMM_WORLD,"         ------------------------------------------------------------------------------------------------------------------------------------\n");
 
       if (portList[i]->solve(&tempDirectory,&MPI_PORT_COMM)) fail=true;
 
@@ -5560,7 +6726,7 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
          current=chrono::system_clock::now();
          elapsed=current-start;
          if (elapsed.count() > 60) {
-            PetscPrintf(PETSC_COMM_WORLD,"ERROR3118: OpenParEM2D lock file is present, implying a failed 2D port simulation.\n");
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3118: OpenParEM2D lock file is present, implying a failed 2D port simulation.\n");
             break;
          }
       }
@@ -5568,19 +6734,10 @@ bool BoundaryDatabase::solvePorts (int mesh_order, ParMesh *pmesh, vector<ParSub
       i++;
    }
 
-   if (loadPortSolutions(frequency)) fail=true;
-   if (getGamma(gammaDatabase,frequency)) fail=true;
+   if (!fail && loadPortSolutions(frequency)) fail=true;
+   if (!fail) populateGamma(frequency,gammaDatabase);
 
    return fail;
-}
-
-void BoundaryDatabase::markPortModes ()
-{
-   long unsigned int i=0;
-   while (i < portList.size()) {
-      portList[i]->markUsedModes();
-      i++;
-   }
 }
 
 bool BoundaryDatabase::loadPortSolutions (double frequency)
@@ -5594,20 +6751,15 @@ bool BoundaryDatabase::loadPortSolutions (double frequency)
    return fail;
 }
 
-bool BoundaryDatabase::getGamma (GammaDatabase *gammaDatabase, double frequency)
+void BoundaryDatabase::populateGamma (double frequency, GammaDatabase *gammaDatabase)
 {
-   bool fail=false;
-
    gammaDatabase->reset();
 
    long unsigned int i=0;
    while (i < portList.size()) {
-      Gamma *gamma=new Gamma;
-      if (portList[i]->getGamma(gamma,frequency)) fail=true;
-      gammaDatabase->push(gamma);
+      portList[i]->populateGamma(frequency,gammaDatabase);
       i++;
    }
-   return fail;
 }
 
 void BoundaryDatabase::printPortSolutions()
@@ -5650,15 +6802,6 @@ void BoundaryDatabase::set2DModeNumbers()
    }
 }
 
-void BoundaryDatabase::fillUnused2DModeNumbers()
-{
-   long unsigned int i=0;
-   while (i < portList.size()) {
-      portList[i]->fillUnused2DModeNumbers();
-      i++;
-   }
-}
-
 void BoundaryDatabase::build_portEssTdofLists (ParFiniteElementSpace *fespace, ParMesh *pmesh)
 {
    long unsigned int i=0;
@@ -5668,96 +6811,327 @@ void BoundaryDatabase::build_portEssTdofLists (ParFiniteElementSpace *fespace, P
    }
 }
 
-void BoundaryDatabase::fillX (Vec *X, Vec *Xdofs, int drivingSport)
+void BoundaryDatabase::fillX (Vec *X, Vec *Xdofs, int drivingSet)
 {
    long unsigned int i=0;
    while (i < portList.size()) {
-      portList[i]->fillX(X,Xdofs,drivingSport);
+      portList[i]->fillX(X,Xdofs,drivingSet);
       i++;
    }
 }
 
-bool BoundaryDatabase::addMassPortIntegrators (ParMesh *pmesh, ParMixedBilinearForm *pmblf, PWConstCoefficient *Inv_mur, vector<Array<int> *> &borderAttributesList,
-                                               vector<ConstantCoefficient *> &alphaConstList, vector<ConstantCoefficient *> &betaConstList, bool isReal)
+bool BoundaryDatabase::addPortIntegrators (ParMesh *pmesh, ParBilinearForm *pmblf, PWConstCoefficient *Inv_mur, PWConstCoefficient *neg_ko2_Re_er, PWConstCoefficient *neg_ko2_Im_er, 
+                                           vector<Array<int> *> &borderAttributesList, vector<ConstantCoefficient *> &ReInvGammaConstList, vector<ConstantCoefficient *> &ImInvGammaConstList,
+                                           vector<ConstantCoefficient *> &RekConstList, vector<ConstantCoefficient *> &ImkConstList,
+                                           bool isReal, int drivingSport, bool solution_check_homogeneous, string indent)
 {
-   bool fail=false;
    long unsigned int i=0;
    while (i < portList.size()) {
-      if (portList[i]->addMassPortIntegrators(pmesh,pmblf,Inv_mur,borderAttributesList,alphaConstList,betaConstList,isReal)) fail=true;
+      if (portList[i]->addPortIntegrators(pmesh,pmblf,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,
+                                          borderAttributesList,ReInvGammaConstList,ImInvGammaConstList,RekConstList,ImkConstList,
+                                          isReal,drivingSport,solution_check_homogeneous,indent)) {
+         return true;
+      }
       i++;
    }
-
-   return fail;
+   return false;
 }
 
-void BoundaryDatabase::addMassImpedanceIntegrators (double frequency, double temperature, ParMesh *pmesh, ParMixedBilinearForm *pmblf, MaterialDatabase *materialDatabase,
-                                                    vector<Array<int> *> &borderAttributesList, vector<ConstantCoefficient *> &ZconstList, bool isReal)
+void BoundaryDatabase::addImpedanceIntegrators (double frequency, double temperature, ParMesh *pmesh, ParBilinearForm *pmblf, MaterialDatabase *materialDatabase,
+                                                vector<Array<int> *> &borderAttributesList, vector<ConstantCoefficient *> &ZconstList, bool isReal)
 {
    long unsigned int i=0;
    while (i < boundaryList.size()) {
-      boundaryList[i]->addMassImpedanceIntegrator(frequency,temperature,pmesh,pmblf,materialDatabase,borderAttributesList,ZconstList,isReal);
+      boundaryList[i]->addImpedanceIntegrator(frequency,temperature,pmesh,pmblf,materialDatabase,borderAttributesList,ZconstList,isReal);
       i++;
    }
 }
 
-
-void BoundaryDatabase::set_V3Dsize ()
+bool is_vectorMatch (vector<Mode *> *v1, vector<Mode *> *v2)
 {
-   int size=get_totalModeCount();
+   if (v1 == nullptr) return false;
+   if (v2 == nullptr) return false;
+   if (v1->size() != v2->size()) return false;
 
    long unsigned int i=0;
+   while (i < v1->size()) {
+      if ((*v1)[i] != (*v2)[i]) return false;
+      i++;
+   }
+
+   return true;
+}
+
+// Driving sets for S-parameters are generalized to enable calculating S-parameters with
+// different excitations.
+void BoundaryDatabase::createDrivingSets ()
+{
+   PetscMPIInt rank;
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+   // ToDo: create a keyword/value pair so that the driving set can be selected in the project setup file.
+   int setType=0;
+
+   int portCount=get_SportCount();
+
+   // driving set "single"
+   // drive one port at a time
+   if (setType == 0) {
+
+      set_drivingSetName("S-port");
+
+      // create portCount weights per mode form sets of weights
+      // initialize all weights to zero
+      int i=0;
+      while (i < portCount) {
+         long unsigned int j=0;
+         while (j < portList.size()) {
+            portList[j]->addWeight(complex<double>(0,0));
+            j++;
+         }
+         i++;
+      }
+
+      // set one Sport driving at a time
+      i=0;
+      while (i < portCount) {
+         Mode *drivingMode=getDrivingMode(i+1);
+         drivingMode->setWeight(i,complex<double>(1,0));
+         i++;
+      }
+   }
+
+   // driving set "multiple"
+   // drive single-mode ports one port at a time and
+   // multimode ports with orthogonal combinations of the port modes
+   // Note: not thoroughly tested
+   if (setType == 1) {
+
+      set_drivingSetName("set");
+
+      // create portCount weights per mode form sets of weights
+      // initialize all weights to zero
+      int i=0;
+      while (i < portCount) {
+         long unsigned int j=0;
+         while (j < portList.size()) {
+            portList[j]->addWeight(complex<double>(0,0));
+            j++;
+         }
+         i++;
+      }
+
+      // keep track of the modes per port
+
+      vector<vector<Mode *> *> modeArray;
+      i=0;
+      while (i < portCount) {
+
+         vector<Mode *> *modeVector=new vector<Mode *>;
+
+         Mode *modei=getDrivingMode(i+1);
+         Port *porti=get_port(modei);
+
+         int j=0;
+         while (j < portCount) {
+            Mode *modej=getDrivingMode(j+1);
+            Port *portj=get_port(modej);
+            if (portj == porti) modeVector->push_back(modej);
+            j++;
+         }
+
+         modeArray.push_back(modeVector);
+
+         i++;
+      }
+
+      // count the number of times a particular weight pattern previously appears
+      vector<int> counts;
+      i=0;
+      while (i < portCount) {
+         counts.push_back(0);
+
+         long unsigned int j=0;
+         while ((int)j < i) {
+            if (is_vectorMatch(modeArray[i],modeArray[j])) counts[i]++;
+            j++;
+         }
+
+         i++;
+      }
+
+      // set weights
+      i=0;
+      while (i < portCount) {
+         Mode *modei=getDrivingMode(i+1);
+
+         vector<Mode *> *testVector=modeArray[i];
+         long unsigned int j=0;
+         while (j < testVector->size()) {
+            Mode *modej=(*testVector)[j];
+            modei->setWeight(modej->get_Sport()-1,complex<double>(1,0));
+
+            if (counts[i] > 0 && (int)j == counts[i]) {
+               modei->setWeight(modej->get_Sport()-1,complex<double>(-1,0));
+            }
+
+            j++;
+         }
+
+         i++;
+      }
+
+      // clean up
+      long unsigned int j=0;
+      while (j < modeArray.size()) {
+         delete modeArray[j];
+         j++;
+      }
+   }
+
+   // driving set "single-ended"
+   // drive single-mode ports one port at a time and
+   // multimode ports with weights from the Tv vectors
+   // to obtain single-ended driving
+   if (setType == 2) {
+
+      set_drivingSetName("single-ended");
+
+      // ToDo
+   }
+
+   // debug output to verify the sets
+   if (false) {
+      int i=0;
+      while (i < portCount) {
+          Mode *modei=getDrivingMode(i+1);
+          if (rank == 0) cout << "Sport=" << modei->get_Sport() << " weights:" << endl;
+          int j=0;
+          while (j < portCount) {
+             if (rank == 0) cout << "   " << modei->getWeight(j) << endl;
+             j++;
+          }
+          i++;
+      }
+   }
+}
+
+void BoundaryDatabase::calculateSplits ()
+{
+   long unsigned int i=0;
    while (i < portList.size()) {
-      portList[i]->set_V3Dsize(size);
+      portList[i]->calculateSplits();
       i++;
    }
 }
 
-void BoundaryDatabase::calculateWeights(Mode *drivingMode)
+PetscErrorCode BoundaryDatabase::calculateS (Result *result)
 {
-   long unsigned int i=0;
-   while (i < portList.size()) {
-      portList[i]->calculateWeights(drivingMode);
-      i++;
-   }
-}
+   PetscErrorCode ierr=0;
 
-double BoundaryDatabase::get_maxReflection ()
-{
-   double reflection;
-   double maxReflection=-DBL_MAX;
+   int portCount=get_SportCount();
+   int size=portCount*portCount;
 
-   long unsigned int i=0;
-   while (i < portList.size()) {
-      reflection=portList[i]->get_maxReflection();
-      if (reflection > maxReflection) maxReflection=reflection;
-      i++;
-   }
+   // for a*S=b
+   lapack_complex_double *a=(lapack_complex_double *) malloc(size*size*sizeof(lapack_complex_double));       // matrix
+   lapack_complex_double *S=(lapack_complex_double *) malloc(size*sizeof(lapack_complex_double));            // vector
+   lapack_complex_double *b=(lapack_complex_double *) malloc(size*sizeof(lapack_complex_double));            // vector
 
-   return maxReflection;
-}
+   matrixZero(a,size);
+   vectorZero(S,size);
+   vectorZero(b,size);
 
-double BoundaryDatabase::get_maxReflection (int drivingSport)
-{
-   double reflection;
-   double maxReflection=-DBL_MAX;
+   // b
 
-   long unsigned int i=0;
-   while (i < portList.size()) {
-      reflection=portList[i]->get_maxReflection(drivingSport);
-      if (reflection > maxReflection) maxReflection=reflection;
+   // loop through the drivingSets
+   int i=0;
+   while (i < portCount) {
+
+      // loop through the S-ports
+      int j=0;
+      while (j < portCount) {
+         Mode *mode=getDrivingMode(j+1);
+         complex<double> value=mode->get_Cp(i)*mode->get_voltage()/sqrt(mode->get_impedance());
+         vectorSetValue(b,i*portCount+j,real(value),imag(value));
+         j++;
+      }
       i++;
    }
 
-   return maxReflection;
-}
+   // a
 
-void BoundaryDatabase::printPortReflections ()
-{
-   long unsigned int i=0;
-   while (i < portList.size()) {
-      portList[i]->printPortReflections();
+   // loop through the drivingSets
+   i=0;
+   while (i < portCount) {
+
+      // loop through the S-ports
+      int j=0;
+      while (j < portCount) {
+
+         // loop through the S-ports
+         int k=0;
+         while (k < portCount) {
+            Mode *mode=getDrivingMode(k+1);
+            complex<double> value=mode->get_Cm(i)*mode->get_voltage()/sqrt(mode->get_impedance());
+            int row=i*portCount+j;
+            int col=j*portCount+k;
+            matrixSetValue(a,row+col*portCount*portCount,real(value),imag(value));
+            k++;
+         }
+
+         j++;
+      }
       i++;
    }
+
+   // invert
+   matrixInverse(a,size);
+
+   // solve for S
+   matrixVectorMultiply(a,b,S,size);
+
+   // transfer to a Mat
+
+   Mat *MatS=result->get_S();
+   ierr=MatCreate(PETSC_COMM_WORLD,MatS); if (ierr) return ierr;
+   ierr=MatSetType(*MatS,MATDENSE); if (ierr) return ierr;
+   ierr=MatSetSizes(*MatS,PETSC_DECIDE,PETSC_DECIDE,portCount,portCount); if (ierr) return ierr;
+   ierr=MatZeroEntries(*MatS); if (ierr) return ierr;
+
+   PetscInt low,high;
+   ierr=MatGetOwnershipRange(*MatS,&low,&high); if (ierr) return ierr;
+
+   int k=0;
+   i=0;
+   while (i < portCount) {
+      int j=0;
+      while (j < portCount) {
+         PetscScalar Sparam=vectorGetRealValue(S,k)+PETSC_i*vectorGetImagValue(S,k);
+         if (i >= low && i < high) {
+            ierr=MatSetValue(*MatS,i,j,Sparam,INSERT_VALUES); if (ierr) return ierr;
+         }
+         j++;
+         k++;
+      }
+      i++;
+   }
+   ierr=MatAssemblyBegin(*MatS,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+   ierr=MatAssemblyEnd(*MatS,MAT_FINAL_ASSEMBLY); if (ierr) return ierr;
+
+   // fill out Zo
+   i=0;
+   while (i < portCount) {
+      Mode *mode=getDrivingMode(i+1);
+      result->push_Zo(mode->get_impedance());
+      i++;
+   }
+
+   // clean up
+   if (a) {free(a); a=nullptr;}
+   if (S) {free(S); S=nullptr;}
+   if (b) {free(b); S=nullptr;}
+
+   return ierr;
 }
 
 Mode* BoundaryDatabase::getDrivingMode (int drivingSport)
@@ -5783,20 +7157,20 @@ void BoundaryDatabase::fillIntegrationPoints ()
    }
 }
 
-void BoundaryDatabase::calculateVoltages(ParMesh *pmesh, ParGridFunction *grid_re, ParGridFunction *grid_im, Mode *drivingMode)
+void BoundaryDatabase::calculateLineIntegrals (ParMesh *pmesh, fem3D *fem)
 {
    long unsigned int i=0;
    while (i < portList.size()) {
-      portList[i]->calculateVoltages(pmesh,&pathList,grid_re,grid_im,drivingMode);
+      portList[i]->calculateLineIntegrals(pmesh,fem);
       i++;
    }
 }
 
-void BoundaryDatabase::calculateSparameters(Result *result, Mode *drivingMode)
+void BoundaryDatabase::alignDirections (ParMesh *pmesh, fem3D *fem)
 {
    long unsigned int i=0;
    while (i < portList.size()) {
-      portList[i]->calculateSparameter(result,drivingMode);
+      portList[i]->alignDirections(pmesh,fem);
       i++;
    }
 }
@@ -5909,7 +7283,7 @@ void BoundaryDatabase::buildGrids (fem3D *fem)
    build2DSolutionGrids();
 }
 
-bool BoundaryDatabase::solve2Dports (ParMesh *pmesh, vector<ParSubMesh> *parSubMeshes, struct projectData *projData, double frequency, meshMaterialList *meshMaterials, GammaDatabase *gammaDatabase)
+bool BoundaryDatabase::solve2Dports (ParMesh *pmesh, vector<ParSubMesh> *parSubMeshes, struct projectData *projData, double frequency, MeshMaterialList *meshMaterials, GammaDatabase *gammaDatabase)
 {
    bool fail=false;
    PetscMPIInt rank;
@@ -5932,7 +7306,7 @@ bool BoundaryDatabase::solve2Dports (ParMesh *pmesh, vector<ParSubMesh> *parSubM
 
       // create the temp directory
       if (! std::filesystem::create_directory(get_tempDirectory().c_str())) {
-         PetscPrintf(PETSC_COMM_WORLD,"ERROR3119: Failed to create results directory \"%s\".\n",get_tempDirectory().c_str());
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"ERROR3119: Failed to create results directory \"%s\".\n",get_tempDirectory().c_str());
          fail=true;
       }
    }
@@ -5960,6 +7334,98 @@ void BoundaryDatabase::resetElementNumbers ()
    }
 }
 
+bool BoundaryDatabase::snapToMeshBoundary (Mesh *mesh)
+{
+   bool fail=false;
+
+   long unsigned int j=0;
+   while (j < boundaryList.size()) {
+      if (boundaryList[j]->snapToMeshBoundary(&pathList,mesh,indent)) fail=true;
+      j++;
+   }
+
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      if (portList[i]->snapToMeshBoundary(&pathList,mesh,indent)) fail=true;
+      i++;
+   }
+
+   // seems redundant - delete?
+   i=0;
+   while (i < boundaryList.size()) {
+      if (boundaryList[i]->snapToMeshBoundary(&pathList,mesh,indent)) fail=true;
+      i++;
+   }
+
+   return fail;
+}
+
+PetscErrorCode BoundaryDatabase::build_M (Mat *M, vector<DifferentialPair *> *differentialPairList, BoundaryDatabase *boundaryDatabase)
+{
+   PetscErrorCode ierr=0;
+
+   // total number of ports
+   int portCount=get_SportCount();
+
+   // M
+
+   ierr=MatCreate(PETSC_COMM_WORLD,M); if (ierr) return 1;
+   ierr=MatSetType(*M,MATDENSE); if (ierr) return 2;
+   ierr=MatSetSizes(*M,PETSC_DECIDE,PETSC_DECIDE,portCount,portCount); if (ierr) return 3;
+   ierr=MatZeroEntries(*M); if (ierr) return 6;
+
+   PetscInt low,high;
+   ierr=MatGetOwnershipRange(*M,&low,&high); if (ierr) return 6;
+
+   // set all to single-ended
+   int m=0;
+   while (m < portCount) {
+      if (m >= low && m < high) {
+         ierr=MatSetValue(*M,m,m,1.0,INSERT_VALUES); if (ierr) return 7;
+      }
+      m++;
+   }
+
+   // set differential pairs
+   long unsigned int i=0;
+   while (i < differentialPairList->size()) {
+      int p=(*differentialPairList)[i]->get_Sport_P()-1;
+      int n=(*differentialPairList)[i]->get_Sport_N()-1;
+
+      // update the net names
+
+      Mode *mode_P=boundaryDatabase->getDrivingMode(p+1);
+      Mode *mode_N=boundaryDatabase->getDrivingMode(n+1);
+
+      stringstream ssP,ssN;
+      if (mode_P->net_is_loaded()) {ssP << mode_P->get_net(); ssN << mode_P->get_net();}
+      else {ssP << "net" << mode_P->get_Sport(); ssN << "net" << mode_P->get_Sport();}
+      ssP << "_"; ssN << "_";
+      if (mode_N->net_is_loaded()) {ssP << mode_N->get_net(); ssN << mode_N->get_net();}
+      else {ssP << "net" << mode_N->get_Sport(); ssP << "net" << mode_N->get_Sport();}
+      ssP << "_common"; ssN << "_differential";
+
+      if (!mode_P->get_net_is_updated()) {mode_P->set_net(ssP.str()); mode_P->set_net_is_updated();}
+      if (!mode_N->get_net_is_updated()) {mode_N->set_net(ssN.str()); mode_N->set_net_is_updated();}
+
+      i++;
+   }
+
+   ierr=MatAssemblyBegin(*M,MAT_FINAL_ASSEMBLY); if (ierr) return 12;
+   ierr=MatAssemblyEnd(*M,MAT_FINAL_ASSEMBLY); if (ierr) return 13;
+
+   return ierr;
+}
+
+void BoundaryDatabase::aggregateDifferentialPairList (vector<DifferentialPair *> *aggregateList)
+{
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      portList[i]->aggregateDifferentialPairList(aggregateList);
+      i++;
+   }
+}
+
 void BoundaryDatabase::reset ()
 {
    long unsigned int i=0;
@@ -5968,7 +7434,101 @@ void BoundaryDatabase::reset ()
       i++;
    }
 
+   i=0;
+   while (i < pathList.size()) {
+      pathList[i]->unset_hasOutput();
+      i++;
+   }
+
    tempDirectory="";
+}
+
+bool BoundaryDatabase::buildAggregateModeList (vector<Mode *> *aggregateModeList)
+{
+   // build the list
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      portList[i]->buildAggregateModeList(aggregateModeList);
+      i++;
+   }
+
+   // sort them in order of Sport
+   i=0;
+   while (i < aggregateModeList->size()-1) {
+      long unsigned int j=i+1;
+      while (j < aggregateModeList->size()) {
+         if ((*aggregateModeList)[j]->get_Sport() < (*aggregateModeList)[i]->get_Sport()) {
+            Mode *temp=(*aggregateModeList)[j];
+            (*aggregateModeList)[j]=(*aggregateModeList)[i];
+            (*aggregateModeList)[i]=temp;
+         }
+         j++;
+      }
+      i++;
+   }
+
+   // check for inconsistent Sport numbering
+   i=0;
+   while (i < aggregateModeList->size()) {
+      if ((*aggregateModeList)[i]->get_Sport() != (int)i+1) {
+         PetscPrintf(PETSC_COMM_WORLD,"ASSERT: BoundaryDatabase::buildAggregateModeList found inconsistent Sport assignments.\n");
+         return true;
+      }
+      i++;
+   }
+
+   return false;
+}
+
+// given mode, return port and index
+bool BoundaryDatabase::get_port_from_mode (Mode *mode, Port **port, long unsigned int *index)
+{
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      if (portList[i]->has_mode(mode,index)) {
+         *port=portList[i];
+         return false;
+      }
+      i++;
+   }
+   return true;
+}
+
+bool BoundaryDatabase::has_Ti ()
+{
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      if (!portList[i]->has_Ti()) return false;
+      i++;
+   }
+   return true;
+}
+
+bool BoundaryDatabase::has_Tv ()
+{
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      if (!portList[i]->has_Tv()) return false;
+      i++;
+   }
+   return true;
+}
+
+Port* BoundaryDatabase::get_port (Mode *mode)
+{
+   Port *port=nullptr;
+   long unsigned int index=0;
+
+   long unsigned int i=0;
+   while (i < portList.size()) {
+      if (portList[i]->has_mode(mode,&index)) {
+         port=portList[i];
+         break;
+      }
+      i++;
+   }
+
+   return port;
 }
 
 BoundaryDatabase::~BoundaryDatabase ()

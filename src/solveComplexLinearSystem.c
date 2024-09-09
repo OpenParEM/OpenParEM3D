@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 //    OpenParEM3D - A fullwave 3D electromagnetic simulator.                  //
-//    Copyright (C) 2022 Brian Young                                          //
+//    Copyright (C) 2024 Brian Young                                          //
 //                                                                            //
 //    This program is free software: you can redistribute it and/or modify    //
 //    it under the terms of the GNU General Public License as published by    //
@@ -23,8 +23,8 @@
 double current_residual;
 
 void showReason (KSPConvergedReason reason) {
-   if (reason < 0) PetscPrintf(PETSC_COMM_WORLD," NOT CONVERGED: ");
-   else PetscPrintf(PETSC_COMM_WORLD," Converged: ");
+   if (reason < 0) {prefix(); PetscPrintf(PETSC_COMM_WORLD," NOT CONVERGED: ");}
+   else {prefix(); PetscPrintf(PETSC_COMM_WORLD," Converged: ");}
 
    if (reason == KSP_CONVERGED_ITERATING) PetscPrintf(PETSC_COMM_WORLD,"CONVERGED_ITERATING");
    if (reason == KSP_CONVERGED_RTOL_NORMAL) PetscPrintf(PETSC_COMM_WORLD,"RTOL_NORMAL");
@@ -52,7 +52,7 @@ void showReason (KSPConvergedReason reason) {
 PetscErrorCode monitorEM3D(KSP ksp, PetscInt its, PetscReal residual, void *vf)
 {
    if (residual < current_residual/10) {
-      PetscPrintf (PETSC_COMM_WORLD,"|               iteration=%ld   residual=%g\n",its,residual);
+      prefix(); PetscPrintf (PETSC_COMM_WORLD,"               iteration=%ld   residual=%g\n",its,residual);
       current_residual=residual;
    }
    PetscFunctionReturn(0);
@@ -61,6 +61,26 @@ PetscErrorCode monitorEM3D(KSP ksp, PetscInt its, PetscReal residual, void *vf)
 PetscErrorCode eliminatePEC (Mat *A, PetscInt nPEC, PetscInt *PEC) {
    PetscErrorCode ierr=0;
    ierr=MatZeroRowsColumns(*A,nPEC,PEC,1.0,NULL,NULL);
+   return ierr;
+}
+
+PetscErrorCode setIdentity (Mat *A)
+{
+   PetscErrorCode ierr=0;
+   PetscInt i,m,n;
+   MatGetSize(*A,&m,&n);
+
+   MatZeroEntries(*A);
+
+   i=0;
+   while (i < m) {
+      MatSetValue(*A,i,i,0.0,INSERT_VALUES);
+      i++;
+   }
+
+   MatAssemblyBegin(*A,MAT_FINAL_ASSEMBLY);
+   MatAssemblyEnd(*A,MAT_FINAL_ASSEMBLY);
+
    return ierr;
 }
 
@@ -81,7 +101,7 @@ PetscErrorCode solveComplexLinearSystem (const char *directory, struct projectDa
     PetscInt nPortDof, PetscInt *PortDof, Mat *A, Vec *x, PetscInt *matrixSize, PetscReal *rnorm, PetscInt *converged)
 {
    PetscErrorCode ierr=0;
-   PetscInt i,maxits,m,n,*ivals;;
+   PetscInt i,maxits,m,n;
    PetscReal rtol,atol,dtol;
    PetscScalar *vals;
    KSP ksp;
@@ -98,23 +118,11 @@ PetscErrorCode solveComplexLinearSystem (const char *directory, struct projectDa
    ierr=VecScale(b,-1); if (ierr) return 2;
 
    // set the known dof values from x in b
-
-   ierr=PetscMalloc(nPortDof*sizeof(PetscInt),&ivals); if (ierr) return 3;
-   i=0;
-   while (i < nPortDof) {
-      ivals[i]=PortDof[i];
-      i++;
-   }
-
    ierr=PetscMalloc(nPortDof*sizeof(PetscScalar),&vals); if (ierr) return 4;
-
-   ierr=VecGetValues(*x,nPortDof,ivals,vals); if (ierr) return 5;
-   ierr=VecSetValues(b,nPortDof,ivals,vals,INSERT_VALUES); if (ierr) return 6;
-
+   ierr=VecGetValues(*x,nPortDof,PortDof,vals); if (ierr) return 5;
+   ierr=VecSetValues(b,nPortDof,PortDof,vals,INSERT_VALUES); if (ierr) return 6;
    ierr=VecAssemblyBegin(b); if (ierr) return 7;
    ierr=VecAssemblyEnd(b); if (ierr) return 8;
-
-   ierr=PetscFree(ivals); if (ierr) return 9;
    ierr=PetscFree(vals); if (ierr) return 10;
 
    // eliminate the known port dofs from A
@@ -144,19 +152,19 @@ PetscErrorCode solveComplexLinearSystem (const char *directory, struct projectDa
 
       if (i == 0) {
          ierr=PCSetType(pc,PCCHOLESKY); if (ierr) return 19;
-         PetscPrintf(PETSC_COMM_WORLD,"|            using Cholesky preconditioner ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            using Cholesky preconditioner ...\n");
       } else if (i == 1) {
          ierr=PCSetType(pc,PCCHOLESKY); if (ierr) return 20;
-         PetscPrintf(PETSC_COMM_WORLD,"|            re-trying ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            re-trying ...\n");
       } else if (i == 2) {
          ierr=PCSetType(pc,PCLU); if (ierr) return 21;
-         PetscPrintf(PETSC_COMM_WORLD,"|            re-trying using LU preconditioner ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            re-trying using LU preconditioner ...\n");
       } else if (i == 3) {
          ierr=PCSetType(pc,PCBJACOBI); if (ierr) return 22;
-         PetscPrintf(PETSC_COMM_WORLD,"|            re-trying using Jacobi preconditioner ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            re-trying using Jacobi preconditioner ...\n");
       } else {
          ierr=PCSetType(pc,PCNONE); if (ierr) return 23;
-         PetscPrintf(PETSC_COMM_WORLD,"|            re-trying using no preconditioner ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            re-trying using no preconditioner ...\n");
       }
 
       // switch x to get the needed local distribution for the solve
@@ -165,6 +173,7 @@ PetscErrorCode solveComplexLinearSystem (const char *directory, struct projectDa
 
       // solve
       ierr=KSPSolve(ksp,b,*x); if (ierr) return 24;
+
       // get stats
       ierr=KSPGetResidualNorm(ksp,rnorm); if (ierr) return 25;
       ierr=KSPGetConvergedReason(ksp,&reason); if (ierr) return 26;
@@ -173,16 +182,16 @@ PetscErrorCode solveComplexLinearSystem (const char *directory, struct projectDa
       // exit criteria
 
       if (reason >= 0) {      // converged
-         PetscPrintf(PETSC_COMM_WORLD,"|              ");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"              ");
          showReason(reason);
          break;
       } else if (reason == KSP_DIVERGED_PC_FAILED) {
          if (i >= 2) {
-            PetscPrintf(PETSC_COMM_WORLD,"|              ");
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"              ");
             showReason(reason);
          }
       } else {
-         PetscPrintf(PETSC_COMM_WORLD,"|              ");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"              ");
          showReason(reason);
       }
 
@@ -255,19 +264,19 @@ PetscErrorCode solveHfield (const char *directory, struct projectData *projData,
 
       if (i == 0) {
          ierr=PCSetType(pc,PCCHOLESKY); if (ierr) return 8;
-         PetscPrintf(PETSC_COMM_WORLD,"|            using Cholesky preconditioner ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            using Cholesky preconditioner ...\n");
       } else if (i == 1) {
          ierr=PCSetType(pc,PCCHOLESKY); if (ierr) return 9;
-         PetscPrintf(PETSC_COMM_WORLD,"|            re-trying ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            re-trying ...\n");
       } else if (i == 2) {
          ierr=PCSetType(pc,PCLU); if (ierr) return 10;
-         PetscPrintf(PETSC_COMM_WORLD,"|            re-trying using LU preconditioner ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            re-trying using LU preconditioner ...\n");
       } else if (i == 3) {
          ierr=PCSetType(pc,PCBJACOBI); if (ierr) return 11;
-         PetscPrintf(PETSC_COMM_WORLD,"|            re-trying using Jacobi preconditioner ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            re-trying using Jacobi preconditioner ...\n");
       } else {
          ierr=PCSetType(pc,PCNONE); if (ierr) return 12;
-         PetscPrintf(PETSC_COMM_WORLD,"|            re-trying using no preconditioner ...\n");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"            re-trying using no preconditioner ...\n");
       }
 
       // solve
@@ -281,16 +290,16 @@ PetscErrorCode solveHfield (const char *directory, struct projectData *projData,
       // exit criteria
 
       if (reason >= 0) {      // converged
-         PetscPrintf(PETSC_COMM_WORLD,"|              ");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"              ");
          showReason(reason);
          break;
       } else if (reason == KSP_DIVERGED_PC_FAILED) {
          if (i >= 2) {
-            PetscPrintf(PETSC_COMM_WORLD,"|              ");
+            prefix(); PetscPrintf(PETSC_COMM_WORLD,"              ");
             showReason(reason);
          }
       } else {
-         PetscPrintf(PETSC_COMM_WORLD,"|              ");
+         prefix(); PetscPrintf(PETSC_COMM_WORLD,"              ");
          showReason(reason);
       }
 
@@ -311,7 +320,264 @@ PetscErrorCode solveHfield (const char *directory, struct projectData *projData,
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+PetscErrorCode MatInvert (Mat *A, int isDiagonal)
+{
+   PetscErrorCode ierr=0;
+   PetscInt m,n,i,j,high,low,r,c;
+   int row,col,count;
+   double val_re,val_im;
+   PetscScalar val,*idx;
+   lapack_complex_double *B;
+   PetscMPIInt rank,size;
 
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+
+   if (A == NULL) return 1;
+
+   ierr=MatGetSize(*A,&m,&n); if (ierr) return 2;
+   if (m != n) return 3;
+
+   ierr=MatGetOwnershipRange(*A,&low,&high); if (ierr) return 4;
+
+   if (isDiagonal || m == 1) {
+
+      ierr=PetscMalloc((high-low)*sizeof(PetscScalar),&idx);  if (ierr) return 5;
+      i=low;
+      while (i < high) {
+         ierr=MatGetValue(*A,i,i,&val); if (ierr) return 6;
+         idx[i-low]=val;
+         i++;
+      }
+
+      i=low;
+      while (i < high) {
+         ierr=MatSetValue(*A,i,i,1/idx[i-low],INSERT_VALUES); if (ierr) return 7;
+         i++;
+      }
+
+      ierr=PetscFree(idx); if (ierr) return 8;
+
+   } else {
+
+      B=(lapack_complex_double *) malloc(m*m*sizeof(lapack_complex_double));
+      if (!B) return 9;
+
+      // collect at 0
+
+      if (rank == 0) {
+         r=0; 
+         while (r < m) {
+            c=0;
+            while (c < m) {
+               if (r >= low && r < high) {
+                  ierr=MatGetValue(*A,r,c,&val); if (ierr) return 10;
+                  B[r+m*c]=CMPLX(PetscRealPart(val),PetscImaginaryPart(val));
+               }
+               c++;
+            }
+            r++;
+         }
+
+         i=1;
+         while (i < size) {
+            ierr=MPI_Recv(&count,1,MPI_INT,i,1,PETSC_COMM_WORLD,MPI_STATUS_IGNORE); if (ierr) return 11;
+            j=0;
+            while (j < count) {
+               ierr=MPI_Recv(&row,1,MPI_INT,i,2,PETSC_COMM_WORLD,MPI_STATUS_IGNORE); if (ierr) return 12;
+               ierr=MPI_Recv(&col,1,MPI_INT,i,3,PETSC_COMM_WORLD,MPI_STATUS_IGNORE); if (ierr) return 13;
+               ierr=MPI_Recv(&val_re,1,MPI_DOUBLE,i,4,PETSC_COMM_WORLD,MPI_STATUS_IGNORE); if (ierr) return 14;
+               ierr=MPI_Recv(&val_im,1,MPI_DOUBLE,i,5,PETSC_COMM_WORLD,MPI_STATUS_IGNORE); if (ierr) return 15;
+               B[row+m*col]=CMPLX(val_re,val_im);
+               j++;
+            }
+            i++;
+         }
+      } else {
+         count=0;
+         r=0;
+         while (r < m) {
+            c=0;
+            while (c < m) {
+               if (r >= low && r < high) count++;
+               c++;
+            }
+            r++;
+         }
+
+         ierr=MPI_Send(&count,1,MPI_INT,0,1,PETSC_COMM_WORLD);
+
+         r=0;
+         while (r < m) {
+            c=0;
+            while (c < m) {
+               if (r >= low && r < high) {
+                  ierr=MatGetValue(*A,r,c,&val); if (ierr) return 16;
+                  val_re=PetscRealPart(val);
+                  val_im=PetscImaginaryPart(val);
+                  row=r;
+                  col=c;
+                  ierr=MPI_Send(&row,1,MPI_INT,0,2,PETSC_COMM_WORLD); if (ierr) return 17;
+                  ierr=MPI_Send(&col,1,MPI_INT,0,3,PETSC_COMM_WORLD); if (ierr) return 18;
+                  ierr=MPI_Send(&val_re,1,MPI_DOUBLE,0,4,PETSC_COMM_WORLD); if (ierr) return 19;
+                  ierr=MPI_Send(&val_im,1,MPI_DOUBLE,0,5,PETSC_COMM_WORLD); if (ierr) return 20;
+               }
+               c++;
+            }
+            r++;
+         }
+      }
+
+      // invert
+      if (rank == 0) {
+         if (matrixInverse(B,m)) return 21;
+      }
+
+      // distribute
+
+      if (rank == 0) {
+         i=1;
+         while (i < size) {
+            j=0;
+            while (j < m*m) {
+               val_re=lapack_complex_double_real(B[j]);
+               val_im=lapack_complex_double_imag(B[j]);
+               ierr=MPI_Send(&val_re,1,MPI_DOUBLE,i,10,PETSC_COMM_WORLD); if (ierr) return 22;
+               ierr=MPI_Send(&val_im,1,MPI_DOUBLE,i,11,PETSC_COMM_WORLD); if (ierr) return 23;
+               j++;
+            }
+            i++;
+         }
+      } else {
+         i=0;
+         while (i < m*m) {
+            ierr=MPI_Recv(&val_re,1,MPI_DOUBLE,0,10,PETSC_COMM_WORLD,MPI_STATUS_IGNORE); if (ierr) return 24;
+            ierr=MPI_Recv(&val_im,1,MPI_DOUBLE,0,11,PETSC_COMM_WORLD,MPI_STATUS_IGNORE); if (ierr) return 25;
+            B[i]=CMPLX(val_re,val_im);
+            i++;
+         }
+      }
+
+      // put on A
+
+      r=0;
+      while (r < m) {
+         c=0;
+         while (c < m) {
+            if (r >= low && r < high) {
+               val=lapack_complex_double_real(B[r+m*c])+PETSC_i*lapack_complex_double_imag(B[r+m*c]);
+               ierr=MatSetValue(*A,r,c,val,INSERT_VALUES); if (ierr) return 26;
+            }
+            c++;
+         }
+         r++;
+      }
+
+      if (B) free(B);
+   }
+
+   ierr=MatAssemblyBegin(*A,MAT_FINAL_ASSEMBLY); if (ierr) return 27;
+   ierr=MatAssemblyEnd(*A,MAT_FINAL_ASSEMBLY); if (ierr) return 28;
+
+   return ierr;
+}
+
+PetscErrorCode MatInvertTest (int n)
+{
+   PetscErrorCode ierr=0;
+   Mat A,B,C;
+   PetscInt i,high,low,r,c;
+   int fail,transfer_fail;
+   double val_re,val_im;
+   PetscScalar val;
+   PetscMPIInt rank,size;
+
+   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+   MPI_Comm_size(PETSC_COMM_WORLD, &size);
+
+   srand(rank+time(NULL));
+
+   // A - trial matrix
+
+   ierr=MatCreate(PETSC_COMM_WORLD,&A); if (ierr) return 1;
+   ierr=MatSetType(A,MATAIJ); if (ierr) return 2;
+   ierr=MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n); if (ierr) return 3;
+   ierr=MatSeqAIJSetPreallocation(A,n,NULL); if (ierr) return 4;
+   ierr=MatMPIAIJSetPreallocation(A,n,NULL,n,NULL); if (ierr) return 5;
+
+   ierr=MatGetOwnershipRange(A,&low,&high); if (ierr) return 6;
+
+   r=0;
+   while (r < n) {
+      c=0;
+      while (c < n) {
+         if (r >= low && r < high) {
+            val=CMPLX((double)rand()/(double)RAND_MAX-0.5,(double)rand()/(double)RAND_MAX-0.5);
+            ierr=MatSetValue(A,r,c,val,INSERT_VALUES); if (ierr) return 7;
+         }
+         c++;
+      }
+      r++;
+   }
+
+   ierr=MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); if (ierr) return 8;
+   ierr=MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); if (ierr) return 9;
+
+   // B - copy of A
+   ierr=MatDuplicate(A,MAT_COPY_VALUES,&B); if (ierr) return 10;
+
+   // A^(-1)
+   ierr=MatInvert(&A,0); if (ierr) return 11;
+
+   // C=B*A^(-1)
+   ierr=MatMatMult(B,A,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C); if (ierr) return 12;
+
+   // test for identity matrix
+   fail=0;
+   r=0;
+   while (r < n) {
+      c=0;
+      while (c < n) {
+         if (r >= low && r < high) {
+            ierr=MatGetValue(C,r,c,&val); if (ierr) return 13;
+            val_re=PetscRealPart(val);
+            val_im=PetscImaginaryPart(val);
+            if (r == c) {
+               if (abs(sqrt(val_re*val_re+val_im*val_im)-1) > 1e-14) {fail=1; break;}
+            } else { 
+               if (sqrt(val_re*val_re+val_im*val_im) > 1e-14) {fail=1; break;}
+            }
+         }
+         c++;
+      }
+      if (fail) break;
+      r++;
+   }
+
+   if (rank == 0) {
+      i=1;
+      while (i < size) {
+         ierr=MPI_Recv(&transfer_fail,1,MPI_INT,i,100,PETSC_COMM_WORLD,MPI_STATUS_IGNORE); if (ierr) return 14;
+         if (transfer_fail) fail=1;
+         i++;
+      }
+
+      if (fail) printf ("MatInvertTest n=%d: FAIL\n",n);
+      else printf ("MatInvertTest n=%d: pass\n",n);
+
+   } else {
+      ierr=MPI_Send(&fail,1,MPI_INT,0,100,PETSC_COMM_WORLD); if (ierr) return 15;
+   }
+
+   MatDestroy(&A);
+   MatDestroy(&B);
+   MatDestroy(&C);
+
+   return ierr;
+}
+
+
+/*
 PetscErrorCode MatInvert (Mat *A, int isDiagonal)
 {
    PetscErrorCode ierr=0;
@@ -348,24 +614,24 @@ PetscErrorCode MatInvert (Mat *A, int isDiagonal)
 
       ierr=PetscFree(idx); if (ierr) return 8;
 
-/* ToDo: parallelize the m=2 case
-   } else if (m == 2) {
-
-      // analytic inversion
-
-      ierr=MatGetValue(*A,0,0,&A11); if (ierr) return 9;
-      ierr=MatGetValue(*A,0,1,&A12); if (ierr) return 10;
-      ierr=MatGetValue(*A,1,0,&A21); if (ierr) return 11;
-      ierr=MatGetValue(*A,1,1,&A22); if (ierr) return 12;
-
-      det=A11*A22-A21*A12;
-      if (det == 0) return 13;
-
-      ierr=MatSetValue(*A,0,0,A22/det,INSERT_VALUES); if (ierr) return 14;
-      ierr=MatSetValue(*A,0,1,-A12/det,INSERT_VALUES); if (ierr) return 15;
-      ierr=MatSetValue(*A,1,0,-A21/det,INSERT_VALUES); if (ierr) return 16;
-      ierr=MatSetValue(*A,1,1,A11/det,INSERT_VALUES); if (ierr) return 17;
-*/
+// ToDo: parallelize the m=2 case
+//   } else if (m == 2) {
+//
+//      // analytic inversion
+//
+//      ierr=MatGetValue(*A,0,0,&A11); if (ierr) return 9;
+//      ierr=MatGetValue(*A,0,1,&A12); if (ierr) return 10;
+//      ierr=MatGetValue(*A,1,0,&A21); if (ierr) return 11;
+//      ierr=MatGetValue(*A,1,1,&A22); if (ierr) return 12;
+//
+//      det=A11*A22-A21*A12;
+//      if (det == 0) return 13;
+//
+//      ierr=MatSetValue(*A,0,0,A22/det,INSERT_VALUES); if (ierr) return 14;
+//      ierr=MatSetValue(*A,0,1,-A12/det,INSERT_VALUES); if (ierr) return 15;
+//      ierr=MatSetValue(*A,1,0,-A21/det,INSERT_VALUES); if (ierr) return 16;
+//      ierr=MatSetValue(*A,1,1,A11/det,INSERT_VALUES); if (ierr) return 17;
+//
    } else {
 
       // iterative inversion: inefficient, but ok for usage here with small S-parameter matrices
@@ -380,14 +646,16 @@ PetscErrorCode MatInvert (Mat *A, int isDiagonal)
       ierr=MatCreateVecs(*A,NULL,&x); if (ierr) return 25;
       ierr=MatCreateVecs(*A,NULL,&b); if (ierr) return 26;
 
+      ierr=VecGetOwnershipRange(b,&low,&high); if (ierr) return 30;
+
       i=0;
       while (i < m) {
+
          ierr=MatCopy(*A,Ap,SAME_NONZERO_PATTERN); if (ierr) return 27;
          ierr=KSPSetOperators(ksp,Ap,Ap); if (ierr) return 28;
 
          ierr=VecZeroEntries(b); if (ierr) return 29;
 
-         ierr=VecGetOwnershipRange(b,&low,&high); if (ierr) return 30;
          if (i >= low && i < high) {
             ierr=VecSetValue(b,i,1,INSERT_VALUES); if (ierr) return 31;
          }
@@ -430,4 +698,5 @@ PetscErrorCode MatInvert (Mat *A, int isDiagonal)
 
    return ierr;
 }
+*/
 
