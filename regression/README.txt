@@ -1,0 +1,43 @@
+Note: The regression tests are set up to exercise and to check setop options for OpenParEM3D, so the setups do not necessarily
+      demonstrate the best way to set a up a problem.
+
+1. check on project files
+
+   (a) find . -name ".*.lock" -print
+
+       Remove any locks found.
+       Verify that a valid job is not running before removing a lock file.
+
+   (b) proj_search has output.show.license | grep true
+       proj_search has debug.show.mode.definitions | grep true
+       proj_search has debug.show.impedance.details | grep true
+       proj_search has debug.tempfiles.keep | grep true
+       proj_search has project.save.fields | grep true
+       proj_search has test.create.cases | grep true
+       proj_search has debug.save.port.fields | grep true
+       proj_search has debug.tempfiles.keep | grep true
+
+       Generally, these should be false to minimize disk usage.
+
+2. To set up a project:
+
+   mpirun -np N OpenParEM2D *.proj
+   mv *_prototype_test_cases.csv *_test_cases.csv
+   Edit the file *_test_cases.csv as desired.
+   Set test.create.cases to false
+
+3. To check a project for errors:
+
+   process3D.sh project.proj N
+
+4. To check errors in all projects, from the regression directory:
+
+   regression3D.sh >& regression.log
+
+5. To check the files for issues, run:
+
+   ./check.sh
+
+6. To add projects to the regression suite, add a line to
+
+   regression_case_list.txt
