@@ -1,0 +1,9 @@
+# name,status,frequency,portOut,portIn,testVariable,testFunction,[equal:expectedValue,]foundValue,[equal:error,tolerance | lessthan:threshold | greaterthan:threshold
+straight-loaded_1_6_result,pass,8300000000,2,2,magS(dB),lessthan,-121.298531501048,-110,
+straight-loaded_1_0_result,pass,8300000000,1,1,magS(dB),lessthan,-121.295715222337,-110,
+straight-loaded_1_5_result,pass,8300000000,1,2,argS(deg),equal,-50.911505879957,-50.9111872657301,6.2581968730206e-06,1e-05,
+straight-loaded_1_3_result,pass,8300000000,2,1,argS(deg),equal,-50.911505879957,-50.9111872657301,6.2581968730206e-06,1e-05,
+straight-loaded_1_4_result,pass,8300000000,1,2,magS(dB),lessthan,-1.35963538317458e-08,1e-10,
+straight-loaded_1_4a_result,pass,8300000000,1,2,magS(dB),greaterthan,-1.35963538317458e-08,-1e-07,
+straight-loaded_1_2a_result,pass,8300000000,2,1,magS(dB),greaterthan,-1.35963538317458e-08,-1e-07,
+straight-loaded_1_2_result,pass,8300000000,2,1,magS(dB),lessthan,-1.35963538317458e-08,1e-10,

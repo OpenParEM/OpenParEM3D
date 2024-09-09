@@ -1,7 +1,7 @@
 #OpenParEMports 1.0
 
 File
-   name=/home/briany/Desktop/OpenParEM3D/regression/WR90/straight-lossy/straight.FCStd
+   name=/home/briany/Desktop/OpenParEM3D/regression/WR90/straight-lossy-alt/straight.FCStd
 EndFile
 
 Path
@@ -38,37 +38,37 @@ EndPath
 
 Path
    name=side1
-   point=(-0.01143,-0.00508,0.0)
-   point=(0.01143,-0.00508,0.0)
-   point=(0.01143,-0.005079999999999978,0.1)
-   point=(-0.01143,-0.005079999999999978,0.1)
+   point=(-0.01143,-0.00508,0.001)
+   point=(0.01143,-0.00508,0.001)
+   point=(0.01143,-0.005079999999999979,0.099)
+   point=(-0.01143,-0.005079999999999979,0.099)
    closed=true
 EndPath
 
 Path
    name=side3
-   point=(-0.01143,0.00508,0.0)
-   point=(0.01143,0.00508,0.0)
-   point=(0.01143,0.005080000000000023,0.1)
-   point=(-0.01143,0.005080000000000023,0.1)
+   point=(-0.01143,0.00508,0.001)
+   point=(0.01143,0.00508,0.001)
+   point=(0.01143,0.005080000000000022,0.099)
+   point=(-0.01143,0.005080000000000022,0.099)
    closed=true
 EndPath
 
 Path
    name=side2
-   point=(0.01143,-0.00508,0.0)
-   point=(0.01143,0.00508,0.0)
-   point=(0.01143,0.00508,0.1)
-   point=(0.01143,-0.00508,0.1)
+   point=(0.01143,-0.00508,0.001)
+   point=(0.01143,0.005080000000000002,0.0009999999999999979)
+   point=(0.011429999999999977,0.005080000000000002,0.09900000000000003)
+   point=(0.011429999999999977,-0.00508,0.09900000000000003)
    closed=true
 EndPath
 
 Path
    name=side4
-   point=(-0.01143,-0.00508,0.0)
-   point=(-0.01143,0.00508,0.0)
-   point=(-0.01143,0.00508,0.1)
-   point=(-0.01143,-0.00508,0.1)
+   point=(-0.01143,-0.00508,0.001)
+   point=(-0.01143,0.005080000000000002,0.0009999999999999979)
+   point=(-0.011430000000000022,0.005080000000000002,0.09900000000000003)
+   point=(-0.011430000000000022,-0.00508,0.09900000000000003)
    closed=true
 EndPath
 
@@ -107,8 +107,10 @@ Port
    impedance_calculation=line
    Line
       Sport=1
-      type=voltage
-      path=+v1
+      IntegrationPath
+         type=voltage
+         path=+v1
+      EndIntegrationPath
    EndLine
 EndPort
 
@@ -119,8 +121,10 @@ Port
    impedance_calculation=line
    Line
       Sport=2
-      type=voltage
-      path=+v2
+      IntegrationPath
+         type=voltage
+         path=+v2
+      EndIntegrationPath
    EndLine
 EndPort
 

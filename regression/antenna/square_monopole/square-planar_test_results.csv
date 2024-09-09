@@ -1,0 +1,7 @@
+# name,status,frequency,portOut,portIn,testVariable,testFunction,[equal:expectedValue,]foundValue,[equal:error,tolerance | lessthan:threshold | greaterthan:threshold
+square-planar_1_1_result,pass,2000000000,1,1,argS(deg),equal,-38.5804036106321,-38.5804036065461,1.05908804504364e-10,1e-05,
+square-planar_3_5_result,pass,6000000000,1,1,argS(deg),equal,-24.3070259501114,-24.307025948751,5.5967275439252e-11,0.001,
+square-planar_1_0_result,pass,2000000000,1,1,magS(dB),equal,-21.5924382281752,-21.5924382288089,2.93481232731168e-11,1e-05,
+square-planar_3_4_result,pass,6000000000,1,1,magS(dB),equal,-4.28311528525499,-4.28311528533044,1.76156520546736e-11,0.001,
+square-planar_2_2_result,pass,4000000000,1,1,magS(dB),equal,-3.63018366077821,-3.63018366078408,1.61699013722622e-12,0.0001,
+square-planar_2_3_result,pass,4000000000,1,1,argS(deg),equal,173.654739847267,173.654739847193,4.26027586188607e-13,0.0001,

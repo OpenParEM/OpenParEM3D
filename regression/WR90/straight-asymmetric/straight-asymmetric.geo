@@ -1,3 +1,4 @@
+SetFactory("OpenCASCADE");
 Merge "straight-asymmetric.brep";
 //+
-Physical Volume("air", 1) = {3, 2, 1};
+Physical Volume("air", 1) = {1, 2, 3};

@@ -1,0 +1,75 @@
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=9000000000
+   shortestPerWavelength=0.173062638178889
+   longestPerWavelength=0.445290672947614
+   S(dB,deg):
+      S(1,1)=(-131.680849846446,64.8744316213253)
+      S(1,2)=(-2.74303044337142e-09,-20.75303995489)
+      S(2,1)=(-2.74303044337142e-09,-20.75303995489)
+      S(2,2)=(-131.684664985053,73.6566451241636)
+   S-port Zo:
+      Zo(0)=(488.572366855553,-3.33281772647329e-11)
+      Zo(1)=(488.572366855241,-6.82355914232861e-12)
+   mesh_size=289
+   matrix_size(DOF_count)=41460
+   sparse_width=1350
+   isRefined=0
+   fem_setup_time=4.8798
+   solve_time=14.4597
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=9999999999
+   shortestPerWavelength=0.192291820179536
+   longestPerWavelength=0.494767414336761
+   S(dB,deg):
+      S(1,1)=(-121.46051854131,82.8917136174033)
+      S(1,2)=(-5.78502940360366e-09,172.8846080307)
+      S(2,1)=(-5.78502940360366e-09,172.8846080307)
+      S(2,2)=(-121.461892318504,82.9502406114346)
+   S-port Zo:
+      Zo(0)=(443.299541588668,2.55315992785182e-13)
+      Zo(1)=(443.299541588668,-6.83252137075646e-13)
+   mesh_size=289
+   matrix_size(DOF_count)=41460
+   sparse_width=1350
+   isRefined=0
+   fem_setup_time=3.22546
+   solve_time=14.2749
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=11000000000
+   shortestPerWavelength=0.211521002218642
+   longestPerWavelength=0.544244155824861
+   S(dB,deg):
+      S(1,1)=(-112.293853758734,112.357709703616)
+      S(1,2)=(-1.11334055476695e-08,18.9351103086115)
+      S(2,1)=(-1.11334055476695e-08,18.9351103086115)
+      S(2,2)=(-112.294257518341,105.593329739319)
+   S-port Zo:
+      Zo(0)=(416.879495247676,-1.00013751273674e-13)
+      Zo(1)=(416.879495247678,2.0211046059761e-13)
+   mesh_size=289
+   matrix_size(DOF_count)=41460
+   sparse_width=1350
+   isRefined=0
+   fem_setup_time=3.2268
+   solve_time=14.1929
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Time]
+   job_time=48.6266
+[EndTime]

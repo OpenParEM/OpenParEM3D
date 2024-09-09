@@ -1,12 +1,13 @@
 #OpenParEM3Dproject 1.0
 
 // Same as the project "straight-loaded" with added conductor losses.
+//
 // Phase shifts are compared to the lossless phase shift from 2D simulation,
 // so some difference is expected.
 
 project.save.fields            false
 
-mesh.file                      straight-loaded.msh
+mesh.file                      ../straight-loaded/straight-loaded.msh
 
 mesh.order                     6
 mesh.quality.limit             1e6
@@ -18,12 +19,14 @@ materials.global.name          global_materials.txt
 materials.local.path           ./
 materials.local.name           local_materials.txt
 materials.check.limits         true
+materials.default.boundary     copper
 
 refinement.frequency           none
 refinement.iteration.min       1 
 refinement.iteration.max       24 
 refinement.required.passes     1
-refinement.tolerance           1e-8
+refinement.relative.tolerance  1e-4
+refinement.variable            S
 
 frequency.plan.point           8.3e9
 

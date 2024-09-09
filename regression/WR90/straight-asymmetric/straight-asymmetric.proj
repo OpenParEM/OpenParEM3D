@@ -4,7 +4,7 @@ project.save.fields            false
 
 mesh.file                      straight-asymmetric.msh
 
-mesh.order                     4
+mesh.order                     6 
 
 mesh.quality.limit             20
 
@@ -20,7 +20,7 @@ refinement.frequency           none
 refinement.iteration.min       1 
 refinement.iteration.max       5
 refinement.required.passes     1
-refinement.tolerance           1e-4
+refinement.relative.tolerance  1e-4
 
 frequency.plan.point           9e9
 frequency.plan.point           9.999999999e9

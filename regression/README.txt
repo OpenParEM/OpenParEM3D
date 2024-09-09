@@ -41,3 +41,10 @@ Note: The regression tests are set up to exercise and to check setop options for
 6. To add projects to the regression suite, add a line to
 
    regression_case_list.txt
+
+7. To clean up directories after a regression run, from the regression directory:
+
+   find -type d -exec project_cleanup.sh {} \;
+
+   WARNING: Will remove 'regression_results.csv' and 'regression.log', so save these first.
+

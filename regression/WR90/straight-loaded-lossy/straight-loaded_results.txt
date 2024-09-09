@@ -1,0 +1,27 @@
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=8300000000
+   shortestPerWavelength=0.08212941426675
+   longestPerWavelength=0.825390398216349
+   S(dB,deg):
+      S(1,1)=(-81.8873560917217,157.969012598227)
+      S(1,2)=(-0.01185790563125,-50.9146528465404)
+      S(2,1)=(-0.01185790563125,-50.9146528465404)
+      S(2,2)=(-81.9075309395839,157.967362746679)
+   S-port Zo:
+      Zo(0)=(493.515577296726,9.93406808896478e-10)
+      Zo(1)=(493.515577291095,1.14622692655837e-09)
+   mesh_size=252
+   matrix_size(DOF_count)=35178
+   sparse_width=1350
+   isRefined=0
+   fem_setup_time=8.24333
+   solve_time=11.3363
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Time]
+   job_time=15.486
+[EndTime]

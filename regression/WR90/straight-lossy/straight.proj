@@ -1,28 +1,33 @@
 #OpenParEM3Dproject 1.0
 
 // Same as the project "straight" with added conductor losses.
+
 // Phase shifts are compared to the lossless phase shift from 2D simulation,
-// so some difference is expected.
+// so some difference is expected.  Losses are compared to 2D perturbational
+// losses, so again, some small differences are expected.
 
 project.save.fields            false
 
-mesh.file                      straight.msh
+mesh.file                      ../straight/straight.msh
 
 mesh.order                     6
+mesh.quality.limit             1e6
 
-port.definition.file           straight_ports.txt
+port.definition.file           ../straight/straight_ports.txt
 
 materials.global.path          ../../../../OpenParEM2D/regression/
 materials.global.name          global_materials.txt
 materials.local.path           ./
 materials.local.name           //local_materials.txt
 materials.check.limits         true
+materials.default.boundary     copper
 
 refinement.frequency           none
 refinement.iteration.min       1 
-refinement.iteration.max       5
+refinement.iteration.max       50
 refinement.required.passes     1
-refinement.tolerance           1e-4
+refinement.relative.tolerance  1e-3
+refinement.variable            SandH
 
 frequency.plan.point           9e9
 frequency.plan.point           9.999999999e9
@@ -54,5 +59,5 @@ debug.show.port.definitions    false
 debug.show.impedance.details   false
 debug.save.port.fields         false
 debug.tempfiles.keep           false
-
+debug.skip.forced.reciprocity  false
 

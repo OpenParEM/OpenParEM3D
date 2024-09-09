@@ -18,7 +18,7 @@ refinement.frequency           none
 refinement.iteration.min       3 
 refinement.iteration.max       5
 refinement.required.passes     1
-refinement.tolerance           1e-8
+refinement.relative.tolerance  1e-8
 
 frequency.plan.point           9e9
 frequency.plan.point           9.999999999e9

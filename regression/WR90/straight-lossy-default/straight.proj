@@ -1,15 +1,17 @@
 #OpenParEM3Dproject 1.0
 
-// Same as the project "straight" with added conductor losses using materials.default.boundary.
+// Same as the project "straight-lossy" but with using the default boundary condition.
+// The impedance boundaries are pulled back slightly from the ports by using strips of PEC.
+
 // Phase shifts are compared to the lossless phase shift from 2D simulation,
 // so some difference is expected.
-
 
 project.save.fields            false
 
 mesh.file                      straight.msh
 
 mesh.order                     6
+mesh.quality.limit             1e6
 
 port.definition.file           straight_ports.txt
 
@@ -17,14 +19,15 @@ materials.global.path          ../../../../OpenParEM2D/regression/
 materials.global.name          global_materials.txt
 materials.local.path           ./
 materials.local.name           //local_materials.txt
-materials.default.boundary     copper
 materials.check.limits         true
+materials.default.boundary     copper
 
 refinement.frequency           none
 refinement.iteration.min       1 
-refinement.iteration.max       5
+refinement.iteration.max       50
 refinement.required.passes     1
-refinement.tolerance           1e-4
+refinement.relative.tolerance  1e-3
+refinement.variable            SandH
 
 frequency.plan.point           9e9
 frequency.plan.point           9.999999999e9
@@ -34,7 +37,7 @@ reference.impedance            0
 
 solution.temperature           20
 solution.2D.tolerance          1e-14
-solution.3D.tolerance          1e-14
+solution.3D.tolerance          1e-15
 solution.iteration.limit       10000
 solution.modes.buffer          0
 solution.accurate.residual     false
@@ -56,5 +59,5 @@ debug.show.port.definitions    false
 debug.show.impedance.details   false
 debug.save.port.fields         false
 debug.tempfiles.keep           false
-
+debug.skip.forced.reciprocity  false
 

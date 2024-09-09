@@ -1,0 +1,3891 @@
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=6000000000
+   shortestPerWavelength=0.000400396979304377
+   longestPerWavelength=0.0109216846450987
+   S(mag,deg):
+      S(1,1)=(0.045223497146203,48.2435978867472)
+      S(1,2)=(0.998976914197245,-41.8879022021433)
+      S(2,1)=(0.998976914197245,-41.8879022021433)
+      S(2,2)=(0.0452238600580052,47.9724717359666)
+   S-port Zo:
+      Zo(0)=(37.9796150964792,3.14801002121548e-08)
+      Zo(1)=(37.9796152026825,4.97300564202096e-09)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=34.0345
+   solve_time=62.4671
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=7000000000
+   shortestPerWavelength=0.00046712980918844
+   longestPerWavelength=0.0127419654192818
+   S(mag,deg):
+      S(1,1)=(0.0527676605336194,41.2220034650129)
+      S(1,2)=(0.99860684578568,-48.8764886383124)
+      S(2,1)=(0.99860684578568,-48.8764886383124)
+      S(2,2)=(0.0527680372393999,41.0158795903291)
+   S-port Zo:
+      Zo(0)=(38.0108540044084,3.66609654840978e-15)
+      Zo(1)=(38.0108539999171,2.54767427335738e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.54506
+   solve_time=64.1344
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=8000000000
+   shortestPerWavelength=0.000533862639072503
+   longestPerWavelength=0.0145622461934649
+   S(mag,deg):
+      S(1,1)=(0.0603150326099078,34.2039330293612)
+      S(1,2)=(0.998179430806382,-55.8684188357221)
+      S(2,1)=(0.998179430806382,-55.8684188357221)
+      S(2,2)=(0.0603153942065112,34.0492256590269)
+   S-port Zo:
+      Zo(0)=(38.0468565874204,-1.86778047849197e-14)
+      Zo(1)=(38.0468565856718,-1.75159160544528e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.44713
+   solve_time=61.4916
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=9000000000
+   shortestPerWavelength=0.000600595468956566
+   longestPerWavelength=0.016382526967648
+   S(mag,deg):
+      S(1,1)=(0.06786605119957,27.1868136382478)
+      S(1,2)=(0.997694495466691,-62.8641621189168)
+      S(2,1)=(0.997694495466691,-62.8641621189168)
+      S(2,2)=(0.067866374095617,27.0741583414644)
+   S-port Zo:
+      Zo(0)=(38.0876043088019,4.65422260444989e-15)
+      Zo(1)=(38.0876043071128,-1.39461145354236e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.56942
+   solve_time=62.0367
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=10000000000
+   shortestPerWavelength=0.000667328298840628
+   longestPerWavelength=0.0182028077418311
+   S(mag,deg):
+      S(1,1)=(0.0754211360548057,20.168931386167)
+      S(1,2)=(0.997151841820183,-69.8641844273362)
+      S(2,1)=(0.997151841820183,-69.8641844273362)
+      S(2,2)=(0.0754213960392831,20.0914722109124)
+   S-port Zo:
+      Zo(0)=(38.1330763206366,1.11318287258447e-15)
+      Zo(1)=(38.1330763192051,1.01856506279182e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.54446
+   solve_time=61.4287
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=11000000000
+   shortestPerWavelength=0.000734061128724691
+   longestPerWavelength=0.0200230885160143
+   S(mag,deg):
+      S(1,1)=(0.0829806853199849,13.1490397037473)
+      S(1,2)=(0.996551250409804,-76.8689477662408)
+      S(2,1)=(0.996551250409804,-76.8689477662408)
+      S(2,2)=(0.0829808582765929,13.1014998007115)
+   S-port Zo:
+      Zo(0)=(38.183249245133,-4.69777797812267e-15)
+      Zo(1)=(38.1832492439951,2.12889999824069e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.559
+   solve_time=60.2407
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=12000000000
+   shortestPerWavelength=0.000800793958608754
+   longestPerWavelength=0.0218433692901974
+   S(mag,deg):
+      S(1,1)=(0.0905450678396909,6.12616411390147)
+      S(1,2)=(0.995892481618384,-83.8789096971269)
+      S(2,1)=(0.995892481618384,-83.8789096971269)
+      S(2,2)=(0.0905451304388038,6.10430772753363)
+   S-port Zo:
+      Zo(0)=(38.2380971438559,6.33792416762982e-15)
+      Zo(1)=(38.2380971424603,-6.37464674302111e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.51624
+   solve_time=61.447
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=13000000000
+   shortestPerWavelength=0.000867526788492817
+   longestPerWavelength=0.0236636500643805
+   S(mag,deg):
+      S(1,1)=(0.0981146139944427,-0.900502713994955)
+      S(1,2)=(0.995175277418707,-90.8945228087449)
+      S(2,1)=(0.995175277418707,-90.8945228087449)
+      S(2,2)=(0.0981145444127914,-0.900197458556965)
+   S-port Zo:
+      Zo(0)=(38.297591494051,-1.93288612472747e-15)
+      Zo(1)=(38.297591492907,1.02892704936246e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.68731
+   solve_time=61.8724
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=14000000000
+   shortestPerWavelength=0.00093425961837688
+   longestPerWavelength=0.0254839308385636
+   S(mag,deg):
+      S(1,1)=(0.105689605509225,-7.9316607736416)
+      S(1,2)=(0.994399363688634,-97.9162341785783)
+      S(2,1)=(0.994399363688634,-97.9162341785783)
+      S(2,2)=(0.105689384101006,-7.91220847364549)
+   S-port Zo:
+      Zo(0)=(38.3617011614451,-1.26769060562008e-14)
+      Zo(1)=(38.3617011608151,6.20850715704383e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.59255
+   solve_time=62.4834
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=15000000000
+   shortestPerWavelength=0.00100099244826094
+   longestPerWavelength=0.0273042116127467
+   S(mag,deg):
+      S(1,1)=(0.113270264062562,-14.9679383755121)
+      S(1,2)=(0.993564453118717,-104.944484823366)
+      S(2,1)=(0.993564453118717,-104.944484823366)
+      S(2,2)=(0.113269874030207,-14.9319805899097)
+   S-port Zo:
+      Zo(0)=(38.4303923721183,7.34562450670847e-15)
+      Zo(1)=(38.430392371377,2.86884557089766e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.61838
+   solve_time=61.9711
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=16000000000
+   shortestPerWavelength=0.00106772527814501
+   longestPerWavelength=0.0291244923869298
+   S(mag,deg):
+      S(1,1)=(0.120856738885614,-22.0099141975396)
+      S(1,2)=(0.992670248797136,-111.979709145902)
+      S(2,1)=(0.992670248797136,-111.979709145902)
+      S(2,2)=(0.120856166863501,-21.9598084909711)
+   S-port Zo:
+      Zo(0)=(38.5036286825827,3.4890991941995e-15)
+      Zo(1)=(38.5036286819568,-3.30343963906098e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.6641
+   solve_time=60.8068
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=17000000000
+   shortestPerWavelength=0.00113445810802907
+   longestPerWavelength=0.0309447731611129
+   S(mag,deg):
+      S(1,1)=(0.128449093418485,-29.058131296302)
+      S(1,2)=(0.991716448475123,-119.022334381363)
+      S(2,1)=(0.991716448475123,-119.022334381363)
+      S(2,2)=(0.128448330021209,-28.9960111156704)
+   S-port Zo:
+      Zo(0)=(38.5813709526496,8.70081015679388e-15)
+      Zo(1)=(38.5813709520929,-9.41903119745651e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.65095
+   solve_time=62.1914
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=18000000000
+   shortestPerWavelength=0.00120119093791313
+   longestPerWavelength=0.0327650539352961
+   S(mag,deg):
+      S(1,1)=(0.136047291292753,-36.1131061769543)
+      S(1,2)=(0.990702749590421,-126.072780051109)
+      S(2,1)=(0.990702749590421,-126.072780051109)
+      S(2,2)=(0.136046331566829,-36.0409214105401)
+   S-port Zo:
+      Zo(0)=(38.6635773177107,1.46383735592419e-14)
+      Zo(1)=(38.6635773171743,-1.38824369590517e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.63438
+   solve_time=62.2693
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=19000000000
+   shortestPerWavelength=0.00126792376779719
+   longestPerWavelength=0.0345853347094792
+   S(mag,deg):
+      S(1,1)=(0.143651181832893,-43.1753347275797)
+      S(1,2)=(0.989628855030149,-133.131457427896)
+      S(2,1)=(0.989628855030149,-133.131457427896)
+      S(2,2)=(0.143650025627648,-43.0948792019874)
+   S-port Zo:
+      Zo(0)=(38.7502031610088,-2.18477729278599e-14)
+      Zo(1)=(38.7502031606532,3.41759007157731e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.60563
+   solve_time=60.2888
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=20000000000
+   shortestPerWavelength=0.00133465659768126
+   longestPerWavelength=0.0364056154836623
+   S(mag,deg):
+      S(1,1)=(0.151260485336202,-50.2452961000905)
+      S(1,2)=(0.988494479661264,-140.198769022884)
+      S(2,1)=(0.988494479661264,-140.198769022884)
+      S(2,2)=(0.151259137574033,-50.1582261284151)
+   S-port Zo:
+      Zo(0)=(38.8412010894788,-3.38625480368522e-15)
+      Zo(1)=(38.8412010888328,1.22413044390642e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.37252
+   solve_time=62.8233
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=21000000000
+   shortestPerWavelength=0.00140138942756532
+   longestPerWavelength=0.0382258962578454
+   S(mag,deg):
+      S(1,1)=(0.158874778448338,-57.3234551990436)
+      S(1,2)=(0.98729935756776,-147.275108100224)
+      S(2,1)=(0.98729935756776,-147.275108100224)
+      S(2,2)=(0.158873249282792,-57.231301961559)
+   S-port Zo:
+      Zo(0)=(38.9365209085287,-6.33561284495418e-15)
+      Zo(1)=(38.9365209081359,-9.27412295110339e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.69271
+   solve_time=63.0113
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=22000000000
+   shortestPerWavelength=0.00146812225744938
+   longestPerWavelength=0.0400461770320285
+   S(mag,deg):
+      S(1,1)=(0.166493479945654,-64.4102642505028)
+      S(1,2)=(0.98604324998801,-154.360858227821)
+      S(2,1)=(0.98604324998801,-154.360858227821)
+      S(2,2)=(0.166491784804086,-64.3144418963923)
+   S-port Zo:
+      Zo(0)=(39.0361096033244,3.41039644283801e-15)
+      Zo(1)=(39.036109603061,1.77153590716343e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.63665
+   solve_time=63.9089
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=23000000000
+   shortestPerWavelength=0.00153485508733345
+   longestPerWavelength=0.0418664578062116
+   S(mag,deg):
+      S(1,1)=(0.174115837257829,-71.5061637029906)
+      S(1,2)=(0.984725953850904,-161.456392873608)
+      S(2,1)=(0.984725953850904,-161.456392873608)
+      S(2,2)=(0.174113996775795,-71.4079745624123)
+   S-port Zo:
+      Zo(0)=(39.1399113194487,7.75667962799604e-15)
+      Zo(1)=(39.1399113190804,9.83400434602517e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.72575
+   solve_time=62.3419
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=24000000000
+   shortestPerWavelength=0.00160158791721751
+   longestPerWavelength=0.0436867385803947
+   S(mag,deg):
+      S(1,1)=(0.181740914122112,-78.6115826686383)
+      S(1,2)=(0.983347310844448,-168.562075053582)
+      S(2,1)=(0.983347310844448,-168.562075053582)
+      S(2,2)=(0.181738953946085,-78.5122205504699)
+   S-port Zo:
+      Zo(0)=(39.2478673489339,-6.59384674820901e-15)
+      Zo(1)=(39.2478673486655,-4.23732900760566e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.67815
+   solve_time=60.343
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=25000000000
+   shortestPerWavelength=0.00166832074710157
+   longestPerWavelength=0.0455070193545779
+   S(mag,deg):
+      S(1,1)=(0.189367579696659,-85.7269390720952)
+      S(1,2)=(0.98190721687492,-175.678257041898)
+      S(2,1)=(0.98190721687492,-175.678257041898)
+      S(2,2)=(0.18936553018013,-85.6274913492701)
+   S-port Zo:
+      Zo(0)=(39.3599161202071,4.00590677888795e-15)
+      Zo(1)=(39.3599161200653,-6.78649049282717e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.54631
+   solve_time=62.8927
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=26000000000
+   shortestPerWavelength=0.00173505357698563
+   longestPerWavelength=0.047327300128761
+   S(mag,deg):
+      S(1,1)=(0.196994499532963,-92.8526395801464)
+      S(1,2)=(0.980405631785619,177.19471985103)
+      S(2,1)=(0.980405631785619,177.19471985103)
+      S(2,2)=(0.196992395301593,-92.7540886010145)
+   S-port Zo:
+      Zo(0)=(39.4759931925351,1.1436057427263e-14)
+      Zo(1)=(39.4759931921643,4.78048233283478e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.82776
+   solve_time=61.8945
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=27000000000
+   shortestPerWavelength=0.0018017864068697
+   longestPerWavelength=0.0491475809029441
+   S(mag,deg):
+      S(1,1)=(0.204620128744756,-99.9890793877032)
+      S(1,2)=(0.978842589159141,170.056525424946)
+      S(2,1)=(0.978842589159141,170.056525424946)
+      S(2,2)=(0.204618008153222,-99.8923036300073)
+   S-port Zo:
+      Zo(0)=(39.5960312552163,-1.06774967182231e-14)
+      Zo(1)=(39.5960312550026,1.27958898924494e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.73185
+   solve_time=63.0933
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=28000000000
+   shortestPerWavelength=0.00186851923675376
+   longestPerWavelength=0.0509678616771272
+   S(mag,deg):
+      S(1,1)=(0.21224270770854,-107.136641959903)
+      S(1,2)=(0.977218206038787,162.906840654861)
+      S(2,1)=(0.977218206038787,162.906840654861)
+      S(2,2)=(0.212240612197542,-107.042417178758)
+   S-port Zo:
+      Zo(0)=(39.7199601335267,9.87241074481498e-15)
+      Zo(1)=(39.7199601332928,1.7859768045802e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.6518
+   solve_time=61.83
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=29000000000
+   shortestPerWavelength=0.00193525206663782
+   longestPerWavelength=0.0527881424513103
+   S(mag,deg):
+      S(1,1)=(0.219860260639188,-114.295698717562)
+      S(1,2)=(0.975532692317109,155.745357670098)
+      S(2,1)=(0.975532692317109,155.745357670098)
+      S(2,2)=(0.219858233985613,-114.204699352545)
+   S-port Zo:
+      Zo(0)=(39.8477067997611,-2.02972754833803e-15)
+      Zo(1)=(39.8477067995099,1.07604094649767e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.87502
+   solve_time=61.2666
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=30000000000
+   shortestPerWavelength=0.00200198489652188
+   longestPerWavelength=0.0546084232254934
+   S(mag,deg):
+      S(1,1)=(0.227470597281346,-121.466608754805)
+      S(1,2)=(0.973786359613786,148.571779645092)
+      S(2,1)=(0.973786359613786,148.571779645092)
+      S(2,2)=(0.227468684768524,-121.379409716262)
+   S-port Zo:
+      Zo(0)=(39.9791953915853,-1.07198487377344e-14)
+      Zo(1)=(39.9791953914441,7.2536317370809e-16)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.75833
+   solve_time=63.2616
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=31000000000
+   shortestPerWavelength=0.00206871772640595
+   longestPerWavelength=0.0564287039996765
+   S(mag,deg):
+      S(1,1)=(0.235071317964123,-128.649718588525)
+      S(1,2)=(0.97197962937158,141.385820598779)
+      S(2,1)=(0.97197962937158,141.385820598779)
+      S(2,2)=(0.235069565475901,-128.566797542785)
+   S-port Zo:
+      Zo(0)=(40.1143472374774,5.81233723207112e-15)
+      Zo(1)=(40.1143472372384,1.53910554446937e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.83897
+   solve_time=63.4666
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=32000000000
+   shortestPerWavelength=0.00213545055629001
+   longestPerWavelength=0.0582489847738597
+   S(mag,deg):
+      S(1,1)=(0.24265982221628,-135.845361968181)
+      S(1,2)=(0.970113039947761,134.187205105362)
+      S(2,1)=(0.970113039947761,134.187205105362)
+      S(2,2)=(0.242658275270261,-135.767102193644)
+   S-port Zo:
+      Zo(0)=(40.2530808895198,1.36087654607703e-14)
+      Zo(1)=(40.2530808893609,9.08014544251209e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.85355
+   solve_time=64.33
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=33000000000
+   shortestPerWavelength=0.00220218338617407
+   longestPerWavelength=0.0600692655480428
+   S(mag,deg):
+      S(1,1)=(0.250233321017696,-143.053859774878)
+      S(1,2)=(0.968187252448545,126.975667917322)
+      S(2,1)=(0.968187252448545,126.975667917322)
+      S(2,2)=(0.250232023765111,-142.980553601416)
+   S-port Zo:
+      Zo(0)=(40.3953121648096,1.89357828689805e-14)
+      Zo(1)=(40.3953121646392,8.74682229706344e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.71391
+   solve_time=61.757
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=34000000000
+   shortestPerWavelength=0.00226891621605814
+   longestPerWavelength=0.0618895463222259
+   S(mag,deg):
+      S(1,1)=(0.257788852789312,-150.275520000531)
+      S(1,2)=(0.966203055061442,119.750953506299)
+      S(2,1)=(0.966203055061442,119.750953506299)
+      S(2,2)=(0.257787846981544,-150.207372858707)
+   S-port Zo:
+      Zo(0)=(40.5409541943842,-1.33455143686123e-14)
+      Zo(1)=(40.5409541942843,-1.40100384693556e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.69157
+   solve_time=60.8916
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=35000000000
+   shortestPerWavelength=0.0023356490459422
+   longestPerWavelength=0.063709827096409
+   S(mag,deg):
+      S(1,1)=(0.265323303047661,-157.510637835678)
+      S(1,2)=(0.964161365673107,112.512815530602)
+      S(2,1)=(0.964161365673107,112.512815530602)
+      S(2,2)=(0.265322627008701,-157.447772878212)
+   S-port Zo:
+      Zo(0)=(40.6899174819712,-5.08741863429367e-15)
+      Zo(1)=(40.6899174817775,1.69383677856282e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.79285
+   solve_time=60.9633
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=36000000000
+   shortestPerWavelength=0.00240238187582626
+   longestPerWavelength=0.0655301078705921
+   S(mag,deg):
+      S(1,1)=(0.272833427663447,-164.75949584955)
+      S(1,2)=(0.962063232547495,105.261016236612)
+      S(2,1)=(0.962063232547495,105.261016236612)
+      S(2,2)=(0.272833115273269,-164.701959120376)
+   S-port Zo:
+      Zo(0)=(40.8421099704926,-4.32607316405551e-15)
+      Zo(1)=(40.8421099703008,-1.39423906122014e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.81709
+   solve_time=61.0951
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=37000000000
+   shortestPerWavelength=0.00246911470571032
+   longestPerWavelength=0.0673503886447752
+   S(mag,deg):
+      S(1,1)=(0.28031587951032,-172.022364278409)
+      S(1,2)=(0.95990983289848,97.9953258094806)
+      S(2,1)=(0.95990983289848,97.9953258094806)
+      S(2,2)=(0.280315959233195,-171.970130358824)
+   S-port Zo:
+      Zo(0)=(40.9974371187853,2.20380360566697e-15)
+      Zo(1)=(40.9974371187147,-1.02310607060803e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.73266
+   solve_time=61.1234
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=38000000000
+   shortestPerWavelength=0.00253584753559439
+   longestPerWavelength=0.0691706694189583
+   S(mag,deg):
+      S(1,1)=(0.287767238270774,-179.299501399493)
+      S(1,2)=(0.95770246918908,90.7155216853239)
+      S(2,1)=(0.95770246918908,90.7155216853239)
+      S(2,2)=(0.28776773224455,-179.252479474779)
+   S-port Zo:
+      Zo(0)=(41.1558019874203,7.53698501892501e-15)
+      Zo(1)=(41.1558019872809,-1.58073977302366e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.74651
+   solve_time=62.48
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=39000000000
+   shortestPerWavelength=0.00260258036547845
+   longestPerWavelength=0.0709909501931415
+   S(mag,deg):
+      S(1,1)=(0.295184043037077,173.408846009983)
+      S(1,2)=(0.95544256306589,83.421387843729)
+      S(2,1)=(0.95544256306589,83.421387843729)
+      S(2,2)=(0.295184966246345,173.450805744862)
+   S-port Zo:
+      Zo(0)=(41.317105333733,-7.2279281314928e-16)
+      Zo(1)=(41.317105333574,-1.99474197216511e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.94131
+   solve_time=61.7799
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=40000000000
+   shortestPerWavelength=0.00266931319536251
+   longestPerWavelength=0.0728112309673246
+   S(mag,deg):
+      S(1,1)=(0.302562827286575,166.102442142771)
+      S(1,2)=(0.953131646868921,76.1127140986401)
+      S(2,1)=(0.953131646868921,76.1127140986401)
+      S(2,2)=(0.302564186846505,166.139541829099)
+   S-port Zo:
+      Zo(0)=(41.4812457167405,1.31940916520068e-15)
+      Zo(1)=(41.4812457166026,-7.69085302327412e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.95389
+   solve_time=61.7506
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=41000000000
+   shortestPerWavelength=0.00273604602524658
+   longestPerWavelength=0.0746315117415077
+   S(mag,deg):
+      S(1,1)=(0.309900155743447,158.78106158067)
+      S(1,2)=(0.950771352700415,68.7892954086782)
+      S(2,1)=(0.950771352700415,68.7892954086782)
+      S(2,2)=(0.309901950310353,158.81354888259)
+   S-port Zo:
+      Zo(0)=(41.6481196112747,-1.07780124765984e-14)
+      Zo(1)=(41.6481196111848,-3.24223850496089e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.86704
+   solve_time=62.1711
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=42000000000
+   shortestPerWavelength=0.00280277885513064
+   longestPerWavelength=0.0764517925156908
+   S(mag,deg):
+      S(1,1)=(0.317192662586136,151.444488681543)
+      S(1,2)=(0.948363399109107,61.4509312281145)
+      S(2,1)=(0.948363399109107,61.4509312281145)
+      S(2,2)=(0.317194881918589,151.472649903653)
+   S-port Zo:
+      Zo(0)=(41.8176215318796,-2.03498403821726e-14)
+      Zo(1)=(41.8176215317613,3.35796575205782e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.85975
+   solve_time=62.1637
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=43000000000
+   shortestPerWavelength=0.0028695116850147
+   longestPerWavelength=0.0782720732898739
+   S(mag,deg):
+      S(1,1)=(0.324437090349868,144.092516951934)
+      S(1,2)=(0.945909575506724,54.0974249220145)
+      S(2,1)=(0.945909575506724,54.0974249220145)
+      S(2,2)=(0.324439715037054,144.116670190704)
+   S-port Zo:
+      Zo(0)=(41.9896441655232,2.33498708015067e-14)
+      Zo(1)=(41.9896441654044,4.11822785754991e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.81791
+   solve_time=62.8193
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=44000000000
+   shortestPerWavelength=0.00293624451489876
+   longestPerWavelength=0.080092354064057
+   S(mag,deg):
+      S(1,1)=(0.331630328896819,136.724948433853)
+      S(1,2)=(0.943411724492851,46.7285832678571)
+      S(2,1)=(0.943411724492851,46.7285832678571)
+      S(2,2)=(0.331633330266383,136.745436849302)
+   S-port Zo:
+      Zo(0)=(42.164078513471,3.50708323332161e-15)
+      Zo(1)=(42.1640785133367,7.1409038217231e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.92483
+   solve_time=61.5247
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=45000000000
+   shortestPerWavelength=0.00300297734478283
+   longestPerWavelength=0.0819126348382402
+   S(mag,deg):
+      S(1,1)=(0.338769453738014,129.341593127501)
+      S(1,2)=(0.940871722316185,39.3442160665011)
+      S(2,1)=(0.940871722316185,39.3442160665011)
+      S(2,2)=(0.3387727939696,129.358778426825)
+   S-port Zo:
+      Zo(0)=(42.3408140418485,1.41408598723549e-16)
+      Zo(1)=(42.3408140418003,9.79571092048589e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.96157
+   solve_time=61.0177
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=46000000000
+   shortestPerWavelength=0.00306971017466689
+   longestPerWavelength=0.0837329156124233
+   S(mag,deg):
+      S(1,1)=(0.345851763001943,121.942268470956)
+      S(1,2)=(0.938291457795771,31.9441358833968)
+      S(2,1)=(0.938291457795771,31.9441358833968)
+      S(2,2)=(0.345855395431179,121.95652469136)
+   S-port Zo:
+      Zo(0)=(42.5197388403573,3.72518468365613e-15)
+      Zo(1)=(42.5197388402809,-5.18574666837792e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.87122
+   solve_time=62.2944
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=47000000000
+   shortestPerWavelength=0.00313644300455095
+   longestPerWavelength=0.0855531963866064
+   S(mag,deg):
+      S(1,1)=(0.352874812310457,114.526798907203)
+      S(1,2)=(0.93567281004089,24.5281579411281)
+      S(2,1)=(0.93567281004089,24.5281579411281)
+      S(2,2)=(0.352878681953858,114.538506572391)
+   S-port Zo:
+      Zo(0)=(42.7007397887924,-3.87067663221019e-17)
+      Zo(1)=(42.7007397886792,7.97232193443922e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.97041
+   solve_time=63.2334
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=48000000000
+   shortestPerWavelength=0.00320317583443502
+   longestPerWavelength=0.0873734771607895
+   S(mag,deg):
+      S(1,1)=(0.359836446844839,107.095015553777)
+      S(1,2)=(0.933017625403221,17.0961001793673)
+      S(2,1)=(0.933017625403221,17.0961001793673)
+      S(2,2)=(0.359840491124806,107.10455627722)
+   S-port Zo:
+      Zo(0)=(42.8837027304813,1.09679226823992e-14)
+      Zo(1)=(42.8837027303735,-1.07649757694759e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.73354
+   solve_time=61.5822
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=49000000000
+   shortestPerWavelength=0.00326990866431908
+   longestPerWavelength=0.0891937579349726
+   S(mag,deg):
+      S(1,1)=(0.366734829900277,99.6467560012447)
+      S(1,2)=(0.930327694106098,9.64778349810376)
+      S(2,1)=(0.930327694106098,9.64778349810376)
+      S(2,2)=(0.366738979584309,99.6545075934522)
+   S-port Zo:
+      Zo(0)=(43.0685126529337,1.63427829765288e-14)
+      Zo(1)=(43.0685126528418,1.36551038917428e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.84241
+   solve_time=61.8182
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=50000000000
+   shortestPerWavelength=0.00333664149420314
+   longestPerWavelength=0.0910140387091557
+   S(mag,deg):
+      S(1,1)=(0.373568467257393,92.181864254337)
+      S(1,2)=(0.927604727062315,2.1830321949216)
+      S(2,1)=(0.927604727062315,2.1830321949216)
+      S(2,2)=(0.373572647585597,92.1881963879469)
+   S-port Zo:
+      Zo(0)=(43.255053873758,8.18778197587261e-15)
+      Zo(1)=(43.2550538736654,1.51196469696159e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.06975
+   solve_time=60.0753
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=51000000000
+   shortestPerWavelength=0.0034033743240872
+   longestPerWavelength=0.0928343194833388
+   S(mag,deg):
+      S(1,1)=(0.380336226747631,84.7001908331779)
+      S(1,2)=(0.924850333401841,-5.29832539692984)
+      S(2,1)=(0.924850333401841,-5.29832539692984)
+      S(2,2)=(0.380340358740082,84.7054613019605)
+   S-port Zo:
+      Zo(0)=(43.4432102319438,6.85225659893046e-15)
+      Zo(1)=(43.4432102318416,4.83929918868256e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.09809
+   solve_time=61.7439
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=52000000000
+   shortestPerWavelength=0.00347010715397127
+   longestPerWavelength=0.094654600257522
+   S(mag,deg):
+      S(1,1)=(0.387037352448754,77.2015930423383)
+      S(1,2)=(0.922065999251732,-12.7964560672639)
+      S(2,1)=(0.922065999251732,-12.7964560672639)
+      S(2,2)=(0.387041354378606,77.2061446438083)
+   S-port Zo:
+      Zo(0)=(43.6328652836356,-1.46032052565756e-14)
+      Zo(1)=(43.6328652835544,2.174057124643e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.93494
+   solve_time=60.5372
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=53000000000
+   shortestPerWavelength=0.00353683998385533
+   longestPerWavelength=0.0964748810317051
+   S(mag,deg):
+      S(1,1)=(0.393671473038628,69.6859354197051)
+      S(1,2)=(0.91925306832291,-20.3115206858725)
+      S(2,1)=(0.91925306832291,-20.3115206858725)
+      S(2,2)=(0.39367526203506,69.690093473821)
+   S-port Zo:
+      Zo(0)=(43.8239025011344,8.71665230070399e-16)
+      Zo(1)=(43.8239025010709,7.35758386814908e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.92831
+   solve_time=61.4659
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=54000000000
+   shortestPerWavelength=0.00360357281373939
+   longestPerWavelength=0.0982951618058882
+   S(mag,deg):
+      S(1,1)=(0.400238603877968,62.1530903600417)
+      S(1,2)=(0.916412724839078,-27.8436729675524)
+      S(2,1)=(0.916412724839078,-27.8436729675524)
+      S(2,2)=(0.400242097634886,62.1571608673148)
+   S-port Zo:
+      Zo(0)=(44.0162054746048,1.12551562920968e-14)
+      Zo(1)=(44.0162054745431,-3.8222334724183e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.0515
+   solve_time=61.4947
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=55000000000
+   shortestPerWavelength=0.00367030564362346
+   longestPerWavelength=0.100115442580071
+   S(mag,deg):
+      S(1,1)=(0.406739142551232,54.6029389185759)
+      S(1,2)=(0.913545979322169,-35.3930580557865)
+      S(2,1)=(0.913545979322169,-35.3930580557865)
+      S(2,2)=(0.406742261107788,54.6072073473422)
+   S-port Zo:
+      Zo(0)=(44.2096581154154,1.52708541650445e-15)
+      Zo(1)=(44.2096581153251,7.84436741296938e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.23463
+   solve_time=61.259
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=56000000000
+   shortestPerWavelength=0.00373703847350752
+   longestPerWavelength=0.101935723354254
+   S(mag,deg):
+      S(1,1)=(0.413173857642995,47.0353717800378)
+      S(1,2)=(0.910653657729965,-42.9598109454817)
+      S(2,1)=(0.910653657729965,-42.9598109454817)
+      S(2,2)=(0.413176525198894,47.0401024585659)
+   S-port Zo:
+      Zo(0)=(44.4041448600812,-1.71413228386648e-14)
+      Zo(1)=(44.4041448600175,1.08936928513072e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.11338
+   solve_time=60.6297
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=57000000000
+   shortestPerWavelength=0.00380377130339158
+   longestPerWavelength=0.103756004128438
+   S(mag,deg):
+      S(1,1)=(0.419543870693849,39.4502903864316)
+      S(1,2)=(0.907736394367778,-50.5440547677423)
+      S(2,1)=(0.907736394367778,-50.5440547677423)
+      S(2,2)=(0.419546017413552,39.4557264647306)
+   S-port Zo:
+      Zo(0)=(44.5995508740111,-1.45262727954151e-15)
+      Zo(1)=(44.5995508739487,2.01785168010252e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.13382
+   solve_time=61.246
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=58000000000
+   shortestPerWavelength=0.00387050413327564
+   longestPerWavelength=0.105576284902621
+   S(mag,deg):
+      S(1,1)=(0.42585063135783,31.8476082012273)
+      S(1,2)=(0.904794628957636,-58.1458989663491)
+      S(2,1)=(0.904794628957636,-58.1458989663491)
+      S(2,2)=(0.425852195125231,31.8539721362366)
+   S-port Zo:
+      Zo(0)=(44.795762253793,7.34997763842686e-15)
+      Zo(1)=(44.7957622537393,1.81756530988203e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.07205
+   solve_time=61.3443
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=59000000000
+   shortestPerWavelength=0.00393723696315971
+   longestPerWavelength=0.107396565676804
+   S(mag,deg):
+      S(1,1)=(0.432095885954127,24.2272520926244)
+      S(1,2)=(0.901828608159893,-65.7654373981162)
+      S(2,1)=(0.901828608159893,-65.7654373981162)
+      S(2,2)=(0.43209681403746,24.2347465975843)
+   S-port Zo:
+      Zo(0)=(44.992666227397,9.0175886402566e-15)
+      Zo(1)=(44.9926662273397,2.05314863975983e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.04621
+   solve_time=61.1212
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=60000000000
+   shortestPerWavelength=0.00400396979304377
+   longestPerWavelength=0.109216846450987
+   S(mag,deg):
+      S(1,1)=(0.438281639718526,16.5891638044065)
+      S(1,2)=(0.898838391773572,-73.4027463972712)
+      S(2,1)=(0.898838391773572,-73.4027463972712)
+      S(2,2)=(0.438281890291972,16.5979731958329)
+   S-port Zo:
+      Zo(0)=(45.1901513507851,-1.17332862908658e-14)
+      Zo(1)=(45.1901513507374,-6.27226447827573e-16)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.1251
+   solve_time=62.9887
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=61000000000
+   shortestPerWavelength=0.00407070262292783
+   longestPerWavelength=0.11103712722517
+   S(mag,deg):
+      S(1,1)=(0.444410113191845,8.93330148707228)
+      S(1,2)=(0.895823863737505,-81.0578828433823)
+      S(2,1)=(0.895823863737505,-81.0578828433823)
+      S(2,2)=(0.444409656680945,8.94359335377176)
+   S-port Zo:
+      Zo(0)=(45.3881077005479,1.17444129833932e-14)
+      Zo(1)=(45.3881077004576,2.14611012562843e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.03908
+   solve_time=61.3245
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=62000000000
+   shortestPerWavelength=0.0041374354528119
+   longestPerWavelength=0.112857407999353
+   S(mag,deg):
+      S(1,1)=(0.450483693343617,1.25964125335001)
+      S(1,2)=(0.89278474795985,-88.7308822784058)
+      S(2,1)=(0.89278474795985,-88.7308822784058)
+      S(2,2)=(0.450482513552185,1.27156836403401)
+   S-port Zo:
+      Zo(0)=(45.5864270609872,-6.20253675615975e-15)
+      Zo(1)=(45.5864270609496,4.70718937416266e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.14827
+   solve_time=61.1755
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=63000000000
+   shortestPerWavelength=0.00420416828269596
+   longestPerWavelength=0.114677688773536
+   S(mag,deg):
+      S(1,1)=(0.456504880138325,-6.43182128050962)
+      S(1,2)=(0.889720628895386,-96.4217571198895)
+      S(2,1)=(0.889720628895386,-96.4217571198895)
+      S(2,2)=(0.456502975112829,-6.41811891727412)
+   S-port Zo:
+      Zo(0)=(45.7850031056104,2.14979993192928e-15)
+      Zo(1)=(45.7850031055659,7.03777604170276e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.17543
+   solve_time=63.3706
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=64000000000
+   shortestPerWavelength=0.00427090111258002
+   longestPerWavelength=0.116497969547719
+   S(mag,deg):
+      S(1,1)=(0.46247622939302,-14.1410695061528)
+      S(1,2)=(0.886630976686306,-104.13049501652)
+      S(2,1)=(0.886630976686306,-104.13049501652)
+      S(2,2)=(0.46247361200878,-14.1254625209123)
+   S-port Zo:
+      Zo(0)=(45.9837315709382,4.29159368717021e-15)
+      Zo(1)=(45.9837315708959,-2.51324632408993e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=5.98829
+   solve_time=59.9819
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=65000000000
+   shortestPerWavelength=0.00433763394246408
+   longestPerWavelength=0.118318250321902
+   S(mag,deg):
+      S(1,1)=(0.468400292899532,-21.8680644332393)
+      S(1,2)=(0.883515176555712,-111.857057396498)
+      S(2,1)=(0.883515176555712,-111.857057396498)
+      S(2,2)=(0.4683969911248,-21.8504320016927)
+   S-port Zo:
+      Zo(0)=(46.1825104230528,-3.41511478768922e-14)
+      Zo(1)=(46.1825104230174,-1.99156646097264e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.17895
+   solve_time=61.4565
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=66000000000
+   shortestPerWavelength=0.00440436677234815
+   longestPerWavelength=0.120138531096086
+   S(mag,deg):
+      S(1,1)=(0.474279556880125,-29.6127434379824)
+      S(1,2)=(0.880372562046123,-119.601378253885)
+      S(2,1)=(0.880372562046123,-119.601378253885)
+      S(2,2)=(0.474275613713349,-29.5929713048787)
+   S-port Zo:
+      Zo(0)=(46.3812400153117,-3.14713315670066e-14)
+      Zo(1)=(46.3812400152574,-1.39636619379021e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.14561
+   solve_time=60.3177
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=67000000000
+   shortestPerWavelength=0.00447109960223221
+   longestPerWavelength=0.121958811870269
+   S(mag,deg):
+      S(1,1)=(0.480116379948797,-37.3750191972022)
+      S(1,2)=(0.877202451575389,-127.363363219906)
+      S(2,1)=(0.877202451575389,-127.363363219906)
+      S(2,2)=(0.48011185301044,-37.3529979023274)
+   S-port Zo:
+      Zo(0)=(46.5798232367575,-1.02778130555999e-14)
+      Zo(1)=(46.5798232367176,-4.63707004228649e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.19577
+   solve_time=61.9016
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=68000000000
+   shortestPerWavelength=0.00453783243211627
+   longestPerWavelength=0.123779092644452
+   S(mag,deg):
+      S(1,1)=(0.485912931817404,-45.1547788524806)
+      S(1,2)=(0.87400418768178,-135.142888961511)
+      S(2,1)=(0.87400418768178,-135.142888961511)
+      S(2,2)=(0.485907892593551,-45.1304022328329)
+   S-port Zo:
+      Zo(0)=(46.7781656508229,2.28181237246281e-14)
+      Zo(1)=(46.7781656507677,-8.91316762808732e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.20961
+   solve_time=60.9759
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=69000000000
+   shortestPerWavelength=0.00460456526200034
+   longestPerWavelength=0.125599373418635
+   S(mag,deg):
+      S(1,1)=(0.49167113403308,-52.9518834430649)
+      S(1,2)=(0.870777178231059,-142.939802945299)
+      S(2,1)=(0.870777178231059,-142.939802945299)
+      S(2,2)=(0.491665666780175,-52.9250474846187)
+   S-port Zo:
+      Zo(0)=(46.9761756233649,8.31646459953775e-15)
+      Zo(1)=(46.9761756233171,6.77512166191777e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.29838
+   solve_time=60.2317
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=70000000000
+   shortestPerWavelength=0.0046712980918844
+   longestPerWavelength=0.127419654192818
+   S(mag,deg):
+      S(1,1)=(0.497392604060878,-60.7661676512357)
+      S(1,2)=(0.867520938770416,-150.753923600762)
+      S(2,1)=(0.867520938770416,-150.753923600762)
+      S(2,2)=(0.497386804381468,-60.7367697435655)
+   S-port Zo:
+      Zo(0)=(47.1737644398933,-7.40596540491555e-15)
+      Zo(1)=(47.1737644398511,-3.36812423065197e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.21785
+   solve_time=60.4533
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=71000000000
+   shortestPerWavelength=0.00473803092176846
+   longestPerWavelength=0.129239934967001
+   S(mag,deg):
+      S(1,1)=(0.503078604009364,-68.597439895729)
+      S(1,2)=(0.864235135143222,-158.585040909943)
+      S(2,1)=(0.864235135143222,-158.585040909943)
+      S(2,2)=(0.503072577124645,-68.5653785338871)
+   S-port Zo:
+      Zo(0)=(47.3708464113948,-9.47339844117902e-15)
+      Zo(1)=(47.3708464113575,2.86914160794529e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.30171
+   solve_time=60.6274
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=72000000000
+   shortestPerWavelength=0.00480476375165252
+   longestPerWavelength=0.131060215741184
+   S(mag,deg):
+      S(1,1)=(0.50872999525235,-76.4454828017355)
+      S(1,2)=(0.860919625412008,-166.432917443051)
+      S(2,1)=(0.860919625412008,-166.432917443051)
+      S(2,2)=(0.508723854001436,-76.4106577661568)
+   S-port Zo:
+      Zo(0)=(47.5673389687129,7.89431691251131e-15)
+      Zo(1)=(47.5673389686662,1.813036640547e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.27476
+   solve_time=60.5894
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=73000000000
+   shortestPerWavelength=0.00487149658153659
+   longestPerWavelength=0.132880496515367
+   S(mag,deg):
+      S(1,1)=(0.514347200131606,-84.3100540770995)
+      S(1,2)=(0.857574500109528,-174.297289852177)
+      S(2,1)=(0.857574500109528,-174.297289852177)
+      S(2,2)=(0.514341062742167,-84.2723671020364)
+   S-port Zo:
+      Zo(0)=(47.763162744735,2.40533760760491e-14)
+      Zo(1)=(47.7631627446885,7.27566019735798e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.2296
+   solve_time=60.75
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=74000000000
+   shortestPerWavelength=0.00493822941142065
+   longestPerWavelength=0.13470077728955
+   S(mag,deg):
+      S(1,1)=(0.51993017181,-92.1908878093535)
+      S(1,2)=(0.854200119801328,177.822129174434)
+      S(2,1)=(0.854200119801328,177.822129174434)
+      S(2,2)=(0.51992415947532,-92.150243737776)
+   S-port Zo:
+      Zo(0)=(47.9582416449178,2.51970122155667e-15)
+      Zo(1)=(47.9582416448783,-9.66653962296389e-16)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.25389
+   solve_time=63.3139
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=75000000000
+   shortestPerWavelength=0.00500496224130471
+   longestPerWavelength=0.136521058063734
+   S(mag,deg):
+      S(1,1)=(0.525478373174978,-100.087696193942)
+      S(1,2)=(0.850797148961475,169.925648505278)
+      S(2,1)=(0.850797148961475,169.925648505278)
+      S(2,2)=(0.525472607506538,-100.044004598409)
+   S-port Zo:
+      Zo(0)=(48.1525029056117,3.42092559923457e-14)
+      Zo(1)=(48.1525029055664,-6.57636834301599e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.23919
+   solve_time=61.1417
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=76000000000
+   shortestPerWavelength=0.00507169507118878
+   longestPerWavelength=0.138341338837917
+   S(mag,deg):
+      S(1,1)=(0.530990765559634,-108.000171694906)
+      S(1,2)=(0.847366585182733,162.013595722828)
+      S(2,1)=(0.847366585182733,162.013595722828)
+      S(2,2)=(0.53098536595733,-107.953348925652)
+   S-port Zo:
+      Zo(0)=(48.3458771403296,-7.17656138691424e-15)
+      Zo(1)=(48.3458771402925,-6.8015239259064e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.3267
+   solve_time=61.0812
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=77000000000
+   shortestPerWavelength=0.00513842790107284
+   longestPerWavelength=0.1401616196121
+   S(mag,deg):
+      S(1,1)=(0.536465807787391,-115.927989624996)
+      S(1,2)=(0.843909782799286,154.086313874078)
+      S(2,1)=(0.843909782799286,154.086313874078)
+      S(2,2)=(0.536460888796763,-115.87796123463)
+   S-port Zo:
+      Zo(0)=(48.5382983741337,4.45605919205169e-15)
+      Zo(1)=(48.5382983740978,1.34091250003794e-13)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.39182
+   solve_time=61.8378
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=78000000000
+   shortestPerWavelength=0.0052051607309569
+   longestPerWavelength=0.141981900386283
+   S(mag,deg):
+      S(1,1)=(0.54190146585209,-123.870811124836)
+      S(1,2)=(0.84042847007993,146.14415785376)
+      S(2,1)=(0.84042847007993,146.14415785376)
+      S(2,2)=(0.541897134570215,-123.817514601675)
+   S-port Zo:
+      Zo(0)=(48.7297040663466,1.73019090658762e-14)
+      Zo(1)=(48.7297040663059,7.99037817224371e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.23015
+   solve_time=60.4853
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=79000000000
+   shortestPerWavelength=0.00527189356084096
+   longestPerWavelength=0.143802181160466
+   S(mag,deg):
+      S(1,1)=(0.547295233280873,-131.828286507208)
+      S(1,2)=(0.836924759265378,138.187490470996)
+      S(2,1)=(0.836924759265378,138.187490470996)
+      S(2,2)=(0.547291586868276,-131.771674238264)
+   S-port Zo:
+      Zo(0)=(48.9200351215652,9.1538809178033e-14)
+      Zo(1)=(48.9200351215302,3.03280290999908e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.3857
+   solve_time=60.3048
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=80000000000
+   shortestPerWavelength=0.00533862639072503
+   longestPerWavelength=0.145622461934649
+   S(mag,deg):
+      S(1,1)=(0.552644161972614,-139.800058920884)
+      S(1,2)=(0.833401148841808,130.216678259853)
+      S(2,1)=(0.833401148841808,130.216678259853)
+      S(2,2)=(0.552641285337984,-139.740101295694)
+   S-port Zo:
+      Zo(0)=(49.1092358897355,9.94894552673039e-14)
+      Zo(1)=(49.1092358897104,2.03760433325322e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.38787
+   solve_time=61.209
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=81000000000
+   shortestPerWavelength=0.00540535922060909
+   longestPerWavelength=0.147442742708832
+   S(mag,deg):
+      S(1,1)=(0.557944903047476,-147.785768277348)
+      S(1,2)=(0.829860517614439,122.232087104357)
+      S(2,1)=(0.829860517614439,122.232087104357)
+      S(2,2)=(0.557942866763761,-147.722456837355)
+   S-port Zo:
+      Zo(0)=(49.297254155267,1.49821701938957e-14)
+      Zo(1)=(49.297254155235,-6.81918447812734e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.32579
+   solve_time=61.0735
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=82000000000
+   shortestPerWavelength=0.00547209205049315
+   longestPerWavelength=0.149263023483015
+   S(mag,deg):
+      S(1,1)=(0.56319375699761,-155.785055373293)
+      S(1,2)=(0.826306110319085,114.234077757935)
+      S(2,1)=(0.826306110319085,114.234077757935)
+      S(2,2)=(0.563192615492033,-155.71840590381)
+   S-port Zo:
+      Zo(0)=(49.48404111576,2.54964694444882e-14)
+      Zo(1)=(49.484041115732,-4.37751553205793e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.42137
+   solve_time=62.9052
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=83000000000
+   shortestPerWavelength=0.00553882488037722
+   longestPerWavelength=0.151083304257199
+   S(mag,deg):
+      S(1,1)=(0.568386732178871,-163.797566131315)
+      S(1,2)=(0.822741514695111,106.223001342243)
+      S(2,1)=(0.822741514695111,106.223001342243)
+      S(2,2)=(0.568386522256246,-163.727621595755)
+   S-port Zo:
+      Zo(0)=(49.6695513509945,8.27593016945377e-14)
+      Zo(1)=(49.6695513509539,-1.42759895858525e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.5935
+   solve_time=61.1957
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=84000000000
+   shortestPerWavelength=0.00560555771026128
+   longestPerWavelength=0.152903585031382
+   S(mag,deg):
+      S(1,1)=(0.5735196105007,-171.822955874255)
+      S(1,2)=(0.819170630163902,98.1991949188853)
+      S(2,1)=(0.819170630163902,98.1991949188853)
+      S(2,2)=(0.573520350228669,-171.749789088822)
+   S-port Zo:
+      Zo(0)=(49.8537427823646,-4.07970955759511e-14)
+      Zo(1)=(49.8537427823305,-2.38629670963074e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.65931
+   solve_time=59.9805
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=85000000000
+   shortestPerWavelength=0.00567229054014534
+   longestPerWavelength=0.154723865805565
+   S(mag,deg):
+      S(1,1)=(0.578588018968452,-179.860893542226)
+      S(1,2)=(0.815597628450117,90.1629772278024)
+      S(2,1)=(0.815597628450117,90.1629772278024)
+      S(2,2)=(0.578589706964621,-179.784609494384)
+   S-port Zo:
+      Zo(0)=(50.0365766236239,4.69564018536849e-16)
+      Zo(1)=(50.0365766235864,-4.44409918692851e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.75041
+   solve_time=62.3196
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=86000000000
+   shortestPerWavelength=0.0057390233700294
+   longestPerWavelength=0.156544146579748
+   S(mag,deg):
+      S(1,1)=(0.58358750561453,172.088934243131)
+      S(1,2)=(0.812026906708808,82.114644689992)
+      S(2,1)=(0.812026906708808,82.114644689992)
+      S(2,2)=(0.583590120746316,172.168196522148)
+   S-port Zo:
+      Zo(0)=(50.2180173233951,8.67292010659071e-15)
+      Zo(1)=(50.2180173233686,-3.65784592037924e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.47053
+   solve_time=60.7125
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=87000000000
+   shortestPerWavelength=0.00580575619991347
+   longestPerWavelength=0.158364427353931
+   S(mag,deg):
+      S(1,1)=(0.588513618235664,164.026819361924)
+      S(1,2)=(0.808463033915797,74.0544677687795)
+      S(2,1)=(0.808463033915797,74.0544677687795)
+      S(2,2)=(0.588517119754099,164.108885450678)
+   S-port Zo:
+      Zo(0)=(50.3980325000456,-4.74152318006878e-14)
+      Zo(1)=(50.3980325000124,2.45689537006786e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.67621
+   solve_time=61.2448
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=88000000000
+   shortestPerWavelength=0.00587248902979753
+   longestPerWavelength=0.160184708128114
+   S(mag,deg):
+      S(1,1)=(0.593361984326807,155.953028722033)
+      S(1,2)=(0.804910691464977,65.982687781544)
+      S(2,1)=(0.804910691464977,65.982687781544)
+      S(2,2)=(0.593366312428812,156.037688058693)
+   S-port Zo:
+      Zo(0)=(50.5765928695998,-4.28064462701454e-15)
+      Zo(1)=(50.5765928695478,1.46829995330044e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.52496
+   solve_time=62.377
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=89000000000
+   shortestPerWavelength=0.00593922185968159
+   longestPerWavelength=0.162004988902297
+   S(mag,deg):
+      S(1,1)=(0.598128390559875,147.867801217727)
+      S(1,2)=(0.80137460909341,57.8995142466902)
+      S(2,1)=(0.80137460909341,57.8995142466902)
+      S(2,2)=(0.598133467374689,147.95480700136)
+   S-port Zo:
+      Zo(0)=(50.7536721673061,3.01236248190667e-14)
+      Zo(1)=(50.7536721672765,4.20734245242582e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.63403
+   solve_time=60.6036
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=90000000000
+   shortestPerWavelength=0.00600595468956566
+   longestPerWavelength=0.16382526967648
+   S(mag,deg):
+      S(1,1)=(0.60280886021481,139.771345204093)
+      S(1,2)=(0.797859497391649,49.8051228412287)
+      S(2,1)=(0.797859497391649,49.8051228412287)
+      S(2,2)=(0.602814591196895,139.860414988989)
+   S-port Zo:
+      Zo(0)=(50.9292470636253,3.54961167918691e-15)
+      Zo(1)=(50.9292470635787,-4.25933210000926e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.55208
+   solve_time=62.4649
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=91000000000
+   shortestPerWavelength=0.00607268751944972
+   longestPerWavelength=0.165645550450663
+   S(mag,deg):
+      S(1,1)=(0.607399727029636,131.663836559608)
+      S(1,2)=(0.79436997827093,41.6996540343506)
+      S(2,1)=(0.79436997827093,41.6996540343506)
+      S(2,2)=(0.607406002727647,131.754653569961)
+   S-port Zo:
+      Zo(0)=(51.1032970750139,-2.16281437953661e-14)
+      Zo(1)=(51.1032970749887,9.38560338509214e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.62236
+   solve_time=62.4782
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=92000000000
+   shortestPerWavelength=0.00613942034933378
+   longestPerWavelength=0.167465831224847
+   S(mag,deg):
+      S(1,1)=(0.611897704029004,123.545417399999)
+      S(1,2)=(0.790910514842384,33.5832124473517)
+      S(2,1)=(0.790910514842384,33.5832124473517)
+      S(2,2)=(0.611904402200392,123.637632573917)
+   S-port Zo:
+      Zo(0)=(51.2758044704885,-1.62560246688434e-14)
+      Zo(1)=(51.2758044704691,3.15377902234528e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.47832
+   solve_time=62.0806
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=93000000000
+   shortestPerWavelength=0.00620615317921784
+   longestPerWavelength=0.16928611199903
+   S(mag,deg):
+      S(1,1)=(0.616299946048784,115.416195488847)
+      S(1,2)=(0.787485342202942,25.4558669760081)
+      S(2,1)=(0.787485342202942,25.4558669760081)
+      S(2,2)=(0.616306934076462,115.509430246816)
+   S-port Zo:
+      Zo(0)=(51.4467541742866,3.71709392478313e-14)
+      Zo(1)=(51.4467541742488,2.3229573894155e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.55833
+   solve_time=62.0577
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=94000000000
+   shortestPerWavelength=0.00627288600910191
+   longestPerWavelength=0.171106392773213
+   S(mag,deg):
+      S(1,1)=(0.620604104800891,107.276244378316)
+      S(1,2)=(0.784098400633621,17.3176516947316)
+      S(2,1)=(0.784098400633621,17.3176516947316)
+      S(2,2)=(0.620611242359727,107.370094093145)
+   S-port Zo:
+      Zo(0)=(51.6161336654891,3.22783986548587e-14)
+      Zo(1)=(51.6161336654656,1.78442245819453e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.64342
+   solve_time=61.4008
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=95000000000
+   shortestPerWavelength=0.00633961883898597
+   longestPerWavelength=0.172926673547396
+   S(mag,deg):
+      S(1,1)=(0.624808375506385,99.1256042945255)
+      S(1,2)=(0.780753272682097,9.16856754359238)
+      S(2,1)=(0.780753272682097,9.16856754359238)
+      S(2,2)=(0.624815517431841,99.2196424246771)
+   S-port Zo:
+      Zo(0)=(51.7839328751197,5.62577655357702e-14)
+      Zo(1)=(51.7839328751046,1.08852702557174e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.77349
+   solve_time=60.6903
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=96000000000
+   shortestPerWavelength=0.00640635166887003
+   longestPerWavelength=0.174746954321579
+   S(mag,deg):
+      S(1,1)=(0.628911534293548,90.9642837645959)
+      S(1,2)=(0.777453125552645,1.00858478139691)
+      S(2,1)=(0.777453125552645,1.00858478139691)
+      S(2,2)=(0.628918533588576,91.0580665981648)
+   S-port Zo:
+      Zo(0)=(51.9501440811763,-1.02096406406223e-13)
+      Zo(1)=(51.9501440811638,8.53757054549121e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.62892
+   solve_time=62.5311
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=97000000000
+   shortestPerWavelength=0.0064730844987541
+   longestPerWavelength=0.176567235095762
+   S(mag,deg):
+      S(1,1)=(0.632912965740524,82.7922619671394)
+      S(1,2)=(0.774200660107463,-7.16235382990312)
+      S(2,1)=(0.774200660107463,-7.16235382990312)
+      S(2,2)=(0.632919676664398,82.8853339075975)
+   S-port Zo:
+      Zo(0)=(52.1147618023774,5.85552884347881e-14)
+      Zo(1)=(52.1147618023473,1.72712695239323e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.56287
+   solve_time=62.1251
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=98000000000
+   shortestPerWavelength=0.00653981732863816
+   longestPerWavelength=0.178387515869945
+   S(mag,deg):
+      S(1,1)=(0.636812680117664,74.6094917678415)
+      S(1,2)=(0.770998067682154,-15.3443291626144)
+      S(2,1)=(0.770998067682154,-15.3443291626144)
+      S(2,2)=(0.636818961290967,74.7013910806018)
+   S-port Zo:
+      Zo(0)=(52.2777826909509,1.66114624182058e-15)
+      Zo(1)=(52.2777826909271,6.62529031018984e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.54556
+   solve_time=59.7018
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=99000000000
+   shortestPerWavelength=0.00660655015852222
+   longestPerWavelength=0.180207796644128
+   S(mag,deg):
+      S(1,1)=(0.640611320060735,66.4159033876809)
+      S(1,2)=(0.767846995751882,-23.5374412521161)
+      S(2,1)=(0.767846995751882,-23.5374412521161)
+      S(2,2)=(0.640617037524013,66.5061683135405)
+   S-port Zo:
+      Zo(0)=(52.4392054251369,-9.37409743879253e-15)
+      Zo(1)=(52.4392054251116,-4.75699765375451e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.64645
+   solve_time=60.8413
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=100000000000
+   shortestPerWavelength=0.00667328298840628
+   longestPerWavelength=0.182028077418311
+   S(mag,deg):
+      S(1,1)=(0.644310156567066,58.211408634793)
+      S(1,2)=(0.764748523320362,-31.7418043026881)
+      S(2,1)=(0.764748523320362,-31.7418043026881)
+      S(2,2)=(0.644315186730137,58.2995837655889)
+   S-port Zo:
+      Zo(0)=(52.5990306016884,1.95758272059139e-14)
+      Zo(1)=(52.5990306016723,-1.34566592641942e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.67866
+   solve_time=61.9594
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=101000000000
+   shortestPerWavelength=0.00674001581829035
+   longestPerWavelength=0.183848358192495
+   S(mag,deg):
+      S(1,1)=(0.647911074370311,49.9959056176546)
+      S(1,2)=(0.761703146711935,-39.9575412694454)
+      S(2,1)=(0.761703146711935,-39.9575412694454)
+      S(2,2)=(0.647915306789614,50.0815484198813)
+   S-port Zo:
+      Zo(0)=(52.7572606289742,-4.56599242044055e-15)
+      Zo(1)=(52.7572606289396,2.61252376382299e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.60656
+   solve_time=60.1994
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=102000000000
+   shortestPerWavelength=0.00680674864817441
+   longestPerWavelength=0.185668638966678
+   S(mag,deg):
+      S(1,1)=(0.651416546901636,41.7692838463817)
+      S(1,2)=(0.758710776240916,-48.1847781269934)
+      S(2,1)=(0.758710776240916,-48.1847781269934)
+      S(2,2)=(0.651419886827597,41.8519712111239)
+   S-port Zo:
+      Zo(0)=(52.913899620993,5.7024589432582e-14)
+      Zo(1)=(52.9138996209747,-3.6610468555957e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.68982
+   solve_time=61.4074
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=103000000000
+   shortestPerWavelength=0.00687348147805847
+   longestPerWavelength=0.187488919740861
+   S(mag,deg):
+      S(1,1)=(0.654829601189769,33.5314296168537)
+      S(1,2)=(0.755770744022514,-56.4236379449495)
+      S(2,1)=(0.755770744022514,-56.4236379449495)
+      S(2,2)=(0.654831971841952,33.6107643121602)
+   S-port Zo:
+      Zo(0)=(53.0689532927126,-8.42518555113625e-14)
+      Zo(1)=(53.0689532926893,-6.94095423584491e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.77366
+   solve_time=61.4932
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=104000000000
+   shortestPerWavelength=0.00694021430794254
+   longestPerWavelength=0.189309200515044
+   S(mag,deg):
+      S(1,1)=(0.658153773190534,25.2822315678575)
+      S(1,2)=(0.752881822965785,-64.6742349018939)
+      S(2,1)=(0.752881822965785,-64.6742349018939)
+      S(2,2)=(0.658155117619436,25.357848445289)
+   S-port Zo:
+      Zo(0)=(53.2224288569948,-7.5427277941992e-14)
+      Zo(1)=(53.2224288569724,-1.02303473777604e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.72436
+   solve_time=61.0806
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=105000000000
+   shortestPerWavelength=0.0070069471378266
+   longestPerWavelength=0.191129481289227
+   S(mag,deg):
+      S(1,1)=(0.661393054182787,17.0215862932309)
+      S(1,2)=(0.75004225678313,-72.936668355251)
+      S(2,1)=(0.75004225678313,-72.936668355251)
+      S(2,2)=(0.661393336898252,17.0931581606027)
+   S-port Zo:
+      Zo(0)=(53.3743349235376,-1.96247296701504e-14)
+      Zo(1)=(53.3743349235291,-9.64891173855004e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.79638
+   solve_time=63.2921
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=106000000000
+   shortestPerWavelength=0.00707367996771066
+   longestPerWavelength=0.19294976206341
+   S(mag,deg):
+      S(1,1)=(0.664551829001159,8.74940389027773)
+      S(1,2)=(0.747249800588054,-81.2110171221923)
+      S(2,1)=(0.747249800588054,-81.2110171221923)
+      S(2,2)=(0.664551037024625,8.8166468640673)
+   S-port Zo:
+      Zo(0)=(53.5246814000701,-1.98778673442511e-14)
+      Zo(1)=(53.5246814000477,-1.80538890839708e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.69772
+   solve_time=62.4383
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=107000000000
+   shortestPerWavelength=0.00714041279759472
+   longestPerWavelength=0.194770042837593
+   S(mag,deg):
+      S(1,1)=(0.667634807016049,0.465613324810188)
+      S(1,2)=(0.744501771492267,-89.4973340795423)
+      S(2,1)=(0.744501771492267,-89.4973340795423)
+      S(2,2)=(0.667632950550583,0.528291580186749)
+   S-port Zo:
+      Zo(0)=(53.6734793958483,1.99134968349838e-15)
+      Zo(1)=(53.6734793958098,2.9354239382594e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.69892
+   solve_time=63.0342
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=108000000000
+   shortestPerWavelength=0.00720714562747879
+   longestPerWavelength=0.196590323611776
+   S(mag,deg):
+      S(1,1)=(0.670646946901898,-7.82983250694905)
+      S(1,2)=(0.741795108353834,-97.795641222809)
+      S(2,1)=(0.741795108353834,-97.795641222809)
+      S(2,2)=(0.67064405950612,-7.77190272137746)
+   S-port Zo:
+      Zo(0)=(53.820741128021,1.10504198644911e-14)
+      Zo(1)=(53.820741127989,2.9878313932794e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.83828
+   solve_time=61.5444
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=109000000000
+   shortestPerWavelength=0.00727387845736285
+   longestPerWavelength=0.198410604385959
+   S(mag,deg):
+      S(1,1)=(0.6735933763854,-16.1369521310982)
+      S(1,2)=(0.739126439655653,-106.105925297899)
+      S(2,1)=(0.739126439655653,-106.105925297899)
+      S(2,2)=(0.673589514646082,-16.0838993178181)
+   S-port Zo:
+      Zo(0)=(53.966479830762,-1.20601504038319e-14)
+      Zo(1)=(53.9664798307433,-9.36543614121321e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.98497
+   solve_time=62.4904
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=110000000000
+   shortestPerWavelength=0.00734061128724691
+   longestPerWavelength=0.200230885160143
+   S(mag,deg):
+      S(1,1)=(0.676479308276703,-24.4557313733429)
+      S(1,2)=(0.736492158295847,-114.428134115309)
+      S(2,1)=(0.736492158295847,-114.428134115309)
+      S(2,2)=(0.676474550974173,-24.4076265388375)
+   S-port Zo:
+      Zo(0)=(54.110709667373,-1.10381234783169e-14)
+      Zo(1)=(54.1107096673583,3.64675689362442e-17)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.75376
+   solve_time=62.0789
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=111000000000
+   shortestPerWavelength=0.00740734411713098
+   longestPerWavelength=0.202051165934326
+   S(mag,deg):
+      S(1,1)=(0.679309954222637,-32.7861198594332)
+      S(1,2)=(0.733888501910148,-122.762173644377)
+      S(2,1)=(0.733888501910148,-122.762173644377)
+      S(2,2)=(0.679304401010604,-32.7429752737966)
+   S-port Zo:
+      Zo(0)=(54.2534456455953,2.81126329193315e-14)
+      Zo(1)=(54.2534456455742,-9.04266597982215e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.70319
+   solve_time=60.4779
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=112000000000
+   shortestPerWavelength=0.00747407694701504
+   longestPerWavelength=0.203871446708509
+   S(mag,deg):
+      S(1,1)=(0.682090437721483,-41.1280282263351)
+      S(1,2)=(0.731311637192587,-131.107905964478)
+      S(2,1)=(0.731311637192587,-131.107905964478)
+      S(2,2)=(0.682084207285657,-41.089797231948)
+   S-port Zo:
+      Zo(0)=(54.394703536084,4.10224581185341e-15)
+      Zo(1)=(54.3947035360608,-8.163145989575e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.831
+   solve_time=62.5199
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=113000000000
+   shortestPerWavelength=0.0075408097768991
+   longestPerWavelength=0.205691727482692
+   S(mag,deg):
+      S(1,1)=(0.684825708032009,-49.4813261241692)
+      S(1,2)=(0.728757746568618,-139.465148145365)
+      S(2,1)=(0.728757746568618,-139.465148145365)
+      S(2,2)=(0.684818935819312,-49.4479040368549)
+   S-port Zo:
+      Zo(0)=(54.5344997942347,-3.13451653465697e-15)
+      Zo(1)=(54.5344997942123,-6.6733773327997e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.76916
+   solve_time=61.1762
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=114000000000
+   shortestPerWavelength=0.00760754260678316
+   longestPerWavelength=0.207512008256875
+   S(mag,deg):
+      S(1,1)=(0.687520456656189,-57.8458410677074)
+      S(1,2)=(0.72622311547575,-147.833672095842)
+      S(2,1)=(0.72622311547575,-147.833672095842)
+      S(2,2)=(0.687513292162787,-57.8170671653032)
+   S-port Zo:
+      Zo(0)=(54.6728514853595,-2.0280776396681e-14)
+      Zo(1)=(54.6728514853387,4.7706346202818e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.83115
+   solve_time=61.2528
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=115000000000
+   shortestPerWavelength=0.00767427543666723
+   longestPerWavelength=0.209332289031058
+   S(mag,deg):
+      S(1,1)=(0.690179038113722,-66.221358187606)
+      S(1,2)=(0.723704218451351,-156.213205411163)
+      S(2,1)=(0.723704218451351,-156.213205411163)
+      S(2,2)=(0.690171641799176,-66.1970187669711)
+   S-port Zo:
+      Zo(0)=(54.8097762132462,1.22661052825431e-14)
+      Zo(1)=(54.8097762132272,-3.49588594565563e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.96259
+   solve_time=62.1319
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=116000000000
+   shortestPerWavelength=0.00774100826655129
+   longestPerWavelength=0.211152569805241
+   S(mag,deg):
+      S(1,1)=(0.692805396704816,-74.6076209106273)
+      S(1,2)=(0.721197802203349,-164.603433223926)
+      S(2,1)=(0.721197802203349,-164.603433223926)
+      S(2,2)=(0.692797936587277,-74.587453363633)
+   S-port Zo:
+      Zo(0)=(54.9452920521303,1.16881916486398e-15)
+      Zo(1)=(54.9452920521095,-2.6957514992137e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.8136
+   solve_time=60.5205
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=117000000000
+   shortestPerWavelength=0.00780774109643535
+   longestPerWavelength=0.212972850579424
+   S(mag,deg):
+      S(1,1)=(0.695403000889383,-83.0043325819695)
+      S(1,2)=(0.718700963858405,-173.004001042778)
+      S(2,1)=(0.718700963858405,-173.004001042778)
+      S(2,2)=(0.695395648891046,-82.9880304121034)
+   S-port Zo:
+      Zo(0)=(55.0794174820279,1.2071466395086e-14)
+      Zo(1)=(55.0794174820141,-3.11258625004977e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.88689
+   solve_time=60.1022
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=118000000000
+   shortestPerWavelength=0.00787447392631942
+   longestPerWavelength=0.214793131353608
+   S(mag,deg):
+      S(1,1)=(0.697974786806565,-91.4111590211867)
+      S(1,2)=(0.716211222641917,178.585481458412)
+      S(2,1)=(0.716211222641917,178.585481458412)
+      S(2,2)=(0.697967714926038,-91.3983776986767)
+   S-port Zo:
+      Zo(0)=(55.212171327521,-6.2211334933515e-15)
+      Zo(1)=(55.2121713275066,-1.43356465063245e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.8203
+   solve_time=61.9472
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=119000000000
+   shortestPerWavelength=0.00794120675620348
+   longestPerWavelength=0.216613412127791
+   S(mag,deg):
+      S(1,1)=(0.700523112288941,-99.8277319868642)
+      S(1,2)=(0.713726583341247,170.165435759594)
+      S(2,1)=(0.713726583341247,170.165435759594)
+      S(2,2)=(0.700516488687684,-99.8180955141619)
+   S-port Zo:
+      Zo(0)=(55.3435726998381,-1.94557111568791e-15)
+      Zo(1)=(55.3435726998023,-1.73456773272431e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.00523
+   solve_time=60.953
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=120000000000
+   shortestPerWavelength=0.00800793958608754
+   longestPerWavelength=0.218433692901974
+   S(mag,deg):
+      S(1,1)=(0.703049722515183,-108.253653500815)
+      S(1,2)=(0.711245590048823,161.736309000981)
+      S(2,1)=(0.711245590048823,161.736309000981)
+      S(2,2)=(0.703043707607146,-108.246761541496)
+   S-port Zo:
+      Zo(0)=(55.4736409422006,1.66042908027967e-15)
+      Zo(1)=(55.473640942188,-4.59575006301178e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.84157
+   solve_time=60.7457
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=121000000000
+   shortestPerWavelength=0.0080746724159716
+   longestPerWavelength=0.220253973676157
+   S(mag,deg):
+      S(1,1)=(0.705555728186175,-116.688500967046)
+      S(1,2)=(0.708767368873095,153.298567776184)
+      S(2,1)=(0.708767368873095,153.298567776184)
+      S(2,2)=(0.705550470823047,-116.683936370517)
+   S-port Zo:
+      Zo(0)=(55.6023955785227,-1.00639928303078e-15)
+      Zo(1)=(55.602395578507,7.28278375752003e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.87206
+   solve_time=61.9983
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=122000000000
+   shortestPerWavelength=0.00814140524585567
+   longestPerWavelength=0.22207425445034
+   S(mag,deg):
+      S(1,1)=(0.708041596809446,-125.131832995801)
+      S(1,2)=(0.706291658519499,144.852691328839)
+      S(2,1)=(0.706291658519499,144.852691328839)
+      S(2,2)=(0.708037230656486,-125.129169542293)
+   S-port Zo:
+      Zo(0)=(55.7298562651406,-1.82765039486297e-14)
+      Zo(1)=(55.7298562651237,-1.32083304868159e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.90438
+   solve_time=62.035
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=123000000000
+   shortestPerWavelength=0.00820813807573973
+   longestPerWavelength=0.223894535224523
+   S(mag,deg):
+      S(1,1)=(0.71050715734547,-133.583195828159)
+      S(1,2)=(0.703818827914699,136.399164286075)
+      S(2,1)=(0.703818827914699,136.399164286075)
+      S(2,2)=(0.710503797543066,-133.582006007835)
+   S-port Zo:
+      Zo(0)=(55.8560427456949,2.35346922572279e-14)
+      Zo(1)=(55.8560427456813,-5.17117316133743e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.97049
+   solve_time=61.7361
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=124000000000
+   shortestPerWavelength=0.00827487090562379
+   longestPerWavelength=0.225714815998706
+   S(mag,deg):
+      S(1,1)=(0.71295161814744,-142.042130238169)
+      S(1,2)=(0.701349880316773,127.938469074925)
+      S(2,1)=(0.701349880316773,127.938469074925)
+      S(2,2)=(0.712949358337362,-142.041992878466)
+   S-port Zo:
+      Zo(0)=(55.9809748090682,1.07705329551273e-14)
+      Zo(1)=(55.9809748090603,4.7039337389376e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.08448
+   solve_time=60.7011
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=125000000000
+   shortestPerWavelength=0.00834160373550785
+   longestPerWavelength=0.227535096772889
+   S(mag,deg):
+      S(1,1)=(0.715373597739366,-150.508178772489)
+      S(1,2)=(0.698886443690183,119.471078179801)
+      S(2,1)=(0.698886443690183,119.471078179801)
+      S(2,2)=(0.715372507546958,-150.508686332433)
+   S-port Zo:
+      Zo(0)=(56.1046722501498,2.83654262725339e-14)
+      Zo(1)=(56.1046722501396,-5.54926995172999e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.89307
+   solve_time=59.7642
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=126000000000
+   shortestPerWavelength=0.00840833656539192
+   longestPerWavelength=0.229355377547072
+   S(mag,deg):
+      S(1,1)=(0.71777116768464,-158.980893178701)
+      S(1,2)=(0.696430747417635,110.997446404575)
+      S(2,1)=(0.696430747417635,110.997446404575)
+      S(2,2)=(0.717771290715755,-158.98165853766)
+   S-port Zo:
+      Zo(0)=(56.2271548334638,1.23708657095146e-14)
+      Zo(1)=(56.2271548334495,4.91885940442249e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.99267
+   solve_time=61.6141
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=127000000000
+   shortestPerWavelength=0.00847506939527598
+   longestPerWavelength=0.231175658321256
+   S(mag,deg):
+      S(1,1)=(0.72014190644591,-167.459841861208)
+      S(1,2)=(0.693985585769094,102.518003308446)
+      S(2,1)=(0.693985585769094,102.518003308446)
+      S(2,2)=(0.72014325886545,-167.460504445486)
+   S-port Zo:
+      Zo(0)=(56.3484422595218,-1.52585716382056e-14)
+      Zo(1)=(56.3484422594989,-2.86251424761316e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.88769
+   solve_time=61.2884
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=128000000000
+   shortestPerWavelength=0.00854180222516004
+   longestPerWavelength=0.232995939095439
+   S(mag,deg):
+      S(1,1)=(0.722482962886886,-175.944617199607)
+      S(1,2)=(0.691554268858332,94.033145983327)
+      S(2,1)=(0.691554268858332,94.033145983327)
+      S(2,2)=(0.72248553261229,-175.94484831056)
+   S-port Zo:
+      Zo(0)=(56.4685541337691,-1.79522481739919e-15)
+      Zo(1)=(56.4685541337505,1.81941877299562e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.24753
+   solve_time=61.1673
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=129000000000
+   shortestPerWavelength=0.00860853505504411
+   longestPerWavelength=0.234816219869622
+   S(mag,deg):
+      S(1,1)=(0.72479112781714,175.565157436934)
+      S(1,2)=(0.689140562128242,85.5432323371354)
+      S(2,1)=(0.689140562128242,85.5432323371354)
+      S(2,2)=(0.724794874364022,175.56565020709)
+   S-port Zo:
+      Zo(0)=(56.5875099380615,-3.58436462680125e-14)
+      Zo(1)=(56.5875099380445,3.47285918825908e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.02972
+   solve_time=59.4556
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=130000000000
+   shortestPerWavelength=0.00867526788492817
+   longestPerWavelength=0.236636500643805
+   S(mag,deg):
+      S(1,1)=(0.727062911819076,167.069821142937)
+      S(1,2)=(0.686748615681752,77.0485750383869)
+      S(2,1)=(0.686748615681752,77.0485750383869)
+      S(2,2)=(0.727067766803438,167.071290493114)
+   S-port Zo:
+      Zo(0)=(56.7053290045123,8.11448101480262e-15)
+      Zo(1)=(56.7053290045006,-2.52157589505874e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.03908
+   solve_time=62.8655
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=131000000000
+   shortestPerWavelength=0.00874200071481223
+   longestPerWavelength=0.238456781417988
+   S(mag,deg):
+      S(1,1)=(0.729294627476089,158.569669553068)
+      S(1,2)=(0.684382885024851,68.549436266659)
+      S(2,1)=(0.684382885024851,68.549436266659)
+      S(2,2)=(0.729300495769952,158.572326112071)
+   S-port Zo:
+      Zo(0)=(56.822030491675,-5.49625125539372e-14)
+      Zo(1)=(56.8220304916694,4.77522654855983e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.01638
+   solve_time=61.3899
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=132000000000
+   shortestPerWavelength=0.00880873354469629
+   longestPerWavelength=0.240277062192171
+   S(mag,deg):
+      S(1,1)=(0.731482474065419,150.064949687015)
+      S(1,2)=(0.6820480449928,60.0460233952158)
+      S(2,1)=(0.6820480449928,60.0460233952158)
+      S(2,2)=(0.731489235583754,150.068960735896)
+   S-port Zo:
+      Zo(0)=(56.9376333629081,-8.54399527912547e-15)
+      Zo(1)=(56.9376333628856,-2.1735609439879e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.72066
+   solve_time=59.9978
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=133000000000
+   shortestPerWavelength=0.00887546637458036
+   longestPerWavelength=0.242097342966354
+   S(mag,deg):
+      S(1,1)=(0.733622622791206,141.555855689589)
+      S(1,2)=(0.679748898790848,51.538485715222)
+      S(2,1)=(0.679748898790848,51.538485715222)
+      S(2,2)=(0.733630134874071,141.561344967122)
+   S-port Zo:
+      Zo(0)=(57.0521563667363,-7.11187563355014e-14)
+      Zo(1)=(57.0521563667202,3.31430320551015e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.01651
+   solve_time=62.1121
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=134000000000
+   shortestPerWavelength=0.00894219920446442
+   longestPerWavelength=0.243917623740537
+   S(mag,deg):
+      S(1,1)=(0.735711300687705,133.042525575069)
+      S(1,2)=(0.677490284183723,43.0269122865192)
+      S(2,1)=(0.677490284183723,43.0269122865192)
+      S(2,2)=(0.735719401023967,133.049574136396)
+   S-port Zo:
+      Zo(0)=(57.1656180193323,-7.8324279968808e-14)
+      Zo(1)=(57.1656180193254,1.76662794406605e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.07542
+   solve_time=61.4029
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=135000000000
+   shortestPerWavelength=0.00900893203434848
+   longestPerWavelength=0.24573790451472
+   S(mag,deg):
+      S(1,1)=(0.737744871442818,124.525039061998)
+      S(1,2)=(0.675276978931624,34.511330975984)
+      S(2,1)=(0.675276978931624,34.511330975984)
+      S(2,2)=(0.737753381472098,124.533687132745)
+   S-port Zo:
+      Zo(0)=(57.2780365887414,7.45518168214946e-14)
+      Zo(1)=(57.2780365887254,-7.69334721358779e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=6.99986
+   solve_time=61.3407
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=136000000000
+   shortestPerWavelength=0.00907566486423255
+   longestPerWavelength=0.247558185288904
+   S(mag,deg):
+      S(1,1)=(0.739719911526884,116.00341655776)
+      S(1,2)=(0.673113607567179,25.9917087173649)
+      S(2,1)=(0.673113607567179,25.9917087173649)
+      S(2,2)=(0.739728640245382,116.013666303254)
+   S-port Zo:
+      Zo(0)=(57.3894300809191,9.52641988616425e-14)
+      Zo(1)=(57.3894300809103,-2.98624505123839e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.05767
+   solve_time=62.35
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=137000000000
+   shortestPerWavelength=0.00914239769411661
+   longestPerWavelength=0.249378466063087
+   S(mag,deg):
+      S(1,1)=(0.741633280200192,107.477619327097)
+      S(1,2)=(0.671004551569968,17.4679529986872)
+      S(2,1)=(0.671004551569968,17.4679529986872)
+      S(2,2)=(0.741642028286375,107.48943843312)
+   S-port Zo:
+      Zo(0)=(57.4998162274561,-1.58204760186786e-14)
+      Zo(1)=(57.4998162274358,-3.46600681391115e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.16362
+   solve_time=61.4449
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=138000000000
+   shortestPerWavelength=0.00920913052400067
+   longestPerWavelength=0.25119874683727
+   S(mag,deg):
+      S(1,1)=(0.743482182161848,98.9475508495006)
+      S(1,2)=(0.668953864895963,8.93991455517002)
+      S(2,1)=(0.668953864895963,8.93991455517002)
+      S(2,2)=(0.743490746333027,98.9608767946048)
+   S-port Zo:
+      Zo(0)=(57.6092124747927,4.54915913547436e-14)
+      Zo(1)=(57.6092124747814,-1.28885770344147e-13)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.19508
+   solve_time=60.3507
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=139000000000
+   shortestPerWavelength=0.00927586335388473
+   longestPerWavelength=0.253019027611453
+   S(mag,deg):
+      S(1,1)=(0.745264221807815,90.4130593428779)
+      S(1,2)=(0.666965196697192,0.407391216844772)
+      S(2,1)=(0.666965196697192,0.407391216844772)
+      S(2,2)=(0.745272399311525,90.4278042257192)
+   S-port Zo:
+      Zo(0)=(57.7176359750053,-4.7047083289572e-15)
+      Zo(1)=(57.7176359750005,3.50539593634028e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.08673
+   solve_time=60.8924
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=140000000000
+   shortestPerWavelength=0.0093425961837688
+   longestPerWavelength=0.254839308385636
+   S(mag,deg):
+      S(1,1)=(0.746977448276572,81.8739414045665)
+      S(1,2)=(0.665041722886836,-8.12986716498769)
+      S(2,1)=(0.665041722886836,-8.12986716498769)
+      S(2,2)=(0.746985041419094,81.8899971797137)
+   S-port Zo:
+      Zo(0)=(57.8251035778794,1.72147301283898e-15)
+      Zo(1)=(57.8251035778745,4.7061653448291e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.0162
+   solve_time=60.4196
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=141000000000
+   shortestPerWavelength=0.00940932901365286
+   longestPerWavelength=0.256659589159819
+   S(mag,deg):
+      S(1,1)=(0.74862039062832,73.3299466878856)
+      S(1,2)=(0.663186088037516,-16.6721528173151)
+      S(2,1)=(0.663186088037516,-16.6721528173151)
+      S(2,2)=(0.748627211254548,73.3471906601994)
+   S-port Zo:
+      Zo(0)=(57.9316318243857,-3.64728329110818e-14)
+      Zo(1)=(57.9316318243771,-1.56314290689538e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.39072
+   solve_time=62.3774
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=142000000000
+   shortestPerWavelength=0.00947606184353692
+   longestPerWavelength=0.258479869934002
+   S(mag,deg):
+      S(1,1)=(0.750192082754889,64.7807835253575)
+      S(1,2)=(0.661400358834847,-25.2197932930555)
+      S(2,1)=(0.661400358834847,-25.2197932930555)
+      S(2,2)=(0.750197956557803,64.7990839381589)
+   S-port Zo:
+      Zo(0)=(58.0372369411379,6.00612494180591e-15)
+      Zo(1)=(58.0372369411233,-1.81699782422363e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.47884
+   solve_time=60.4595
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=143000000000
+   shortestPerWavelength=0.00954279467342099
+   longestPerWavelength=0.260300150708185
+   S(mag,deg):
+      S(1,1)=(0.751692077679004,56.2261253587997)
+      S(1,2)=(0.659685990148747,-33.7731440169424)
+      S(2,1)=(0.659685990148747,-33.7731440169424)
+      S(2,2)=(0.751696848276651,56.2453469282415)
+   S-port Zo:
+      Zo(0)=(58.1419348362336,2.05448075593283e-14)
+      Zo(1)=(58.1419348362273,9.80948086383006e-16)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.07579
+   solve_time=61.7499
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=144000000000
+   shortestPerWavelength=0.00960952750330505
+   longestPerWavelength=0.262120431482369
+   S(mag,deg):
+      S(1,1)=(0.753120451171106,47.6656178498514)
+      S(1,2)=(0.658043804466551,-42.3325802892203)
+      S(2,1)=(0.658043804466551,-42.3325802892203)
+      S(2,2)=(0.753123983839026,47.6856270859291)
+   S-port Zo:
+      Zo(0)=(58.2457410960056,-2.59880251505644e-14)
+      Zo(1)=(58.2457410959917,8.99619522568081e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.07814
+   solve_time=61.6059
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=145000000000
+   shortestPerWavelength=0.00967626033318911
+   longestPerWavelength=0.263940712256552
+   S(mag,deg):
+      S(1,1)=(0.754477794662637,39.0988865046809)
+      S(1,2)=(0.656473985236274,-50.8984889253323)
+      S(2,1)=(0.656473985236274,-50.8984889253323)
+      S(2,2)=(0.754479979649629,39.1195566766767)
+   S-port Zo:
+      Zo(0)=(58.3486709826706,1.79053892369415e-14)
+      Zo(1)=(58.3486709826631,3.84892409693488e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.29873
+   solve_time=61.3784
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=146000000000
+   shortestPerWavelength=0.00974299316307317
+   longestPerWavelength=0.265760993030735
+   S(mag,deg):
+      S(1,1)=(0.755765197599992,30.5255446453305)
+      S(1,2)=(0.654976084405192,-59.4712597209702)
+      S(2,1)=(0.654976084405192,-59.4712597209702)
+      S(2,2)=(0.755765952931354,30.5467602428028)
+   S-port Zo:
+      Zo(0)=(58.4507394330229,4.52918006754716e-15)
+      Zo(1)=(58.450739433007,5.0869565896932e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.16134
+   solve_time=63.4905
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=147000000000
+   shortestPerWavelength=0.00980972599295724
+   longestPerWavelength=0.267581273804918
+   S(mag,deg):
+      S(1,1)=(0.756984219485477,21.9452015445791)
+      S(1,2)=(0.653549044157021,-68.0512769271066)
+      S(2,1)=(0.653549044157021,-68.0512769271066)
+      S(2,2)=(0.756983493227695,21.9668621415977)
+   S-port Zo:
+      Zo(0)=(58.5519610577909,-9.06111802281875e-15)
+      Zo(1)=(58.5519610577805,8.88872135570465e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.2201
+   solve_time=62.3096
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=148000000000
+   shortestPerWavelength=0.0098764588228413
+   longestPerWavelength=0.269401554579101
+   S(mag,deg):
+      S(1,1)=(0.758136851970332,13.3574705452806)
+      S(1,2)=(0.652191232680671,-76.6389109440206)
+      S(2,1)=(0.652191232680671,-76.6389109440206)
+      S(2,2)=(0.758134623836561,13.3794939186297)
+   S-port Zo:
+      Zo(0)=(58.6523501418909,-2.31788715316603e-14)
+      Zo(1)=(58.6523501418704,-2.00520590260812e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.22685
+   solve_time=61.5409
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=149000000000
+   shortestPerWavelength=0.00994319165272536
+   longestPerWavelength=0.271221835353284
+   S(mag,deg):
+      S(1,1)=(0.759225471460544,4.76197696946202)
+      S(1,2)=(0.650900493471619,-85.2345104151192)
+      S(2,1)=(0.650900493471619,-85.2345104151192)
+      S(2,2)=(0.759221753753001,4.7843014104189)
+   S-port Zo:
+      Zo(0)=(58.751920645237,-1.44106114193747e-14)
+      Zo(1)=(58.7519206452135,1.02118637244876e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.29643
+   solve_time=63.5386
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=150000000000
+   shortestPerWavelength=0.0100099244826094
+   longestPerWavelength=0.273042116127467
+   S(mag,deg):
+      S(1,1)=(0.760252782817497,-3.84163436544376)
+      S(1,2)=(0.649674207507081,-93.83839491452)
+      S(2,1)=(0.649674207507081,-93.83839491452)
+      S(2,2)=(0.760247620649544,-3.81904861616905)
+   S-port Zo:
+      Zo(0)=(58.8506862042931,2.86725099710138e-14)
+      Zo(1)=(58.850686204273,8.42579032262011e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.38009
+   solve_time=60.4656
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=151000000000
+   shortestPerWavelength=0.0100766573124935
+   longestPerWavelength=0.27486239690165
+   S(mag,deg):
+      S(1,1)=(0.761221754841747,-12.4536922056559)
+      S(1,2)=(0.648509367387131,-102.45084841128)
+      S(2,1)=(0.648509367387131,-102.45084841128)
+      S(2,2)=(0.761215225616245,-12.430862464317)
+   S-port Zo:
+      Zo(0)=(58.9486601341308,-8.13322480152925e-15)
+      Zo(1)=(58.9486601341116,4.99801273007279e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.39922
+   solve_time=60.6725
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=152000000000
+   shortestPerWavelength=0.0101433901423776
+   longestPerWavelength=0.276682677675833
+   S(mag,deg):
+      S(1,1)=(0.762135548345767,-21.0744926722037)
+      S(1,2)=(0.647402662326648,-111.072113669153)
+      S(2,1)=(0.647402662326648,-111.072113669153)
+      S(2,2)=(0.762127760479342,-21.0514142556955)
+   S-port Zo:
+      Zo(0)=(59.0458554310416,1.65924972718768e-14)
+      Zo(1)=(59.0458554310435,-4.60831352526106e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.41894
+   solve_time=60.7235
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=153000000000
+   shortestPerWavelength=0.0102101229722616
+   longestPerWavelength=0.278502958450016
+   S(mag,deg):
+      S(1,1)=(0.762997437738285,-29.7042939858651)
+      S(1,2)=(0.646350572707861,-119.702387741644)
+      S(2,1)=(0.646350572707861,-119.702387741644)
+      S(2,2)=(0.762988528635717,-29.6809416045919)
+   S-port Zo:
+      Zo(0)=(59.1422847756538,-3.63033995459602e-14)
+      Zo(1)=(59.1422847756398,-2.60747678485386e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.31553
+   solve_time=61.3409
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=154000000000
+   shortestPerWavelength=0.0102768558021457
+   longestPerWavelength=0.2803232392242
+   S(mag,deg):
+      S(1,1)=(0.763810727157676,-38.3433122591611)
+      S(1,2)=(0.64534947272733,-128.3418186912)
+      S(2,1)=(0.64534947272733,-128.3418186912)
+      S(2,2)=(0.763800860457979,-38.319642319308)
+   S-port Zo:
+      Zo(0)=(59.2379605363208,2.78402362012502e-14)
+      Zo(1)=(59.2379605363042,8.34416724212229e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.05765
+   solve_time=62.1476
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=155000000000
+   shortestPerWavelength=0.0103435886320297
+   longestPerWavelength=0.282143519998383
+   S(mag,deg):
+      S(1,1)=(0.764578662295097,-46.9917184908709)
+      S(1,2)=(0.644395739542334,-136.990503648301)
+      S(2,1)=(0.644395739542334,-136.990503648301)
+      S(2,2)=(0.764568024429257,-46.9676722483383)
+   S-port Zo:
+      Zo(0)=(59.3328947731443,1.85543415169981e-14)
+      Zo(1)=(59.3328947731322,-3.13148096591969e-16)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.33298
+   solve_time=60.7251
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=156000000000
+   shortestPerWavelength=0.0104103214619138
+   longestPerWavelength=0.283963800772566
+   S(mag,deg):
+      S(1,1)=(0.765304339137399,-55.6496368813977)
+      S(1,2)=(0.643485867215914,-145.648488300533)
+      S(2,1)=(0.643485867215914,-145.648488300533)
+      S(2,2)=(0.765293135254619,-55.6251443599441)
+   S-port Zo:
+      Zo(0)=(59.4270992420681,-1.64406064372115e-14)
+      Zo(1)=(59.4270992420536,3.95125452720028e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.56171
+   solve_time=62.0429
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=157000000000
+   shortestPerWavelength=0.0104770542917979
+   longestPerWavelength=0.285784081546749
+   S(mag,deg):
+      S(1,1)=(0.765990610917303,-64.3171445693802)
+      S(1,2)=(0.642616583706864,-154.315767880742)
+      S(2,1)=(0.642616583706864,-154.315767880742)
+      S(2,2)=(0.765979060256549,-64.2921291315365)
+   S-port Zo:
+      Zo(0)=(59.5205853994842,-2.77839487980688e-14)
+      Zo(1)=(59.5205853994731,3.81263805328949e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.44015
+   solve_time=61.5242
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=158000000000
+   shortestPerWavelength=0.0105437871216819
+   longestPerWavelength=0.287604362320932
+   S(mag,deg):
+      S(1,1)=(0.766639994579684,-72.9942728688444)
+      S(1,2)=(0.64178496913651,-162.992289698376)
+      S(2,1)=(0.64178496913651,-162.992289698376)
+      S(2,2)=(0.766628325381408,-72.96865630367)
+   S-port Zo:
+      Zo(0)=(59.6133644069968,1.13267662337496e-14)
+      Zo(1)=(59.6133644069893,7.74963063857088e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.33861
+   solve_time=61.0795
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=159000000000
+   shortestPerWavelength=0.010610519951566
+   longestPerWavelength=0.289424643095115
+   S(mag,deg):
+      S(1,1)=(0.767254578045511,-81.6810100672423)
+      S(1,2)=(0.640988573621821,-171.67795723597)
+      S(2,1)=(0.640988573621821,-171.67795723597)
+      S(2,2)=(0.767243022113189,-81.6547180390899)
+   S-port Zo:
+      Zo(0)=(59.7054471364146,-3.07113292879103e-15)
+      Zo(1)=(59.7054471364105,-1.4585003735344e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.49061
+   solve_time=61.8144
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=160000000000
+   shortestPerWavelength=0.0106772527814501
+   longestPerWavelength=0.291244923869298
+   S(mag,deg):
+      S(1,1)=(0.767835929458261,-90.3773058236239)
+      S(1,2)=(0.640225533081039,179.627364189456)
+      S(2,1)=(0.640225533081039,179.627364189456)
+      S(2,2)=(0.767824716498538,-90.3502735095284)
+   S-port Zo:
+      Zo(0)=(59.7968441749553,-2.81091158079687e-14)
+      Zo(1)=(59.7968441749347,3.36073789981156e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.27589
+   solve_time=62.0794
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=161000000000
+   shortestPerWavelength=0.0107439856113341
+   longestPerWavelength=0.293065204643481
+   S(mag,deg):
+      S(1,1)=(0.768385009422958,-99.0830771879107)
+      S(1,2)=(0.639494681620912,170.923840219898)
+      S(2,1)=(0.639494681620912,170.923840219898)
+      S(2,2)=(0.768374361299466,-99.0552549182862)
+   S-port Zo:
+      Zo(0)=(59.8875658306877,-2.07373227723714e-15)
+      Zo(1)=(59.887565830677,-4.52764341506911e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.50577
+   solve_time=63.9865
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=162000000000
+   shortestPerWavelength=0.0108107184412182
+   longestPerWavelength=0.294885485417665
+   S(mag,deg):
+      S(1,1)=(0.768902087016291,-107.798216246787)
+      S(1,2)=(0.638795659389239,162.211658738349)
+      S(2,1)=(0.638795659389239,162.211658738349)
+      S(2,2)=(0.768892212065174,-107.769574961115)
+   S-port Zo:
+      Zo(0)=(59.9776221380004,-9.72361600010213e-15)
+      Zo(1)=(59.9776221379891,-2.15873155148295e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.40728
+   solve_time=60.81
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=163000000000
+   shortestPerWavelength=0.0108774512711022
+   longestPerWavelength=0.296705766191848
+   S(mag,deg):
+      S(1,1)=(0.769386659943559,-116.522599388657)
+      S(1,2)=(0.638129015183847,153.491019686608)
+      S(2,1)=(0.638129015183847,153.491019686608)
+      S(2,2)=(0.769377747502599,-116.493135711104)
+   S-port Zo:
+      Zo(0)=(60.067022863246,-2.82991760618234e-15)
+      Zo(1)=(60.0670228632378,-3.15124567926051e-15)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.42879
+   solve_time=61.0441
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=164000000000
+   shortestPerWavelength=0.0109441841009863
+   longestPerWavelength=0.298526046966031
+   S(mag,deg):
+      S(1,1)=(0.769837378803707,-125.256098174449)
+      S(1,2)=(0.637496303578242,144.762123464503)
+      S(2,1)=(0.637496303578242,144.762123464503)
+      S(2,2)=(0.769829594108386,-125.225838926696)
+   S-port Zo:
+      Zo(0)=(60.1557775105056,-4.92680029278896e-15)
+      Zo(1)=(60.1557775105046,4.04671773850563e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.57869
+   solve_time=60.7961
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=165000000000
+   shortestPerWavelength=0.0110109169308704
+   longestPerWavelength=0.300346327740214
+   S(mag,deg):
+      S(1,1)=(0.770251974789762,-133.998591803254)
+      S(1,2)=(0.636900176971486,136.025157953627)
+      S(2,1)=(0.636900176971486,136.025157953627)
+      S(2,2)=(0.770245454380419,-133.967597778337)
+   S-port Zo:
+      Zo(0)=(60.2438953273717,-2.70121646498854e-15)
+      Zo(1)=(60.2438953273507,1.73230623481822e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.60623
+   solve_time=63.0548
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=166000000000
+   shortestPerWavelength=0.0110776497607544
+   longestPerWavelength=0.302166608514397
+   S(mag,deg):
+      S(1,1)=(0.770627189424488,-142.749981172481)
+      S(1,2)=(0.636344473736185,127.280284188232)
+      S(2,1)=(0.636344473736185,127.280284188232)
+      S(2,2)=(0.770622037205306,-142.718350014138)
+   S-port Zo:
+      Zo(0)=(60.3313853107931,-3.9942513454815e-14)
+      Zo(1)=(60.3313853107749,5.9967840259053e-14)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.37306
+   solve_time=62.3018
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Result]
+   type=S
+   active=1
+   iteration=1
+   frequency=167000000000
+   shortestPerWavelength=0.0111443825906385
+   longestPerWavelength=0.30398688928858
+   S(mag,deg):
+      S(1,1)=(0.770958704010001,-151.510204562122)
+      S(1,2)=(0.635834304597343,118.527620660812)
+      S(2,1)=(0.635834304597343,118.527620660812)
+      S(2,2)=(0.770954988082708,-151.478072615877)
+   S-port Zo:
+      Zo(0)=(60.4182562129751,-2.15833353866322e-14)
+      Zo(1)=(60.4182562129697,1.51715510691519e-13)
+   mesh_size=2619
+   matrix_size(DOF_count)=215860
+   sparse_width=1055
+   isRefined=0
+   fem_setup_time=7.25018
+   solve_time=60.6871
+   mesh_refine_time=0
+   refine_time=0
+[EndResult]
+[Time]
+   job_time=10520.1
+[EndTime]

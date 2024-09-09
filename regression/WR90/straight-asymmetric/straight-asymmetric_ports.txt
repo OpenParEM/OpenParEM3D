@@ -43,8 +43,10 @@ Port
    impedance_calculation=line
    Line
       Sport=1
-      type=voltage
-      path=+v1
+      IntegrationPath
+         type=voltage
+         path=+v1
+      EndIntegrationPath
    EndLine
 EndPort
 
@@ -55,8 +57,10 @@ Port
    impedance_calculation=line
    Line
       Sport=2
-      type=voltage
-      path=+v2
+      IntegrationPath
+         type=voltage
+         path=+v2
+      EndIntegrationPath
    EndLine
 EndPort
 

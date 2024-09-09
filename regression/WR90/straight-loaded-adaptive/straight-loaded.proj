@@ -4,7 +4,7 @@ project.save.fields            false
 
 mesh.file                      straight-loaded.msh
 
-mesh.order                     2
+mesh.order                     3
 mesh.quality.limit             1e6
 
 port.definition.file           straight-loaded_ports.txt
@@ -19,7 +19,8 @@ refinement.frequency           high
 refinement.iteration.min       1 
 refinement.iteration.max       50
 refinement.required.passes     2
-refinement.tolerance           0.001
+refinement.relative.tolerance  1e-4
+refinement.variable            S
 
 frequency.plan.point           8300000000
 

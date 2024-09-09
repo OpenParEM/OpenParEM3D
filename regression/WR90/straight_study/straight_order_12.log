@@ -1,0 +1,118 @@
+Invalid MIT-MAGIC-COOKIE-1 keyOpenParEM3D Copyright (C) 2022 Brian Young
+
+This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
+and you are welcome to distribute it under certain conditions. To see
+the full license, set
+  output.show.license true
+in the setup file.
+
+Setting up ...
+   loading project file "straight_order_12.proj"
+      Warning: Value at line 9 is large.
+   loading materials file "../../../../OpenParEM2D/regression/global_materials.txt"
+Loading mesh and assigning materials ...
+   loading gmsh mesh format
+   loading port definition file "straight_ports.txt"
+*******************************************************************************************************************************************************
+ Frequency: 9e+09
+*******************************************************************************************************************************************************
+Mesh::GeneratePartitioning(...): METIS returned 2 empty parts! Applying a simple fix ...
+   Refining mesh starting with the initial mesh.
+   Iteration 1 ...
+      mesh worst element aspect ratio: 6.11284 > target: 5
+      mesh size: 30
+      mesh edge length/wavelength in element: shortest=0.305102 longest=1.53217
+      solving 2D ports ...
+         Port "input" ...
+         | OpenParEM2D Copyright (C) 2022 Brian Young
+         | 
+         | This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
+         | and you are welcome to distribute it under certain conditions. To see
+         | the full license, set
+         |   output.show.license true
+         | in the setup file.
+         | 
+         | Setting up ...
+         |    loading project file "Sinput.proj"
+         |    loading materials file "../../../../../../OpenParEM2D/regression/global_materials.txt"
+         |    loading mode definition file "Sinput_lines.txt"
+         | Loading mesh and assigning materials ...
+         |    loading MFEM mesh format
+         | Frequency: 9e+09
+         |    Using existing mesh ...
+         |       mesh size: 4
+         |       mesh worst element aspect ratio: 3.89711 < target: 5
+         |       Solving ...
+         |          matrix size: 937
+         |          solving the eigenvalue problem ...
+         |             number of iterations: 150
+         |          post processing ...
+           Hfield NOT CONVERGED         |          solve elapsed time: 2.92139 s
+         |       Results:
+         |          -------------------------------------------------------------------------------------------------------------------------
+         |           mode     frequency           er,eff       alpha,dB/m  beta/1000,rad/m          beta/ko         Zo(real)         Zo(imag)
+         |          -------------------------------------------------------------------------------------------------------------------------
+         |           1            9e+09       0.46978408   -2.9487558e-09        0.1292858       0.68540796        488.57237   -2.0466709e-09
+         |          -------------------------------------------------------------------------------------------------------------------------
+         |       Finished
+         |       cummulative elapsed time: 2.95311 s
+         | Job Complete
+         | Elapsed time: 2.95339 s
+         Port "output" ...
+         | OpenParEM2D Copyright (C) 2022 Brian Young
+         | 
+         | This program comes with ABSOLUTELY NO WARRANTY.  This is free software,
+         | and you are welcome to distribute it under certain conditions. To see
+         | the full license, set
+         |   output.show.license true
+         | in the setup file.
+         | 
+         | Setting up ...
+         |    loading project file "Soutput.proj"
+         |    loading materials file "../../../../../../OpenParEM2D/regression/global_materials.txt"
+         |    loading mode definition file "Soutput_lines.txt"
+         | Loading mesh and assigning materials ...
+         |    loading MFEM mesh format
+         | Frequency: 9e+09
+         |    Using existing mesh ...
+         |       mesh size: 4
+         |       mesh worst element aspect ratio: 3.89711 < target: 5
+         |       Solving ...
+         |          matrix size: 937
+         |          solving the eigenvalue problem ...
+         |             number of iterations: 177
+         |          post processing ...
+           Hfield NOT CONVERGED         |          solve elapsed time: 2.93001 s
+         |       Results:
+         |          -------------------------------------------------------------------------------------------------------------------------
+         |           mode     frequency           er,eff       alpha,dB/m  beta/1000,rad/m          beta/ko         Zo(real)         Zo(imag)
+         |          -------------------------------------------------------------------------------------------------------------------------
+         |           1            9e+09       0.46978408    3.9542074e-10        0.1292858       0.68540796        488.57237    8.8366999e-10
+         |          -------------------------------------------------------------------------------------------------------------------------
+         |       Finished
+         |       cummulative elapsed time: 2.96094 s
+         | Job Complete
+         | Elapsed time: 2.96113 s
+      building finite element spaces ...
+      Driving S-port 1 ...
+         solving E field in 3D volume ...
+            using Cholesky preconditioner ...
+               Converged: RTOL
+         solving H field in 3D volume ...
+            using Cholesky preconditioner ...
+               Converged: RTOL
+         post-processing ...
+         calculating mesh errors ...
+            INFO: Calculated mesh errors are approximate with the final error of 0.0131134 > the target of 0.001.
+      Driving S-port 2 ...
+         solving E field in 3D volume ...
+            using Cholesky preconditioner ...
+               Converged: RTOL
+         solving H field in 3D volume ...
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 0 with PID 0 on node Precision-T7920 exited on signal 15 (Terminated).
+--------------------------------------------------------------------------

@@ -36,6 +36,126 @@ Path
    closed=false
 EndPath
 
+Path
+   name=1
+   point=(-0.01143,-0.00508,0.099)
+   point=(0.01143,-0.00508,0.099)
+   point=(0.01143,-0.00508,0.1)
+   point=(-0.01143,-0.00508,0.1)
+   closed=true
+EndPath
+
+Path
+   name=2
+   point=(-0.01143,-0.00508,0.0)
+   point=(0.01143,-0.00508,0.0)
+   point=(0.01143,-0.00508,0.001)
+   point=(-0.01143,-0.00508,0.001)
+   closed=true
+EndPath
+
+Path
+   name=3
+   point=(0.01143,-0.00508,0.099)
+   point=(0.01143,0.00508,0.099)
+   point=(0.01143,0.00508,0.1)
+   point=(0.01143,-0.00508,0.1)
+   closed=true
+EndPath
+
+Path
+   name=4
+   point=(0.01143,-0.00508,0.0)
+   point=(0.01143,0.00508,0.0)
+   point=(0.01143,0.00508,0.001)
+   point=(0.01143,-0.00508,0.001)
+   closed=true
+EndPath
+
+Path
+   name=5
+   point=(0.01143,0.00508,0.099)
+   point=(-0.01143,0.00508,0.099)
+   point=(-0.01143,0.00508,0.1)
+   point=(0.01143,0.00508,0.1)
+   closed=true
+EndPath
+
+Path
+   name=6
+   point=(0.01143,0.00508,0.0)
+   point=(-0.01143,0.00508,0.0)
+   point=(-0.01143,0.00508,0.001)
+   point=(0.01143,0.00508,0.001)
+   closed=true
+EndPath
+
+Path
+   name=7
+   point=(-0.01143,-0.00508,0.099)
+   point=(-0.01143,0.00508,0.099)
+   point=(-0.01143,0.00508,0.1)
+   point=(-0.01143,-0.00508,0.1)
+   closed=true
+EndPath
+
+Path
+   name=8
+   point=(-0.01143,-0.00508,0.0)
+   point=(-0.01143,0.00508,0.0)
+   point=(-0.01143,0.00508,0.001)
+   point=(-0.01143,-0.00508,0.001)
+   closed=true
+EndPath
+
+Boundary
+   name=1
+   type=perfect_electric_conductor
+   path=+1
+EndBoundary
+
+Boundary
+   name=2
+   type=perfect_electric_conductor
+   path=+2
+EndBoundary
+
+Boundary
+   name=3
+   type=perfect_electric_conductor
+   path=+3
+EndBoundary
+
+Boundary
+   name=4
+   type=perfect_electric_conductor
+   path=+4
+EndBoundary
+
+Boundary
+   name=5
+   type=perfect_electric_conductor
+   path=+5
+EndBoundary
+
+Boundary
+   name=6
+   type=perfect_electric_conductor
+   path=+6
+EndBoundary
+
+Boundary
+   name=7
+   type=perfect_electric_conductor
+   path=+7
+EndBoundary
+
+Boundary
+   name=8
+   type=perfect_electric_conductor
+   path=+8
+EndBoundary
+
 Port
    name=input
    path=+port1
@@ -43,8 +163,10 @@ Port
    impedance_calculation=line
    Line
       Sport=1
-      type=voltage
-      path=+v1
+      IntegrationPath
+         type=voltage
+         path=+v1
+      EndIntegrationPath
    EndLine
 EndPort
 
@@ -55,8 +177,10 @@ Port
    impedance_calculation=line
    Line
       Sport=2
-      type=voltage
-      path=+v2
+      IntegrationPath
+         type=voltage
+         path=+v2
+      EndIntegrationPath
    EndLine
 EndPort
 
