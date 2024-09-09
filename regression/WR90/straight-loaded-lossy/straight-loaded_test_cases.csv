@@ -1,9 +1,0 @@
-# ResultDatabase::save_as_test
-straight-loaded_1_0_result,8300000000,magS(dB),1,1,equal,-89.568054038412,1e-07
-straight-loaded_1_1_result,8300000000,argS(deg),1,1,equal,18.474693847318,1e-06
-straight-loaded_1_2_result,8300000000,magS(dB),2,1,equal,-0.0118819475771899,1e-09
-straight-loaded_1_3_result,8300000000,argS(deg),2,1,equal,-50.9115057695,1e-04
-straight-loaded_1_4_result,8300000000,magS(dB),1,2,equal,-0.0118823405299502,1e-09
-straight-loaded_1_5_result,8300000000,argS(deg),1,2,equal,-50.9115057695,1e-04
-straight-loaded_1_6_result,8300000000,magS(dB),2,2,equal,-89.5602971509154,1e-07
-straight-loaded_1_7_result,8300000000,argS(deg),2,2,equal,18.4514541166725,1e-06
