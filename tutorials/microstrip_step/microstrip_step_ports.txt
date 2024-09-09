@@ -1,0 +1,92 @@
+#OpenParEMports 1.0
+
+File
+   name=/home/briany/Desktop/OpenParEM3D/tutorials/microstrip_step/microstrip_step.FCStd
+EndFile
+
+Path
+   name=portout
+   point=(0.0,0.0,0.01)
+   point=(0.00254,0.0,0.01)
+   point=(0.00254,0.0015240000000000002,0.01)
+   point=(0.0,0.0015240000000000002,0.01)
+   closed=true
+EndPath
+
+Path
+   name=Iout
+   point=(0.001016,0.00025399999999999994,0.01)
+   point=(0.001524,0.00025399999999999994,0.01)
+   point=(0.001524,0.00027899999999999995,0.01)
+   point=(0.001016,0.00027899999999999995,0.01)
+   closed=true
+EndPath
+
+Path
+   name=Vout
+   point=(0.00127,0.0,0.01)
+   point=(0.00127,0.000254,0.01)
+   closed=false
+EndPath
+
+Path
+   name=portin
+   point=(0.0,0.0,0.0)
+   point=(3.3839597790574775e-19,0.0015240000000000002,0.0)
+   point=(0.0025400000000000006,0.0015239999999999995,0.0)
+   point=(0.00254,-5.639932965095796e-19,0.0)
+   closed=true
+EndPath
+
+Path
+   name=Iin
+   point=(0.0011430000000000001,0.000254,0.0)
+   point=(0.0011430000000000001,0.000279,0.0)
+   point=(0.0013970000000000002,0.00027899999999999995,0.0)
+   point=(0.0013970000000000002,0.00025399999999999994,0.0)
+   closed=true
+EndPath
+
+Path
+   name=Vin
+   point=(0.00127,-2.819966482547898e-19,0.0)
+   point=(0.0012700000000000003,0.00025399999999999994,0.0)
+   closed=false
+EndPath
+
+Port
+   name=in
+   path=+portin
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=1
+      IntegrationPath
+         type=current
+         path=+Iin
+      EndIntegrationPath
+      IntegrationPath
+         type=voltage
+         path=+Vin
+      EndIntegrationPath
+   EndMode
+EndPort
+
+Port
+   name=out
+   path=+portout
+   impedance_definition=PV
+   impedance_calculation=modal
+   Mode
+      Sport=2
+      IntegrationPath
+         type=current
+         path=+Iout
+      EndIntegrationPath
+      IntegrationPath
+         type=voltage
+         path=+Vout
+      EndIntegrationPath
+   EndMode
+EndPort
+

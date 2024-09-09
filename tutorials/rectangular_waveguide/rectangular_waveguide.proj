@@ -1,0 +1,19 @@
+#OpenParEM3Dproject 1.0
+project.save.fields            true
+mesh.file                      rectangular_waveguide.msh
+mesh.quality.limit             100
+mesh.order                     4
+port.definition.file           rectangular_waveguide_ports.txt
+materials.global.path          ./
+materials.global.name          global_materials.txt
+materials.local.path           ./
+materials.local.name           //local_materials.txt
+refinement.frequency           none
+refinement.iteration.min       1
+refinement.iteration.max       5
+refinement.required.passes     1
+refinement.relative.tolerance  1e-4
+refinement.variable            S
+frequency.plan.point           10e9
+reference.impedance            0
+
