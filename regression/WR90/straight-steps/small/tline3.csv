@@ -1,0 +1,7 @@
+#frequency,ReZ1,ImZ1,ReZo1,ImZo1,ReG1,ImG1,L1,C1,ReZo2,ImZo2,ReG2,ImG2,L2,C2,ReZo3,ImZo3,ReG3,ImG3,L3,ReZ2,ImZ2
+
+# zero'ed out capacitance to see how much phase shift the capacitance causes
+10e9, 443.29955,0,  443.29955,0, 0,158.32151, 0.050,  1e-40,  530.56322,0, 0,158.32151, 0.025,  1e-40,  443.29955,0, 0,158.32151, 0.050, 443.29955,0
+
+# using the capacitance fitted using tline3 to match S11 from the shorted-step project
+10e9, 443.29955,0,  443.29955,0, 0,158.32151, 0.050,  0.9081018e-15,  530.56322,0, 0,158.32151, 0.025,  0.9081018e-15,  443.29955,0, 0,158.32151, 0.050, 443.29955,0
