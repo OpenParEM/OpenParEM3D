@@ -475,7 +475,8 @@ int main(int argc, char *argv[])
 
             prefix(); PetscPrintf(PETSC_COMM_WORLD,"         solving E field in 3D volume ...\n");
             if (fem->solve(&boundaryDatabase,&materialDatabase,projData.solution_temperature,
-                &neg_ko2_Re_er,&neg_ko2_Im_er,&Inv_mur,&Inv_w_mu,drivingSet,true,projData.solution_check_homogeneous,"   ")) {
+                &neg_ko2_Re_er,&neg_ko2_Im_er,&Inv_mur,&Inv_w_mu,
+                drivingSet,true,projData.solution_check_homogeneous,"   ")) {
                exit_job_on_error (job_start_time,lockfile,true);
             }
             result->set_matrixSize(fem->get_matrixSize());

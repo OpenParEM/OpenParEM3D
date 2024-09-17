@@ -149,8 +149,8 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
 
    ParBilinearForm *pmblfImA=new ParBilinearForm(fespace_ND);
    pmblfImA->AddDomainIntegrator(new VectorFEMassIntegrator (*neg_ko2_Im_er));
-   if (boundaryDatabase->addPortIntegrators(*pmesh,pmblfImA,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,borderAttributeList,
-                                            ReInvGammaConstList,ImInvGammaConstList,RekConstList,ImkConstList,
+   if (boundaryDatabase->addPortIntegrators(*pmesh,pmblfImA,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,
+                                            borderAttributeList,ReInvGammaConstList,ImInvGammaConstList,RekConstList,ImkConstList,
                                             false,drivingSet,solution_check_homogeneous,indent)) return true;
    boundaryDatabase->addImpedanceIntegrators(frequency,temperature,*pmesh,pmblfImA,materialDatabase,
                                              borderAttributeList,ZconstList,false);
@@ -708,7 +708,8 @@ void fem3D::build_ImExHgrid()
 
 bool fem3D::solve(BoundaryDatabase *boundaryDatabase, MaterialDatabase *materialDatabase, double temperature,
                   PWConstCoefficient *neg_ko2_Re_er, PWConstCoefficient *neg_ko2_Im_er,
-                  PWConstCoefficient *Inv_mur, PWConstCoefficient *Inv_w_mu, int drivingSet_, bool calculateH,
+                  PWConstCoefficient *Inv_mur, PWConstCoefficient *Inv_w_mu,
+                  int drivingSet_, bool calculateH,
                   bool solution_check_homogeneous, string indent)
 {
    PetscInt i,low,high;
@@ -718,7 +719,8 @@ bool fem3D::solve(BoundaryDatabase *boundaryDatabase, MaterialDatabase *material
 
    drivingSet=drivingSet_;
 
-   if (build_A(boundaryDatabase,materialDatabase,temperature,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,solution_check_homogeneous,indent)) return true;
+   if (build_A(boundaryDatabase,materialDatabase,temperature,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,
+      solution_check_homogeneous,indent)) return true;
 
    build_PEC_dofs();
    eliminatePEC(&A,nPEC,PEC);

@@ -5434,10 +5434,10 @@ void Port::fillX (Vec *X, Vec *Xdofs, int drivingSet)
    }
 }
 
-// ToDo: mur is not correctly applied to all terms, so fix
 bool Port::addPortIntegrators (ParMesh *pmesh, ParBilinearForm *pmblf, PWConstCoefficient *Inv_mur, PWConstCoefficient *neg_ko2_Re_er, PWConstCoefficient *neg_ko2_Im_er,
-                               vector<Array<int> *> &borderAttributesList, vector<ConstantCoefficient *> &ReInvGammaConstList, vector<ConstantCoefficient *> &ImInvGammaConstList,
-                               vector<ConstantCoefficient *> &RekConstList, vector<ConstantCoefficient *> &ImkConstList,
+                               vector<Array<int> *> &borderAttributesList,
+                               vector<ConstantCoefficient *> &ReC1ConstList, vector<ConstantCoefficient *> &ImC1ConstList,
+                               vector<ConstantCoefficient *> &ReC2ConstList, vector<ConstantCoefficient *> &ImC2ConstList,
                                bool isReal, int drivingSet, bool solution_check_homogeneous, string indent)
 {
    if (isDriving(drivingSet)) return false;
@@ -5474,26 +5474,31 @@ bool Port::addPortIntegrators (ParMesh *pmesh, ParBilinearForm *pmblf, PWConstCo
       }
    }
 
-   double ReInvGamma=real(1/max_gamma);
-   double ImInvGamma=imag(1/max_gamma);
-
    // cycle through areas with unique materials
    i=0;
    while (i < attributeList.size()) {
       if (attributeList[i]->get_adjacent_element_attribute() >= 0) {
-         ConstantCoefficient *ReInvGammaConst=new ConstantCoefficient(ReInvGamma);
-         ConstantCoefficient *ImInvGammaConst=new ConstantCoefficient(ImInvGamma);
+
+         // set 1/(mur*max_gamma) for this area
+
+         complex<double> compVal=(*Inv_mur)(attributeList[i]->get_adjacent_element_attribute())/max_gamma;
+
+         double ReC1=real(compVal);
+         double ImC1=imag(compVal);
+
+         ConstantCoefficient *ReC1Const=new ConstantCoefficient(ReC1);
+         ConstantCoefficient *ImC1Const=new ConstantCoefficient(ImC1);
 
          // set -epsr*ko^2/max_gamma for this area
 
-         complex<double> compVal=complex<double>((*neg_ko2_Re_er)(attributeList[i]->get_adjacent_element_attribute()),
-                                                 (*neg_ko2_Im_er)(attributeList[i]->get_adjacent_element_attribute()))/max_gamma;
+         compVal=complex<double>((*neg_ko2_Re_er)(attributeList[i]->get_adjacent_element_attribute()),
+                                 (*neg_ko2_Im_er)(attributeList[i]->get_adjacent_element_attribute()))/max_gamma;
 
-         double Rek=real(compVal);
-         double Imk=imag(compVal);
+         double ReC2=real(compVal);
+         double ImC2=imag(compVal);
 
-         ConstantCoefficient *RekConst=new ConstantCoefficient(Rek);
-         ConstantCoefficient *ImkConst=new ConstantCoefficient(Imk);
+         ConstantCoefficient *ReC2Const=new ConstantCoefficient(ReC2);
+         ConstantCoefficient *ImC2Const=new ConstantCoefficient(ImC2);
 
          // enable each section of the port corresponding to each unique material area
          Array<int> *border_attributes=new Array<int>;
@@ -5503,19 +5508,19 @@ bool Port::addPortIntegrators (ParMesh *pmesh, ParBilinearForm *pmblf, PWConstCo
 
          // set the first-order absorbing boundary condition
          if (isReal) {
-            pmblf->AddBoundaryIntegrator(new CurlCurlIntegrator(*ReInvGammaConst),*border_attributes);
-            pmblf->AddBoundaryIntegrator(new VectorFEMassIntegrator(*RekConst),*border_attributes);
+            pmblf->AddBoundaryIntegrator(new CurlCurlIntegrator(*ReC1Const),*border_attributes);
+            pmblf->AddBoundaryIntegrator(new VectorFEMassIntegrator(*ReC2Const),*border_attributes);
          } else {
-            pmblf->AddBoundaryIntegrator(new CurlCurlIntegrator(*ImInvGammaConst),*border_attributes);
-            pmblf->AddBoundaryIntegrator(new VectorFEMassIntegrator(*ImkConst),*border_attributes);
+            pmblf->AddBoundaryIntegrator(new CurlCurlIntegrator(*ImC1Const),*border_attributes);
+            pmblf->AddBoundaryIntegrator(new VectorFEMassIntegrator(*ImC2Const),*border_attributes);
          }
 
          // save for later deleting
          borderAttributesList.push_back(border_attributes);
-         ReInvGammaConstList.push_back(ReInvGammaConst);
-         ImInvGammaConstList.push_back(ImInvGammaConst);
-         RekConstList.push_back(RekConst);
-         ImkConstList.push_back(ImkConst);
+         ReC1ConstList.push_back(ReC1Const);
+         ImC1ConstList.push_back(ImC1Const);
+         ReC2ConstList.push_back(ReC2Const);
+         ImC2ConstList.push_back(ImC2Const);
       }
       i++;
    }

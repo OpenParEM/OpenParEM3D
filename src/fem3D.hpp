@@ -138,7 +138,8 @@ class fem3D {
       PetscInt get_sparseWidth() {return sparseWidth;}
       void build_fe_spaces ();
       void build_PEC_dofs ();
-      bool build_A (BoundaryDatabase *, MaterialDatabase *, double, PWConstCoefficient *, PWConstCoefficient *, PWConstCoefficient *, bool, string);
+      bool build_A (BoundaryDatabase *, MaterialDatabase *, double, PWConstCoefficient *,
+         PWConstCoefficient *, PWConstCoefficient *, bool, string);
       void build_P ();
       void build_Q (PWConstCoefficient *);
       void build_R (PWConstCoefficient *, PWConstCoefficient *);

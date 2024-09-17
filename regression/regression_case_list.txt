@@ -12,8 +12,12 @@
 ./WR90/straight-loaded-adaptive/straight-loaded_field.proj 12
 ./WR90/straight-asymmetric/straight-asymmetric.proj 12
 
+./permeability/rectangular_waveguide/straight.proj 12
+
 ./partially_filled_rect_waveguide/partially_filled_rect_waveguide_lossless/part.proj 12
 ./partially_filled_rect_waveguide/partially_filled_rect_waveguide_lossy/part.proj 12
+
+./permeability/partially_filled_rect_waveguide/part.proj 12
 
 ./WR75/dielectric-loading/dielectric-loading.proj 12
 ./WR75/T-Junction/T-Junction.proj 12
