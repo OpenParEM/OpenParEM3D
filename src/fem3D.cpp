@@ -102,7 +102,7 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
                      bool solution_check_homogeneous, string indent)
 {
    vector<Array<int> *> borderAttributeList;
-   vector<ConstantCoefficient *> ReInvGammaConstList,ImInvGammaConstList,RekConstList,ImkConstList,ZconstList;
+   vector<ConstantCoefficient *> ReC1ConstList,ImC1ConstList,ReC2ConstList,ImC2ConstList,ZconstList;
 
    PetscMPIInt rank;
    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -113,7 +113,7 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
    pmblfReA->AddDomainIntegrator(new CurlCurlIntegrator (*Inv_mur));
    pmblfReA->AddDomainIntegrator(new VectorFEMassIntegrator (*neg_ko2_Re_er));
    if (boundaryDatabase->addPortIntegrators(*pmesh,pmblfReA,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,borderAttributeList,
-                                            ReInvGammaConstList,ImInvGammaConstList,RekConstList,ImkConstList,
+                                            ReC1ConstList,ImC1ConstList,ReC2ConstList,ImC2ConstList,
                                             true,drivingSet,solution_check_homogeneous,indent)) return true;
    pmblfReA->Assemble();
    pmblfReA->Finalize();
@@ -127,17 +127,17 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
    borderAttributeList.clear();
 
    i=0;
-   while (i < ReInvGammaConstList.size()) {
-      if (ReInvGammaConstList[i]) delete ReInvGammaConstList[i];
-      if (ImInvGammaConstList[i]) delete ImInvGammaConstList[i];
-      if (RekConstList[i]) delete RekConstList[i];
-      if (ImkConstList[i]) delete ImkConstList[i];
+   while (i < ReC1ConstList.size()) {
+      if (ReC1ConstList[i]) delete ReC1ConstList[i];
+      if (ImC1ConstList[i]) delete ImC1ConstList[i];
+      if (ReC2ConstList[i]) delete ReC2ConstList[i];
+      if (ImC2ConstList[i]) delete ImC2ConstList[i];
       i++;
    }
-   ReInvGammaConstList.clear();
-   ImInvGammaConstList.clear();
-   RekConstList.clear();
-   ImkConstList.clear();
+   ReC1ConstList.clear();
+   ImC1ConstList.clear();
+   ReC2ConstList.clear();
+   ImC2ConstList.clear();
 
 
    delete pmblfReA;
@@ -150,7 +150,7 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
    ParBilinearForm *pmblfImA=new ParBilinearForm(fespace_ND);
    pmblfImA->AddDomainIntegrator(new VectorFEMassIntegrator (*neg_ko2_Im_er));
    if (boundaryDatabase->addPortIntegrators(*pmesh,pmblfImA,Inv_mur,neg_ko2_Re_er,neg_ko2_Im_er,
-                                            borderAttributeList,ReInvGammaConstList,ImInvGammaConstList,RekConstList,ImkConstList,
+                                            borderAttributeList,ReC1ConstList,ImC1ConstList,ReC2ConstList,ImC2ConstList,
                                             false,drivingSet,solution_check_homogeneous,indent)) return true;
    boundaryDatabase->addImpedanceIntegrators(frequency,temperature,*pmesh,pmblfImA,materialDatabase,
                                              borderAttributeList,ZconstList,false);
@@ -165,11 +165,11 @@ bool fem3D::build_A (BoundaryDatabase *boundaryDatabase, MaterialDatabase *mater
    }
 
    i=0;
-   while (i < ReInvGammaConstList.size()) {
-      if (ReInvGammaConstList[i]) delete ReInvGammaConstList[i];
-      if (ImInvGammaConstList[i]) delete ImInvGammaConstList[i];
-      if (RekConstList[i]) delete RekConstList[i];
-      if (ImkConstList[i]) delete ImkConstList[i];
+   while (i < ReC1ConstList.size()) {
+      if (ReC1ConstList[i]) delete ReC1ConstList[i];
+      if (ImC1ConstList[i]) delete ImC1ConstList[i];
+      if (ReC2ConstList[i]) delete ReC2ConstList[i];
+      if (ImC2ConstList[i]) delete ImC2ConstList[i];
       i++;
    }
 
