@@ -2447,6 +2447,7 @@ void flipSign (ParGridFunction *a)
    HypreParVector *hpv=a->GetTrueDofs();
    (*hpv)*=-1;
    a->Distribute(hpv);
+   delete hpv;
 }
 
 void FieldSet::flip2DmodalSign ()
@@ -3020,10 +3021,11 @@ void Mode::fillX (Vec *X, Vec *Xdofs, Array<int> *ess_tdof_port_list, HYPRE_BigI
    VecAssemblyEnd(*X);
    VecAssemblyEnd(*Xdofs);
 
+   delete data_re; data_re=nullptr;
+   delete data_im; data_im=nullptr;
+
    delete hypreRe;
    delete hypreIm;
-   delete data_re;
-   delete data_im;
 }
 
 void Mode::build2Dgrids (ParFiniteElementSpace *fes_ND, ParFiniteElementSpace *fes_H1)
