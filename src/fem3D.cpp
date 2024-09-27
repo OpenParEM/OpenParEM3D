@@ -453,9 +453,9 @@ void fem3D::build_e_re_e_im ()
    }
 
    // clean up
-   if (ixvals) {free(ixvals); ixvals=nullptr;}
-   if (local_x_vals) {free(local_x_vals); local_x_vals=nullptr;}
-   if (global_x_vals) {free(global_x_vals); global_x_vals=nullptr;}
+   PetscFree(ixvals);
+   PetscFree(local_x_vals);
+   PetscFree(global_x_vals);
 }
 
 void fem3D::buildEgrids (BoundaryDatabase *boundaryDatabase)
@@ -599,9 +599,9 @@ void fem3D::build_h_re_h_im (Vec *hdofs)
    }
 
    // clean up
-   if (ixvals) {free(ixvals); ixvals=nullptr;}
-   if (local_hdof_vals) {free(local_hdof_vals); local_hdof_vals=nullptr;}
-   if (global_hdof_vals) {free(global_hdof_vals); global_hdof_vals=nullptr;}
+   PetscFree(ixvals);
+   PetscFree(local_hdof_vals);
+   PetscFree(global_hdof_vals);
 }
 
 void fem3D::buildHgrids(BoundaryDatabase *boundaryDatabase, PWConstCoefficient *Inv_w_mu)
